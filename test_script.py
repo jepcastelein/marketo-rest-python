@@ -1,4 +1,4 @@
-from client import MarketoClient
+from pythonmarketo.client import MarketoClient
 
 mc = MarketoClient(host = <Host>, 
                    client_id = <Client_Id>, 
