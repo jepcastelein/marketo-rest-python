@@ -19,7 +19,7 @@ mc = MarketoClient(host = <Host>,
 Get Leads
 ---------
 ```python
-mc.get_leads(filtr='email', values='test@test.com')
+mc.get_leads(filtr = 'email', values = 'test@test.com')
 ```
 Create Lead
 ------------
