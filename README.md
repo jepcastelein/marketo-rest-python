@@ -24,12 +24,12 @@ mc.get_leads(filtr='email', values='test@test.com')
 Create Lead
 ------------
 ```python
-mc.create_lead(lookupField='email', lookupValue='test@test.com', values={'firstName':'Test1','lastName':'Test2'})
+mc.create_lead(lookupField = 'email', lookupValue = 'test@test.com', values = {'firstName':'Test1', 'lastName':'Test2'})
 ```
 Update Lead
 ------------
 ```python
-mc.update_lead(lookupField='email', lookupValue='test@test.com', values={'firstName':'Test1','lastName':'Test2'})
+mc.update_lead(lookupField = 'email', lookupValue = 'test@test.com', values = {'firstName':'Test1', 'lastName':'Test2'})
 ```
 
 TODO
