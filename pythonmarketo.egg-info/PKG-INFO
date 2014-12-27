@@ -1,0 +1,13 @@
+Metadata-Version: 1.0
+Name: pythonmarketo
+Version: 0.0.1
+Summary: Wrapper to Marketo Rest API.
+Home-page: https://github.com/asamat/python_marketo
+Author: Arunim Samat
+Author-email: arunimsamat@gmail.com
+License: MIT License
+Description: 
+        python_marketo is a python query client that wraps the Marketo Rest API.
+        For sending data to Marketo,
+        
+Platform: UNKNOWN

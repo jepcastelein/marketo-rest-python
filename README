@@ -1,0 +1,2 @@
+This package provides a wrapper to the Marketo REST API,
+currently only get leads,update/create leads api are supported.
