@@ -1,7 +1,7 @@
 python_marketo
 ==============
 
-Python interface to marketo REST api
+Python interface to marketo REST api <br />
 Detailed Doc - http://developers.marketo.com/documentation/rest/
 
 Installation
