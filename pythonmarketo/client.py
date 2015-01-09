@@ -23,6 +23,7 @@ class MarketoClient:
         self.client_secret = client_secret
 
     def execute(self, method, *args, **kargs):
+        result = None
         '''
         max 10 rechecks
         '''
