@@ -20,43 +20,49 @@ mc = MarketoClient(host = <Host>,
 Get Leads
 ---------
 ```python
-mc.get_leads(filtr = 'email', values = 'test@test.com')
+mc.execute(method = 'get_leads', filtr = 'email', values = 'test@test.com', fields=['email','firstName','lastName','company','postalCode'])
+#value could be either "v1 v2 v3" or [v1,v2,v3]
 ```
 
 Get Leads from listId
 ---------------------
 ```python
-mc.get_leads_by_listId(listId = '676', fields=['email','firstName','lastName','company','postalCode']))
+mc.execute(method = 'get_leads_by_listId', listId = '676', fields=['email','firstName','lastName','company','postalCode']))
 ```
 
 Get Activity Types
 ------------------
 ```python
-mc.get_activity_types()
+mc.execute(method = 'get_activity_types')
 ```
 
 Get PagingToken
 ----------------
 ```python
-mc.get_paging_token(sinceDatetime = '2014-10-06')
+mc.execute(method = 'get_paging_token', sinceDatetime = '2014-10-06')
+#sinceDatetime format: 
+#2014-10-06T13:22:17-08:00
+#2014-10-06T13:22-07:00
+#2014-10-06
 ```
 
 Get Lead Activity
 ----------------
 ```python
-mc.get_lead_activity(activityTypeIds = ['23','22'], sinceDatetime = '2014-10-06', batchSize = None, listId = None)
+mc.execute(method = 'get_lead_activity', activityTypeIds = ['23','22'], sinceDatetime = '2014-10-06', batchSize = None, listId = None)
+#activityTypeIds could be either "v1 v2 v3" or [v1,v2,v3]
 ```
 
 Create Lead
 ------------
 ```python
-mc.create_lead(lookupField = 'email', lookupValue = 'test@test.com', values = {'firstName':'Test1', 'lastName':'Test2'})
+mc.execute(method = 'create_lead', lookupField = 'email', lookupValue = 'test@test.com', values = {'firstName':'Test1', 'lastName':'Test2'})
 ```
 
 Update Lead
 ------------
 ```python
-mc.update_lead(lookupField = 'email', lookupValue = 'test@test.com', values = {'firstName':'Test1', 'lastName':'Test2'})
+mc.execute(method = 'update_lead', lookupField = 'email', lookupValue = 'test@test.com', values = {'firstName':'Test1', 'lastName':'Test2'})
 ```
 
 

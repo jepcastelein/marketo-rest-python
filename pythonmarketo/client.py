@@ -1,4 +1,5 @@
-from pythonmarketo.helper  import http_lib 
+from pythonmarketo.helper.http_lib  import  HttpLib
+from pythonmarketo.helper.exceptions import MarketoException
 import json
 import time
 
@@ -21,17 +22,40 @@ class MarketoClient:
         self.client_id = client_id
         self.client_secret = client_secret
 
+    def execute(self, method, *args, **kargs):
+        '''
+        max 10 rechecks
+        '''
+        for i in range(0,10):
+            try:
+                method_map={'get_leads':self.get_leads, 'get_leads_by_listId':self.get_leads_by_listId,
+                            'get_activity_types':self.get_activity_types, 'get_lead_activity':self.get_lead_activity,
+                            'get_paging_token':self.get_paging_token, 'update_lead':self.update_lead, 
+                            'create_lead':self.create_lead}
+
+                result = method_map[method](*args,**kargs) 
+            except MarketoException as e:
+                '''
+                601 -> auth token not valid
+                '''
+                if e.code == '601':
+                   continue   
+                else:
+                    raise Exception({'message':e.message, 'code':e.code})    
+            break        
+        return result
+    
+
     def authenticate(self):
         if self.valid_until is not None and\
             self.valid_until > time.time():
             return
-
         args = { 
             'grant_type' : 'client_credentials', 
             'client_id' : self.client_id,
             'client_secret' : self.client_secret
         }
-        data = http_lib.HttpLib().get("https://" + self.host + "/identity/oauth/token", args)
+        data = HttpLib().get("https://" + self.host + "/identity/oauth/token", args)
         if data is None: raise Exception("Empty Response")
         self.token = data['access_token']
         self.token_type = data['token_type']
@@ -39,6 +63,7 @@ class MarketoClient:
         self.valid_until = time.time() + data['expires_in'] 
         self.scope = data['scope']
 
+    
     def get_leads(self, filtr, values = [], fields = []):
         self.authenticate()
         values = values.split() if type(values) is str else values
@@ -49,10 +74,10 @@ class MarketoClient:
         }
         if len(fields) > 0:
             args['fields'] = ",".join(fields)
-        data = http_lib.HttpLib().get("https://" + self.host + "/rest/v1/leads.json", args)
+        data = HttpLib().get("https://" + self.host + "/rest/v1/leads.json", args)
         if data is None: raise Exception("Empty Response")
         self.last_request_id = data['requestId']
-        if not data['success'] : raise Exception(str(data['errors'])) 
+        if not data['success'] : raise MarketoException(data['errors'][0]) 
         return data['result']
 
     def get_leads_by_listId(self, listId = None , batchSize = None, fields = []):
@@ -66,10 +91,10 @@ class MarketoClient:
             args['batchSize'] = batchSize   
         result_list = []    
         while True:
-            data = http_lib.HttpLib().get("https://" + self.host + "/rest/v1/list/" + str(listId)+ "/leads.json", args)
+            data = HttpLib().get("https://" + self.host + "/rest/v1/list/" + str(listId)+ "/leads.json", args)
             if data is None: raise Exception("Empty Response")
             self.last_request_id = data['requestId']
-            if not data['success'] : raise Exception(str(data['errors'])) 
+            if not data['success'] : raise MarketoException(data['errors'][0]) 
             result_list.extend(data['result'])
             if len(data['result']) == 0 or 'nextPageToken' not in data:
                 break
@@ -81,9 +106,9 @@ class MarketoClient:
         args = {
             'access_token' : self.token 
         }
-        data = http_lib.HttpLib().get("https://" + self.host + "/rest/v1/activities/types.json", args)
+        data = HttpLib().get("https://" + self.host + "/rest/v1/activities/types.json", args)
         if data is None: raise Exception("Empty Response")
-        if not data['success'] : raise Exception(str(data['errors'])) 
+        if not data['success'] : raise MarketoException(data['errors'][0]) 
         return data['result']
 
         
@@ -99,14 +124,14 @@ class MarketoClient:
             args['listId'] = listId
         if batchSize:
             args['batchSize'] = batchSize
-        data = http_lib.HttpLib().get("https://" + self.host + "/rest/v1/activities.json", args)
+        data = HttpLib().get("https://" + self.host + "/rest/v1/activities.json", args)
         if data is None: raise Exception("Empty Response")
-        if not data['success'] : raise Exception(str(data['errors'])) 
+        if not data['success'] : raise MarketoException(data['errors'][0])
         return data
 
     def get_lead_activity(self, activityTypeIds, sinceDatetime, batchSize = None, listId = None):
         activity_result_list = []
-        nextPageToken = self.get_paging_token(sinceDatetime)
+        nextPageToken = self.get_paging_token(sinceDatetime = sinceDatetime)
         moreResult = True
         while moreResult:
             result = self.get_lead_activity_page(activityTypeIds, nextPageToken, batchSize, listId)
@@ -125,9 +150,9 @@ class MarketoClient:
             'access_token' : self.token, 
             'sinceDatetime' : sinceDatetime
         }
-        data = http_lib.HttpLib().get("https://" + self.host + "/rest/v1/activities/pagingtoken.json", args)
+        data = HttpLib().get("https://" + self.host + "/rest/v1/activities/pagingtoken.json", args)
         if data is None: raise Exception("Empty Response")
-        if not data['success'] : raise Exception(str(data['errors'])) 
+        if not data['success'] : raise MarketoException(data['errors'][0])
         return data['nextPageToken']
 
     def update_lead(self, lookupField, lookupValue, values):
@@ -157,6 +182,6 @@ class MarketoClient:
         args = {
             'access_token' : self.token 
         }
-        data = http_lib.HttpLib().post("https://" + self.host + "/rest/v1/leads.json" , args, data)
-        if not data['success'] : raise Exception(str(data['errors']))
+        data = HttpLib().post("https://" + self.host + "/rest/v1/leads.json" , args, data)
+        if not data['success'] : raise MarketoException(data['errors'][0])
         print("Status:", data['result'][0]['status'])
