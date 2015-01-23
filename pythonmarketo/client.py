@@ -32,7 +32,7 @@ class MarketoClient:
                 method_map={'get_leads':self.get_leads, 'get_leads_by_listId':self.get_leads_by_listId,
                             'get_activity_types':self.get_activity_types, 'get_lead_activity':self.get_lead_activity,
                             'get_paging_token':self.get_paging_token, 'update_lead':self.update_lead, 
-                            'create_lead':self.create_lead}
+                            'create_lead':self.create_lead, 'get_lead_activity_page':self.get_lead_activity_page}
 
                 result = method_map[method](*args,**kargs) 
             except MarketoException as e:
@@ -165,7 +165,7 @@ class MarketoClient:
              updated_lead
             ]
         }
-        self.post(data)
+        return self.post(data)
 
     def create_lead(self, lookupField, lookupValue, values):
         new_lead = dict(list({lookupField : lookupValue}.items()) + list(values.items()))
@@ -176,7 +176,7 @@ class MarketoClient:
              new_lead
             ]
         }
-        self.post(data)
+        return self.post(data)
            
     def post(self, data):
         self.authenticate()
@@ -185,4 +185,5 @@ class MarketoClient:
         }
         data = HttpLib().post("https://" + self.host + "/rest/v1/leads.json" , args, data)
         if not data['success'] : raise MarketoException(data['errors'][0])
-        print("Status:", data['result'][0]['status'])
+        return data['result'][0]['status']
+        
