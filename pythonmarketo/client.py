@@ -38,8 +38,9 @@ class MarketoClient:
             except MarketoException as e:
                 '''
                 601 -> auth token not valid
+                602 -> auth token expired
                 '''
-                if e.code == '601':
+                if e.code in ['601', '602']:
                    continue   
                 else:
                     raise Exception({'message':e.message, 'code':e.code})    
