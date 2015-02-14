@@ -21,8 +21,9 @@ Get Leads
 ---------
 API Ref: http://developers.marketo.com/documentation/rest/get-multiple-leads-by-filter-type/ 
 ```python
+#values could be either "v1 v2 v3" or [v1,v2,v3]
+
 mc.execute(method = 'get_leads', filtr = 'email', values = 'test@test.com', fields=['email','firstName','lastName','company','postalCode'])
-#value could be either "v1 v2 v3" or [v1,v2,v3]
 ```
 
 Get Leads from listId
@@ -43,19 +44,21 @@ Get PagingToken
 ----------------
 API Ref: http://developers.marketo.com/documentation/rest/get-paging-token/
 ```python
-mc.execute(method = 'get_paging_token', sinceDatetime = '2014-10-06')
 #sinceDatetime format: 
 #2014-10-06T13:22:17-08:00
 #2014-10-06T13:22-07:00
 #2014-10-06
+
+mc.execute(method = 'get_paging_token', sinceDatetime = '2014-10-06')
 ```
 
 Get Lead Activity
 ----------------
 API Ref: http://developers.marketo.com/documentation/rest/get-lead-activities/
 ```python
-mc.execute(method = 'get_lead_activity', activityTypeIds = ['23','22'], sinceDatetime = '2014-10-06', batchSize = None, listId = None)
 #activityTypeIds could be either "v1 v2 v3" or [v1,v2,v3]
+
+mc.execute(method = 'get_lead_activity', activityTypeIds = ['23','22'], sinceDatetime = '2014-10-06', batchSize = None, listId = None)
 ```
 
 Create Lead
