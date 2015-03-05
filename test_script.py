@@ -21,5 +21,3 @@ while moreResult:
     nextPageToken = result['nextPageToken']
     if 'result' in result:
         activity_result_list.extend(result['result'])
-
-#mc.update_lead(lookupField='email', lookupValue='test@test.com', values={'firstName':'Test1','lastName':'Test2'})

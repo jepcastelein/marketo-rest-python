@@ -13,19 +13,25 @@ class MarketoClient:
     token_type = None
     scope = None
     last_request_id = None
+    API_CALLS_MADE = 0
+    API_LIMIT = None
     
-    def __init__(self, host, client_id, client_secret):
+    def __init__(self, host, client_id, client_secret, api_limit=None):
         assert(host is not None)
         assert(client_id is not None)
         assert(client_secret is not None)
         self.host = host
         self.client_id = client_id
         self.client_secret = client_secret
+        self.API_LIMIT = api_limit
 
     def execute(self, method, *args, **kargs):
         result = None
+        if self.API_LIMIT and self.API_CALLS_MADE >= self.API_LIMIT:
+            raise Exception({'message':'API Calls exceded the limit : ' + str(self.API_LIMIT), 'code':416})
+
         '''
-        max 10 rechecks
+            max 10 rechecks
         '''
         for i in range(0,10):
             try:
@@ -35,6 +41,7 @@ class MarketoClient:
                             'create_lead':self.create_lead, 'get_lead_activity_page':self.get_lead_activity_page}
 
                 result = method_map[method](*args,**kargs) 
+                self.API_CALLS_MADE += 1
             except MarketoException as e:
                 '''
                 601 -> auth token not valid
