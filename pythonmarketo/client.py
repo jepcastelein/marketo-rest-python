@@ -28,7 +28,7 @@ class MarketoClient:
     def execute(self, method, *args, **kargs):
         result = None
         if self.API_LIMIT and self.API_CALLS_MADE >= self.API_LIMIT:
-            raise Exception({'message':'API Calls exceded the limit : ' + str(self.API_LIMIT), 'code':416})
+            raise Exception({'message':'API Calls exceded the limit : ' + str(self.API_LIMIT), 'code':'416'})
 
         '''
             max 10 rechecks
