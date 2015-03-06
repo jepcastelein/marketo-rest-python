@@ -16,7 +16,7 @@ For sending data to Marketo,
 
 setup(
     name='pythonmarketo',
-    version= '0.0.8',
+    version= '0.0.9',
     url='https://github.com/asamat/python_marketo',
     author='Arunim Samat',
     author_email='arunimsamat@gmail.com',
