@@ -35,10 +35,19 @@ class MarketoClient:
         '''
         for i in range(0,10):
             try:
-                method_map={'get_leads':self.get_leads, 'get_leads_by_listId':self.get_leads_by_listId,
-                            'get_activity_types':self.get_activity_types, 'get_lead_activity':self.get_lead_activity,
-                            'get_paging_token':self.get_paging_token, 'update_lead':self.update_lead, 
-                            'create_lead':self.create_lead, 'get_lead_activity_page':self.get_lead_activity_page}
+                method_map={
+                    'get_leads':self.get_leads,
+                    'get_leads_by_listId':self.get_leads_by_listId,
+                    'get_activity_types':self.get_activity_types,
+                    'get_lead_activity':self.get_lead_activity,
+                    'get_paging_token':self.get_paging_token,
+                    'update_lead':self.update_lead,
+                    'create_lead':self.create_lead,
+                    'get_lead_activity_page':self.get_lead_activity_page,
+                    'get_email_content_by_id':self.get_email_content_by_id,
+                    'get_email_template_content_by_id':self.get_email_template_content_by_id,
+                    'get_email_templates':self.get_email_templates,
+                }
 
                 result = method_map[method](*args,**kargs) 
                 self.API_CALLS_MADE += 1
@@ -84,6 +93,48 @@ class MarketoClient:
         if len(fields) > 0:
             args['fields'] = ",".join(fields)
         data = HttpLib().get("https://" + self.host + "/rest/v1/leads.json", args)
+        if data is None: raise Exception("Empty Response")
+        self.last_request_id = data['requestId']
+        if not data['success'] : raise MarketoException(data['errors'][0]) 
+        return data['result']
+
+    def get_email_templates(self, offset, maxreturn, status=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token' : self.token,
+            'offset' : offset,
+            'maxreturn' : maxreturn
+        }
+        if status is not None:
+            args['status'] = status
+        data = HttpLib().get("https://" + self.host + "/rest/asset/v1/emailTemplates.json", args)
+        if data is None: raise Exception("Empty Response")
+        self.last_request_id = data['requestId']
+        if not data['success'] : raise MarketoException(data['errors'][0]) 
+        return data['result']
+    
+    def get_email_content_by_id(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token' : self.token
+        }
+        data = HttpLib().get("https://" + self.host + "/rest/asset/v1/email/" + str(id) + "/content", args)
+        if data is None: raise Exception("Empty Response")
+        self.last_request_id = data['requestId']
+        if not data['success'] : raise MarketoException(data['errors'][0]) 
+        return data['result']
+    
+    def get_email_template_content_by_id(self, id, status = None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token' : self.token
+        }
+        if status is not None:
+            args['status'] = status
+        data = HttpLib().get("https://" + self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/content", args)
         if data is None: raise Exception("Empty Response")
         self.last_request_id = data['requestId']
         if not data['success'] : raise MarketoException(data['errors'][0]) 
