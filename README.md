@@ -30,7 +30,7 @@ Get Leads from listId
 ---------------------
 API Ref: http://developers.marketo.com/documentation/rest/get-multiple-leads-by-list-id/
 ```python
-mc.execute(method = 'get_leads_by_listId', listId = '676', fields=['email','firstName','lastName','company','postalCode']))
+mc.execute(method = 'get_leads_by_listId', listId = '676', fields=['email','firstName','lastName','company','postalCode'])
 ```
 
 Get Activity Types
