@@ -47,6 +47,7 @@ class MarketoClient:
                     'get_email_content_by_id':self.get_email_content_by_id,
                     'get_email_template_content_by_id':self.get_email_template_content_by_id,
                     'get_email_templates':self.get_email_templates,
+                    'request_campaign':self.run_request_campaign,
                 }
 
                 result = method_map[method](*args,**kargs) 
@@ -236,7 +237,43 @@ class MarketoClient:
             ]
         }
         return self.post(data)
+    
+    def run_request_campaign(self,campaignID,leadsID,values):
+        def add_curly(k):
+           return '{{'+k+'}}' 
+        append_array={add_curly(k):v for k, v in values.items()}
+        leads_list=[]
+        token_dict={}
+        token_list=[]
+        leads_dict={}
+        for k,v in append_array.items():
+            token_dict['name']=k
+            token_dict['value']=v
+            token_list.append(token_dict)
+        for rows in leadsID:
+            leads_dict['id']=rows
+            leads_list.append(leads_dict)
+        camp_dict={}
+        camp_dict['tokens']= token_list
+        data={
+          'input': {"leads":
+                    leads_list                  
+                   ,"tokens":
+                    token_list
+                   }
+             }
+        
+        self.authenticate()
+        args = {
+            'access_token' : self.token 
+        }
+        x="https://" + self.host + "/rest/v1/campaigns/" + str(campaignID)+ "/trigger.json"
+        result = HttpLib().post("https://" + self.host + "/rest/v1/campaigns/" + str(campaignID)+ "/trigger.json", args,data)
+        if not result['success'] : raise MarketoException(data['errors'][0])
+        return result['success']
+
            
+       
     def post(self, data):
         self.authenticate()
         args = {
