@@ -238,21 +238,9 @@ class MarketoClient:
         }
         return self.post(data)
     
-    def run_request_campaign(self,campaignID,leadsID,values):
-        def add_curly(k):
-           return '{{'+k+'}}' 
-        append_array={add_curly(k):v for k, v in values.items()}
-        leads_list=[]
-        token_dict={}
-        token_list=[]
-        leads_dict={}
-        for k,v in append_array.items():
-            token_dict['name']=k
-            token_dict['value']=v
-            token_list.append(token_dict)
-        for rows in leadsID:
-            leads_dict['id']=rows
-            leads_list.append(leads_dict)
+    def run_request_campaign(self, campaignID, leadsID, values):
+        token_list = [{'name':'{{' + k + '}}', 'value':v} for k, v in values.items()]
+        leads_list = [{'id':items} for items in leads_list] 
         camp_dict={}
         camp_dict['tokens']= token_list
         data={
