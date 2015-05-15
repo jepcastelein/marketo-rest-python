@@ -243,8 +243,8 @@ class MarketoClient:
         leads_list = [{'id':items} for items in leads_list] 
         data={
           'input': {"leads":
-                    leads_list                  
-                   ,"tokens":
+                    leads_list,                  
+                    "tokens":
                     token_list
                    }
              }
@@ -254,7 +254,7 @@ class MarketoClient:
             'access_token' : self.token 
         }
         x="https://" + self.host + "/rest/v1/campaigns/" + str(campaignID)+ "/trigger.json"
-        result = HttpLib().post("https://" + self.host + "/rest/v1/campaigns/" + str(campaignID)+ "/trigger.json", args,data)
+        result = HttpLib().post("https://" + self.host + "/rest/v1/campaigns/" + str(campaignID)+ "/trigger.json", args, data)
         if not result['success'] : raise MarketoException(data['errors'][0])
         return result['success']
 
