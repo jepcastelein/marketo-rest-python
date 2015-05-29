@@ -165,24 +165,24 @@ class MarketoClient:
         return result_list    
 
     def get_multiple_leads_by_filter_type(self, filterType, filterValues, fieldslist):
-        self.autheticate()
+        self.authenticate()
+        args={
+             'access_token' : self.token
+             }
         fieldvalstr = ','.join(filterValues)
         fields = fieldliststr = None
         if len(fieldslist) > 0:
             fieldstr = ','.join(fieldslist)
         else:
             fieldstr= 'id,lastName,firstName,updatedAt,createdAt'
-            
-        args={
-             'access_token' : self.token
-             }
-        
+
         inputp={
+             'access_token' : self.token, 
              'filterType'   : filterType,
              'filterValues' : fieldvalstr,
              'fields'       : fieldstr
-             }            
-        data = HttpLib().get("https://" + self.host + "/rest/v1/leads.json", args,inputp)
+             }
+        data = HttpLib().get("https://" + self.host + "/rest/v1/leads.json",inputp)
         if data is None: raise Exception("Empty Response")
         if not data['success'] : raise MarketoException(data['errors'][0]) 
         return data['result']
@@ -283,8 +283,9 @@ class MarketoClient:
         result = HttpLib().post("https://" + self.host + "/rest/v1/campaigns/" + str(campaignID)+ "/trigger.json", args, data)
         if not result['success'] : raise MarketoException(data['errors'][0])
         return result['success']
+        
 
-    def merge_leads(win_ld, loosing_leads_list,mergeInCRM=False):
+    def merge_leads(winning_ld, loosing_leads_list,mergeInCRM=False):
         leadstr = ','.join(loosing_leads_list)
         if len(loosing_leads_list) > 1:
             data={
@@ -301,7 +302,7 @@ class MarketoClient:
         args = {
             'access_token' : self.token 
         }
-        result = HttpLib().post("https://" + self.host + "/rest/v1/leads/" + str(win_ld) + "/merge.json" , args, data)
+        result = HttpLib().post("https://" + self.host + "/rest/v1/leads/" + str(winning_ld) + "/merge.json" , args, data)
         if not result['success'] : raise MarketoException(data['errors'][0])
         return result['success']
         
