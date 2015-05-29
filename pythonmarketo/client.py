@@ -38,6 +38,7 @@ class MarketoClient:
                 method_map={
                     'get_leads':self.get_leads,
                     'get_leads_by_listId':self.get_leads_by_listId,
+                    'get_multiple_leads_by_filter_type':self.get_multiple_leads_by_filter_type,
                     'get_activity_types':self.get_activity_types,
                     'get_lead_activity':self.get_lead_activity,
                     'get_paging_token':self.get_paging_token,
@@ -48,6 +49,7 @@ class MarketoClient:
                     'get_email_template_content_by_id':self.get_email_template_content_by_id,
                     'get_email_templates':self.get_email_templates,
                     'request_campaign':self.run_request_campaign,
+                    'merge_leads':self.merge_leads,
                 }
 
                 result = method_map[method](*args,**kargs) 
@@ -162,6 +164,30 @@ class MarketoClient:
             args['nextPageToken'] = data['nextPageToken']         
         return result_list    
 
+    def get_multiple_leads_by_filter_type(self, filterType, filterValues, fieldslist):
+        self.autheticate()
+        fieldvalstr = ','.join(filterValues)
+        fields = fieldliststr = None
+        if len(fieldslist) > 0:
+            fieldstr = ','.join(fieldslist)
+        else:
+            fieldstr= 'id,lastName,firstName,updatedAt,createdAt'
+            
+        args={
+             'access_token' : self.token
+             }
+        
+        inputp={
+             'filterType'   : filterType,
+             'filterValues' : fieldvalstr,
+             'fields'       : fieldstr
+             }            
+        data = HttpLib().get("https://" + self.host + "/rest/v1/leads.json", args,inputp)
+        if data is None: raise Exception("Empty Response")
+        if not data['success'] : raise MarketoException(data['errors'][0]) 
+        return data['result']
+     
+
     def get_activity_types(self):
         self.authenticate()
         args = {
@@ -258,7 +284,28 @@ class MarketoClient:
         if not result['success'] : raise MarketoException(data['errors'][0])
         return result['success']
 
-           
+    def merge_leads(win_ld, loosing_leads_list,mergeInCRM=False):
+        leadstr = ','.join(loosing_leads_list)
+        if len(loosing_leads_list) > 1:
+            data={
+                 'leadlds'    : leadstr,
+                 'mergeInCRM' : mergeInCRM
+                 }
+        else:
+            data={
+                 'leadld' : leadstr
+                 }
+       
+        
+        self.authenticate()
+        args = {
+            'access_token' : self.token 
+        }
+        result = HttpLib().post("https://" + self.host + "/rest/v1/leads/" + str(win_ld) + "/merge.json" , args, data)
+        if not result['success'] : raise MarketoException(data['errors'][0])
+        return result['success']
+        
+            
        
     def post(self, data):
         self.authenticate()
