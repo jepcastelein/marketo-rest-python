@@ -296,8 +296,6 @@ class MarketoClient:
             data={
                  'leadld' : leadstr
                  }
-       
-        print 'data', winning_ld, ' And ', data  
         self.authenticate()
         args = {
             'access_token' : self.token 
