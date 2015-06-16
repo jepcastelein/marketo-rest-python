@@ -302,6 +302,7 @@ class MarketoClient:
                  'leadld' : leadstr,
                  'mergeInCRM' : mergeInCRM
                  }
+<<<<<<< HEAD
 
 	data = None
 	args = None
@@ -313,6 +314,15 @@ class MarketoClient:
 	    return False
         else:
       	    return x['success']
+=======
+        self.authenticate()
+        args = {
+            'access_token' : self.token 
+        }
+        result = HttpLib().post("https://" + self.host + "/rest/v1/leads/" + str(winning_ld) + "/merge.json" , args, data)
+        if not result['success'] : raise MarketoException(data['errors'][0])
+        return result['success']
+>>>>>>> 48e0b387c43d57b19a552816780250f10254ca8f
         
             
        
