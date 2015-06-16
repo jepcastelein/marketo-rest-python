@@ -36,6 +36,6 @@ class HttpLib:
                 r = requests.post(url, data=json.dumps(data), headers=headers)
                 return r.json()
             except Exception as e:
-                print("HTTP Post Exception!!! Retrying.....")
+                print("HTTP Post Exception!!! Retrying....."+ str(e))
                 time.sleep(self.sleep_duration)
                 retries += 1
