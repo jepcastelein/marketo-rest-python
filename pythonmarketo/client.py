@@ -266,7 +266,7 @@ class MarketoClient:
     
     def run_request_campaign(self, campaignID, leadsID, values):
         token_list = [{'name':'{{' + k + '}}', 'value':v} for k, v in values.items()]
-        leads_list = [{'id':items} for items in leads_list] 
+        leads_list = [{'id':items} for items in leadsID]
         data={
           'input': {"leads":
                     leads_list,                  
