@@ -2,6 +2,7 @@ from pythonmarketo.helper.http_lib  import  HttpLib
 from pythonmarketo.helper.exceptions import MarketoException
 import json
 import time
+import requests
 
 class MarketoClient:    
     host = None
@@ -285,24 +286,32 @@ class MarketoClient:
         return result['success']
         
 
-    def merge_leads(winning_ld, loosing_leads_list,mergeInCRM=False):
-        leadstr = ','.join(loosing_leads_list)
-        if len(loosing_leads_list) > 1:
-            data={
-                 'leadlds'    : leadstr,
-                 'mergeInCRM' : mergeInCRM
-                 }
-        else:
-            data={
-                 'leadld' : leadstr
-                 }
+    def merge_leads(self, winning_ld, loosing_leads_list,mergeInCRM = False):
+        leadstr = str(loosing_leads_list).strip('[]')
+        leadsing = '&leadIds=' + leadstr
         self.authenticate()
         args = {
             'access_token' : self.token 
         }
-        result = HttpLib().post("https://" + self.host + "/rest/v1/leads/" + str(winning_ld) + "/merge.json" , args, data)
-        if not result['success'] : raise MarketoException(data['errors'][0])
-        return result['success']
+	if len(loosing_leads_list) >  1:
+            data={
+                 'leadIds':leadstr 
+                 }
+        else:
+            data={
+                 'leadld' : leadstr,
+                 'mergeInCRM' : mergeInCRM
+                 }
+	data = None
+	args = None
+        headers = {'content-type': 'application/json'}
+	urls = "https://" + self.host + "/rest/v1/leads/" + str(winning_ld) + "/merge.json?access_token=" + self.token + leadsing
+        result = requests.post(urls, headers = headers)
+        x = result.json()
+        if result.status_code != 200:
+	    return False
+        else:
+      	    return x['success']
         
             
        
