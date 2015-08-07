@@ -282,7 +282,7 @@ class MarketoClient:
         }
         x="https://" + self.host + "/rest/v1/campaigns/" + str(campaignID)+ "/trigger.json"
         result = HttpLib().post("https://" + self.host + "/rest/v1/campaigns/" + str(campaignID)+ "/trigger.json", args, data)
-        if not result['success'] : raise MarketoException(data['errors'][0])
+        if not result['success'] : raise MarketoException(result['errors'][0])
         return result['success']
         
 
