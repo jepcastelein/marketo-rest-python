@@ -1,6 +1,5 @@
 from pythonmarketo.helper.http_lib  import  HttpLib
 from pythonmarketo.helper.exceptions import MarketoException
-import json
 import time
 import requests
 
@@ -51,6 +50,14 @@ class MarketoClient:
                     'get_email_templates':self.get_email_templates,
                     'request_campaign':self.run_request_campaign,
                     'merge_leads':self.merge_leads,
+                    'add_to_list':self.add_to_list,
+                    'remove_from_list':self.remove_from_list,
+                    'browse_folders':self.browse_folders,
+                    'create_folder':self.create_folder,
+                    'get_folder_by_id':self.get_folder_by_id,
+                    'get_folder_by_name':self.get_folder_by_name,
+                    'list_files':self.list_files,
+                    'create_file':self.create_file
                 }
 
                 result = method_map[method](*args,**kargs) 
@@ -264,7 +271,27 @@ class MarketoClient:
             ]
         }
         return self.post(data)
-    
+
+    def upsert_lead(self, lookupField, lookupValue, values):
+        new_lead = dict(list({lookupField : lookupValue}.items()) + list(values.items()))
+        data = {
+            'action' : 'createOrUpdate',
+            'lookupField' : lookupField,
+            'input' : [
+             new_lead
+            ]
+        }
+        return self.post(data)
+
+    def post(self, data):
+        self.authenticate()
+        args = {
+            'access_token' : self.token
+        }
+        data = HttpLib().post("https://" + self.host + "/rest/v1/leads.json" , args, data)
+        if not data['success'] : raise MarketoException(data['errors'][0])
+        return data['result'][0]['status']
+
     def run_request_campaign(self, campaignID, leadsID, values):
         token_list = [{'name':'{{' + k + '}}', 'value':v} for k, v in values.items()]
         leads_list = [{'id':items} for items in leadsID]
@@ -293,34 +320,164 @@ class MarketoClient:
         args = {
             'access_token' : self.token 
         }
-	if len(loosing_leads_list) >  1:
+        if len(loosing_leads_list) >  1:
             data={
-                 'leadIds':leadstr 
+                 'leadIds':leadstr
                  }
         else:
             data={
                  'leadld' : leadstr,
                  'mergeInCRM' : mergeInCRM
                  }
-	data = None
-	args = None
+        data = None
+        args = None
         headers = {'content-type': 'application/json'}
-	urls = "https://" + self.host + "/rest/v1/leads/" + str(winning_ld) + "/merge.json?access_token=" + self.token + leadsing
+        urls = "https://" + self.host + "/rest/v1/leads/" + str(winning_ld) + "/merge.json?access_token=" + self.token + leadsing
         result = requests.post(urls, headers = headers)
         x = result.json()
         if result.status_code != 200:
-	    return False
+            return False
         else:
-      	    return x['success']
-        
-            
+            return x['success']
+
+    def add_to_list(self, listId, leadIds):
+        #currently only handles 300 Leads at a time; looping needs to be implemented outside
+        self.authenticate()
+        leads_list = [{'id':items} for items in leadIds]
+        data={
+            'input': leads_list
+            }
+        args = {
+            'access_token' : self.token
+            }
+        result = HttpLib().post("https://" + self.host + "/rest/v1/lists/" + str(listId)+ "/leads.json", args, data)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result
+
+    def remove_from_list(self, listId, leadIds):
+        self.authenticate()
+        leads_list = [{'id':items} for items in leadIds]
+        data={
+            'input': leads_list
+            }
+        args = {
+            'access_token' : self.token
+            }
+        result = HttpLib().delete("https://" + self.host + "/rest/v1/lists/" + str(listId)+ "/leads.json", args, data)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result
        
-    def post(self, data):
+    def browse_folders(self, root, offset=None, maxDepth=None, maxReturn=None, workSpace=None):
+        # this does not loop, so for now limited to 200 folder; will implement looping in the future
+        self.authenticate()
+        if root is None: raise ValueError("Invalid argument: required argument root is none.")
+        args = {
+            'access_token' : self.token,
+            'root' : root
+        }
+        if offset is not None:
+            args['offset'] = offset
+        if maxDepth is not None:
+            args['maxDepth'] = maxDepth
+        if maxReturn is not None:
+            args['maxReturn'] = maxReturn
+        if workSpace is not None:
+            args['workSpace'] = workSpace
+        result = HttpLib().get("https://" + self.host + "/rest/asset/v1/folders.json", args)
+        if result is None: raise Exception("Empty Response")
+        self.last_request_id = result['requestId']
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_folder_by_id(self, id, type=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token' : self.token
+        }
+        if type is not None:
+            args['type'] = type
+        result = HttpLib().get("https://" + self.host + "/rest/asset/v1/folder/" + str(id) + ".json", args)
+        if result is None: raise Exception("Empty Response")
+        self.last_request_id = result['requestId']
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_folder_by_name(self, name, type=None, root=None, workSpace=None):
+        self.authenticate()
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        args = {
+            'access_token' : self.token,
+            'name' : name
+        }
+        if type is not None:
+            args['type'] = type
+        if root is not None:
+            args['root'] = root
+        if workSpace is not None:
+            args['workSpace'] = workSpace
+        result = HttpLib().get("https://" + self.host + "/rest/asset/v1/folder/byName.json", args)
+        if result is None: raise Exception("Empty Response")
+        self.last_request_id = result['requestId']
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def create_folder(self, name, parent, description=None):
+        self.authenticate()
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        if parent is None: raise ValueError("Invalid argument: required argument parent is none.")
+        args = {
+            'access_token' : self.token,
+            'name' : name,
+            'parent' : parent
+        }
+        if description is not None:
+            args['description'] = description
+        result = HttpLib().post("https://" + self.host + "/rest/asset/v1/folders.json", args)
+        if result is None: raise Exception("Empty Response")
+        self.last_request_id = result['requestId']
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def list_files(self, folder=None, offset=None, maxReturn=None):
+        # this does not loop, so for now limited to 200 files; will implement looping in the future
         self.authenticate()
         args = {
-            'access_token' : self.token 
+            'access_token' : self.token
         }
-        data = HttpLib().post("https://" + self.host + "/rest/v1/leads.json" , args, data)
-        if not data['success'] : raise MarketoException(data['errors'][0])
-        return data['result'][0]['status']
-        
+        if folder is not None:
+            args['folder'] = folder
+        if offset is not None:
+            args['offset'] = offset
+        if maxReturn is not None:
+            args['maxReturn'] = maxReturn
+        result = HttpLib().get("https://" + self.host + "/rest/asset/v1/files.json", args)
+        if result is None: raise Exception("Empty Response")
+        self.last_request_id = result['requestId']
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result
+
+    def create_file(self, name, file, folder, description=None, insertOnly=None):
+        self.authenticate()
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        if file is None: raise ValueError("Invalid argument: required argument file is none.")
+        if folder is None: raise ValueError("Invalid argument: required argument folder is none.")
+        args = {
+            'access_token' : self.token,
+            'name' : name,
+            'folder' : folder
+        }
+        #files = {'file': file}
+        #print(files)
+        if description is not None:
+            args['description'] = description
+        if insertOnly is not None:
+            args['insertOnly'] = insertOnly
+        # this one doesn't work yet; issue with file upload & how to pass file on to HttpLib function
+        result = HttpLib().post("https://" + self.host + "/rest/asset/v1/files.json", args, files=file)
+        if result is None: raise Exception("Empty Response")
+        self.last_request_id = result['requestId']
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result
