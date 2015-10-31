@@ -44,11 +44,12 @@ class MarketoClient:
                     'get_paging_token':self.get_paging_token,
                     'update_lead':self.update_lead,
                     'create_lead':self.create_lead,
+                    'create_update_leads':self.create_update_leads,
                     'get_lead_activity_page':self.get_lead_activity_page,
                     'get_email_content_by_id':self.get_email_content_by_id,
                     'get_email_template_content_by_id':self.get_email_template_content_by_id,
                     'get_email_templates':self.get_email_templates,
-                    'request_campaign':self.run_request_campaign,
+                    'run_request_campaign':self.run_request_campaign,
                     'merge_leads':self.merge_leads,
                     'add_to_list':self.add_to_list,
                     'remove_from_list':self.remove_from_list,
@@ -57,7 +58,27 @@ class MarketoClient:
                     'get_folder_by_id':self.get_folder_by_id,
                     'get_folder_by_name':self.get_folder_by_name,
                     'list_files':self.list_files,
-                    'create_file':self.create_file
+                    'create_file':self.create_file,
+                    'associate_lead':self.associate_lead,
+                    'get_lead_partitions':self.get_lead_partitions,
+                    'get_list_by_id':self.get_list_by_id,
+                    'get_multiple_lists':self.get_multiple_lists,
+                    'member_of_list':self.member_of_list,
+                    'get_campaign_by_id':self.get_campaign_by_id,
+                    'get_multiple_campaigns':self.get_multiple_campaigns,
+                    'schedule_campaign':self.schedule_campaign,
+                    'request_campaign':self.request_campaign,
+                    'describe':self.describe,
+                    'get_lead_changes':self.get_lead_changes,
+                    'get_daily_usage':self.get_daily_usage,
+                    'get_last_7_days_usage':self.get_last_7_days_usage,
+                    'get_daily_errors':self.get_daily_errors,
+                    'get_last_7_days_errors':self.get_last_7_days_errors,
+                    'delete_lead':self.delete_lead,
+                    'get_deleted_leads':self.get_deleted_leads,
+                    'update_leads_partition':self.update_leads_partition,
+                    'get_lead_by_id':self.get_lead_by_id,
+                    'get_multiple_leads_by_program_id':self.get_multiple_leads_by_program_id
                 }
 
                 result = method_map[method](*args,**kargs) 
@@ -283,6 +304,20 @@ class MarketoClient:
         }
         return self.post(data)
 
+    def create_update_leads(self, leads, action='createOrUpdate', lookupField=None, asyncProcessing=None, partitionName=None):
+        # expected format for 'leads': [{"email":"joe@example.com","firstName":"Joe"},{"email":"jill@example.com","firstName":"Jill"}]
+        data = {
+            'action' : action,
+            'input' : leads
+        }
+        if lookupField is not None:
+            data['lookupField'] = lookupField
+        if asyncProcessing is not None:
+            data['asyncProcessing '] = asyncProcessing
+        if partitionName is not None:
+            data['partitionName'] = partitionName
+        return self.post(data)
+
     def post(self, data):
         self.authenticate()
         args = {
@@ -290,7 +325,7 @@ class MarketoClient:
         }
         data = HttpLib().post("https://" + self.host + "/rest/v1/leads.json" , args, data)
         if not data['success'] : raise MarketoException(data['errors'][0])
-        return data['result'][0]['status']
+        return data['result']
 
     def run_request_campaign(self, campaignID, leadsID, values):
         token_list = [{'name':'{{' + k + '}}', 'value':v} for k, v in values.items()]
@@ -311,7 +346,6 @@ class MarketoClient:
         result = HttpLib().post("https://" + self.host + "/rest/v1/campaigns/" + str(campaignID)+ "/trigger.json", args, data)
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['success']
-        
 
     def merge_leads(self, winning_ld, loosing_leads_list,mergeInCRM = False):
         leadstr = str(loosing_leads_list).strip('[]')
@@ -481,3 +515,348 @@ class MarketoClient:
         self.last_request_id = result['requestId']
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result
+
+
+    def associate_lead(self, id, cookie):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if cookie is None: raise ValueError("Invalid argument: required argument cookie is none.")
+        args = {
+            'access_token' : self.token,
+            'id' : id,
+            'cookie' : cookie
+        }
+        result = HttpLib().post("https://" + self.host + "/rest/v1/leads/" + str(id) + "associate.json", args)
+        if result is None: raise Exception("Empty Response")
+        self.last_request_id = result['requestId']
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_lead_partitions(self):
+        self.authenticate()
+        args = {
+            'access_token' : self.token
+        }
+        data = HttpLib().get("https://" + self.host + "/rest/v1/leads/partitions.json", args)
+        if data is None: raise Exception("Empty Response")
+        if not data['success'] : raise MarketoException(data['errors'][0])
+        return data['result']
+
+    def get_list_by_id(self, id):
+        self.authenticate()
+        args = {
+            'access_token' : self.token
+        }
+        data = HttpLib().get("https://" + self.host + "/rest/v1/lists/" + str(id) + ".json", args)
+        if data is None: raise Exception("Empty Response")
+        if not data['success'] : raise MarketoException(data['errors'][0])
+        return data['result']
+
+    def get_multiple_lists(self, id=None, name=None, programName=None, workspaceName=None, batchSize=None, nextPageToken=None):
+        self.authenticate()
+        args = {
+            'access_token' : self.token
+        }
+        if id is not None:
+            args['id'] = id
+        if name is not None:
+            args['name'] = name
+        if programName is not None:
+            args['programName'] = programName
+        if workspaceName is not None:
+            args['workspaceName'] = workspaceName
+        if batchSize is not None:
+            args['batchSize'] = batchSize
+        if nextPageToken is not None:
+            args['nextPageToken'] = nextPageToken
+        result = HttpLib().get("https://" + self.host + "/rest/v1/lists.json", args)
+        if result is None: raise Exception("Empty Response")
+        self.last_request_id = result['requestId']
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def member_of_list(self, listId, id):
+        # this uses POST so large numbers of leads can be specified
+        self.authenticate()
+        leads_list = [{'id':items} for items in id]
+        data = {
+            'input': leads_list
+        }
+        args = {
+            'access_token' : self.token,
+            '_method' : 'GET'
+        }
+        data = HttpLib().post("https://" + self.host + "/rest/v1/lists/" + str(listId) + "/leads/ismember.json", args, data)
+        if data is None: raise Exception("Empty Response")
+        if not data['success'] : raise MarketoException(data['errors'][0])
+        return data['result']
+
+    def get_campaign_by_id(self, id):
+        self.authenticate()
+        args = {
+            'access_token' : self.token,
+            'id' : id
+        }
+        data = HttpLib().get("https://" + self.host + "/rest/v1/campaigns/" + str(id) + ".json", args)
+        if data is None: raise Exception("Empty Response")
+        if not data['success'] : raise MarketoException(data['errors'][0])
+        return data['result']
+
+    def get_multiple_campaigns(self, id=None, name=None, programName=None, workspaceName=None, batchSize=None, nextPageToken=None):
+        # this can also use POST, but not implemented
+        self.authenticate()
+        args = {
+            'access_token' : self.token,
+            '_method' : 'GET'
+        }
+        if id is not None:
+            data = [('id',items) for items in id]
+            #print(data)
+        if name is not None:
+            args['name'] = name
+        if programName is not None:
+            args['programName'] = programName
+        if workspaceName is not None:
+            args['workspaceName'] = workspaceName
+        if batchSize is not None:
+            args['batchSize'] = batchSize
+        if nextPageToken is not None:
+            args['nextPageToken'] = nextPageToken
+        if id is not None:
+            result = HttpLib().post("https://" + self.host + "/rest/v1/campaigns.json", args, data, mode='nojsondumps')
+        else:
+            result = HttpLib().post("https://" + self.host + "/rest/v1/campaigns.json", args)
+        if result is None: raise Exception("Empty Response")
+        self.last_request_id = result['requestId']
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def schedule_campaign(self, id, runAt=None, cloneToProgramName=None, tokens=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if runAt is not None or cloneToProgramName is not None or tokens is not None:
+            data={
+              'input': {}
+                 }
+        if runAt is not None:
+            data['input']['runAt'] = runAt
+            print(data)
+        elif cloneToProgramName is not None:
+            data['input']['cloneToProgramName'] = cloneToProgramName
+        elif tokens is not None:
+            token_list = [{'name':'{{' + k + '}}', 'value':v} for k, v in tokens.items()]
+            data['input']['tokens'] = token_list
+        args = {
+            'access_token' : self.token
+        }
+        if runAt is not None or cloneToProgramName is not None or tokens is not None:
+            result = HttpLib().post("https://" + self.host + "/rest/v1/campaigns/" + str(id)+ "/schedule.json", args, data)
+        else:
+            result = HttpLib().post("https://" + self.host + "/rest/v1/campaigns/" + str(id)+ "/schedule.json", args)
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['success']
+
+    def request_campaign(self, id, leads, tokens=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if leads is None: raise ValueError("Invalid argument: required argument leads is none.")
+        leads_list = [{'id':items} for items in leads]
+        if tokens is not None:
+            token_list = [{'name':'{{' + k + '}}', 'value':v} for k, v in tokens.items()]
+            data={
+              'input': {"leads":
+                        leads_list,
+                        "tokens":
+                        token_list
+                       }
+                 }
+        else:
+            data={
+              'input': {"leads":
+                        leads_list
+                       }
+                 }
+        args = {
+            'access_token' : self.token
+        }
+        result = HttpLib().post("https://" + self.host + "/rest/v1/campaigns/" + str(id)+ "/trigger.json", args, data)
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['success']
+
+    def describe(self):
+        self.authenticate()
+        args = {
+            'access_token' : self.token
+        }
+        data = HttpLib().get("https://" + self.host + "/rest/v1/leads/describe.json", args)
+        if data is None: raise Exception("Empty Response")
+        if not data['success'] : raise MarketoException(data['errors'][0])
+        return data['result']
+
+    def get_lead_changes_page(self, fields, nextPageToken, batchSize = None, listId = None):
+        self.authenticate()
+        fields = fields.split() if type(fields) is str else fields
+        args = {
+            'access_token' : self.token,
+            'fields' : ",".join(fields),
+            'nextPageToken' : nextPageToken
+        }
+        if listId:
+            args['listId'] = listId
+        if batchSize:
+            args['batchSize'] = batchSize
+        data = HttpLib().get("https://" + self.host + "/rest/v1/activities/leadchanges.json", args)
+        if data is None: raise Exception("Empty Response")
+        if not data['success'] : raise MarketoException(data['errors'][0])
+        return data
+
+    def get_lead_changes(self, fields, sinceDatetime, batchSize = None, listId = None):
+        if fields is None: raise ValueError("Invalid argument: required argument fields is none.")
+        if sinceDatetime is None: raise ValueError("Invalid argument: required argument sinceDatetime is none.")
+        activity_result_list = []
+        nextPageToken = self.get_paging_token(sinceDatetime = sinceDatetime)
+        moreResult = True
+        while moreResult:
+            result = self.get_lead_changes_page(fields, nextPageToken, batchSize, listId)
+            if result is None:
+                break
+            moreResult = result['moreResult']
+            nextPageToken = result['nextPageToken']
+            if 'result' in result:
+                activity_result_list.extend(result['result'])
+
+        return activity_result_list
+
+    def get_daily_usage(self):
+        self.authenticate()
+        args = {
+            'access_token' : self.token
+        }
+        data = HttpLib().get("https://" + self.host + "/rest/v1/stats/usage.json", args)
+        if data is None: raise Exception("Empty Response")
+        if not data['success'] : raise MarketoException(data['errors'][0])
+        return data['result']
+
+    def get_last_7_days_usage(self):
+        self.authenticate()
+        args = {
+            'access_token' : self.token
+        }
+        data = HttpLib().get("https://" + self.host + "/rest/v1/stats/usage/last7days.json", args)
+        if data is None: raise Exception("Empty Response")
+        if not data['success'] : raise MarketoException(data['errors'][0])
+        return data['result']
+
+    def get_daily_errors(self):
+        self.authenticate()
+        args = {
+            'access_token' : self.token
+        }
+        data = HttpLib().get("https://" + self.host + "/rest/v1/stats/errors.json", args)
+        if data is None: raise Exception("Empty Response")
+        if not data['success'] : raise MarketoException(data['errors'][0])
+        return data['result']
+
+    def get_last_7_days_errors(self):
+        self.authenticate()
+        args = {
+            'access_token' : self.token
+        }
+        data = HttpLib().get("https://" + self.host + "/rest/v1/stats/errors/last7days.json", args)
+        if data is None: raise Exception("Empty Response")
+        if not data['success'] : raise MarketoException(data['errors'][0])
+        return data['result']
+
+    def delete_lead(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        leads_list = [{'id':items} for items in id]
+        data={
+            'input': leads_list
+            }
+        args = {
+            'access_token' : self.token
+            }
+        result = HttpLib().delete("https://" + self.host + "/rest/v1/leads.json", args, data)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result
+
+    def get_deleted_leads_page(self, nextPageToken, batchSize = None):
+        self.authenticate()
+        args = {
+            'access_token' : self.token,
+            'nextPageToken' : nextPageToken
+        }
+        if batchSize:
+            args['batchSize'] = batchSize
+        data = HttpLib().get("https://" + self.host + "/rest/v1/activities/deletedleads.json", args)
+        if data is None: raise Exception("Empty Response")
+        if not data['success'] : raise MarketoException(data['errors'][0])
+        return data
+
+    def get_deleted_leads(self, sinceDatetime, batchSize = None):
+        if sinceDatetime is None: raise ValueError("Invalid argument: required argument sinceDatetime is none.")
+        deleted_leads_list = []
+        nextPageToken = self.get_paging_token(sinceDatetime = sinceDatetime)
+        moreResult = True
+        while moreResult:
+            result = self.get_deleted_leads_page(nextPageToken, batchSize)
+            if result is None:
+                break
+            moreResult = result['moreResult']
+            nextPageToken = result['nextPageToken']
+            if 'result' in result:
+                deleted_leads_list.extend(result['result'])
+
+        return deleted_leads_list
+
+    def update_leads_partition(self, idAndPartitionName):
+        self.authenticate()
+        if idAndPartitionName is None: raise ValueError("Invalid argument: required argument idAndPartitionName is none.")
+        data={
+          'input': []
+             }
+        for lead in idAndPartitionName:
+            data['input'].append(lead)
+        args = {
+            'access_token' : self.token
+        }
+        result = HttpLib().post("https://" + self.host + "/rest/v1/leads/partitions.json", args, data)
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result
+
+    def get_lead_by_id(self, id, fields=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token' : self.token
+        }
+        if fields is not None:
+            args['fields'] = fields
+        data = HttpLib().get("https://" + self.host + "/rest/v1/lead/" + str(id) + ".json", args)
+        if data is None: raise Exception("Empty Response")
+        if not data['success'] : raise MarketoException(data['errors'][0])
+        return data['result']
+
+    def get_multiple_leads_by_program_id(self, programId , batchSize = None, fields = []):
+        self.authenticate()
+        args = {
+            'access_token' : self.token
+        }
+        if len(fields) > 0:
+            args['fields'] = ",".join(fields)
+        if batchSize:
+            args['batchSize'] = batchSize
+        result_list = []
+        while True:
+            data = HttpLib().get("https://" + self.host + "/rest/v1/leads/programs/" + str(programId)+ ".json", args)
+            if data is None: raise Exception("Empty Response")
+            self.last_request_id = data['requestId']
+            if not data['success'] : raise MarketoException(data['errors'][0])
+            result_list.extend(data['result'])
+            if len(data['result']) == 0 or 'nextPageToken' not in data:
+                break
+            args['nextPageToken'] = data['nextPageToken']
+        return result_list
+

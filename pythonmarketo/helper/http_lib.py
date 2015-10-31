@@ -1,7 +1,10 @@
 import requests
-import urllib
 import json
 import time
+try:
+    from urllib.parse import urlencode
+except ImportError:
+    from urllib import urlencode
 
 class HttpLib:
     max_retries = 3
@@ -15,7 +18,7 @@ class HttpLib:
             try:
                 url = endpoint
                 if args:
-                    url = endpoint + "?" + urllib.parse.urlencode(args)
+                    url = endpoint + "?" + urlencode(args)
                 r = requests.get(url)
                 return r.json()
             except Exception as e:
@@ -24,15 +27,18 @@ class HttpLib:
                 retries += 1
 
 
-    def post(self, endpoint, args, data=None, files=None):
+    def post(self, endpoint, args, data=None, files=None, mode=None):
         retries = 0
         while True:
             if retries > self.max_retries:
                 return None
             try:
-                url = endpoint + "?" + urllib.parse.urlencode(args)
+                url = endpoint + "?" + urlencode(args)
                 headers = {'Content-type': 'application/json'}
-                if data is None and files is None:
+                if mode is 'nojsondumps':
+                    #print("mode is nojsondumps")
+                    r = requests.post(url, data=data)
+                elif data is None and files is None:
                     #print('only args')
                     r = requests.post(url, headers=headers)
                 elif data is not None and files is None:
@@ -63,7 +69,7 @@ class HttpLib:
             if retries > self.max_retries:
                 return None
             try:
-                url = endpoint + "?" + urllib.parse.urlencode(args)
+                url = endpoint + "?" + urlencode(args)
                 headers = {'Content-type': 'application/json'}
                 r = requests.delete(url, data=json.dumps(data), headers=headers)
                 return r.json()
