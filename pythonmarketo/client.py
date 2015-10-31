@@ -68,6 +68,10 @@ class MarketoClient:
                     'get_multiple_campaigns':self.get_multiple_campaigns,
                     'schedule_campaign':self.schedule_campaign,
                     'request_campaign':self.request_campaign,
+                    'import_lead':self.import_lead,
+                    'get_import_lead_status':self.get_import_lead_status,
+                    'get_import_failure_file':self.get_import_failure_file,
+                    'get_import_warning_file':self.get_import_warning_file,
                     'describe':self.describe,
                     'get_lead_changes':self.get_lead_changes,
                     'get_daily_usage':self.get_daily_usage,
@@ -503,13 +507,10 @@ class MarketoClient:
             'name' : name,
             'folder' : folder
         }
-        #files = {'file': file}
-        #print(files)
         if description is not None:
             args['description'] = description
         if insertOnly is not None:
             args['insertOnly'] = insertOnly
-        # this one doesn't work yet; issue with file upload & how to pass file on to HttpLib function
         result = HttpLib().post("https://" + self.host + "/rest/asset/v1/files.json", args, files=file)
         if result is None: raise Exception("Empty Response")
         self.last_request_id = result['requestId']
@@ -682,6 +683,57 @@ class MarketoClient:
         result = HttpLib().post("https://" + self.host + "/rest/v1/campaigns/" + str(id)+ "/trigger.json", args, data)
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['success']
+
+    def import_lead(self, format, file, lookupField=None, listId=None, partitionName=None):
+        self.authenticate()
+        if format is None: raise ValueError("Invalid argument: required argument format is none.")
+        if file is None: raise ValueError("Invalid argument: required argument file is none.")
+        args = {
+            'access_token' : self.token,
+            'format' : format
+        }
+        if lookupField is not None:
+            args['lookupField'] = lookupField
+        if listId is not None:
+            args['listId'] = listId
+        if partitionName is not None:
+            args['partitionName'] = partitionName
+        result = HttpLib().post("https://" + self.host + "/bulk/v1/leads.json", args, files=file)
+        if result is None: raise Exception("Empty Response")
+        self.last_request_id = result['requestId']
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result
+
+    def get_import_lead_status(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token' : self.token
+        }
+        data = HttpLib().get("https://" + self.host + "/bulk/v1/leads/batch/" + str(id) + ".json", args)
+        if data is None: raise Exception("Empty Response")
+        if not data['success'] : raise MarketoException(data['errors'][0])
+        return data['result']
+
+    def get_import_failure_file(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token' : self.token
+        }
+        data = HttpLib().get("https://" + self.host + "/bulk/v1/leads/batch/" + str(id) + "/failures.json", args, mode='nojson')
+        if data is None: raise Exception("Empty Response")
+        return data.text
+
+    def get_import_warning_file(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token' : self.token
+        }
+        data = HttpLib().get("https://" + self.host + "/bulk/v1/leads/batch/" + str(id) + "/warnings.json", args, mode='nojson')
+        if data is None: raise Exception("Empty Response")
+        return data.text
 
     def describe(self):
         self.authenticate()
