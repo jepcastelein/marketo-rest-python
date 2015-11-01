@@ -28,7 +28,7 @@ class MarketoClient:
     def execute(self, method, *args, **kargs):
         result = None
         if self.API_LIMIT and self.API_CALLS_MADE >= self.API_LIMIT:
-            raise Exception({'message':'API Calls exceded the limit : ' + str(self.API_LIMIT), 'code':'416'})
+            raise Exception({'message':'API Calls exceeded the limit : ' + str(self.API_LIMIT), 'code':'416'})
 
         '''
             max 10 rechecks
@@ -197,29 +197,19 @@ class MarketoClient:
             args['nextPageToken'] = data['nextPageToken']         
         return result_list    
 
-    def get_multiple_leads_by_filter_type(self, filterType, filterValues, fieldslist):
+    def get_multiple_leads_by_filter_type(self, filterType, filterValues, fields=None):
         self.authenticate()
-        args={
-             'access_token' : self.token
-             }
-        fieldvalstr = ','.join(filterValues)
-        fields = fieldliststr = None
-        if len(fieldslist) > 0:
-            fieldstr = ','.join(fieldslist)
-        else:
-            fieldstr= 'id,lastName,firstName,updatedAt,createdAt'
-
-        inputp={
-             'access_token' : self.token, 
-             'filterType'   : filterType,
-             'filterValues' : fieldvalstr,
-             'fields'       : fieldstr
-             }
-        data = HttpLib().get("https://" + self.host + "/rest/v1/leads.json",inputp)
-        if data is None: raise Exception("Empty Response")
-        if not data['success'] : raise MarketoException(data['errors'][0]) 
-        return data['result']
-     
+        data=[('filterValues',filterValues),('filterType',filterType)]
+        if fields is not None:
+            data.append(('fields',fields))
+        args = {
+            'access_token' : self.token,
+            '_method' : 'GET'
+        }
+        result = HttpLib().post("https://" + self.host + "/rest/v1/leads.json",args,data,mode='nojsondumps')
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
 
     def get_activity_types(self):
         self.authenticate()
