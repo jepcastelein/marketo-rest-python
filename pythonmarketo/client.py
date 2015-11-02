@@ -197,7 +197,7 @@ class MarketoClient:
             args['nextPageToken'] = data['nextPageToken']         
         return result_list    
 
-    def get_multiple_leads_by_filter_type(self, filterType, filterValues, fields=None):
+    def get_multiple_leads_by_filter_type(self, filterType, filterValues, fields=None, nextPageToken=None):
         self.authenticate()
         data=[('filterValues',filterValues),('filterType',filterType)]
         if fields is not None:
@@ -206,6 +206,8 @@ class MarketoClient:
             'access_token' : self.token,
             '_method' : 'GET'
         }
+        if nextPageToken is not None:
+            args['nextPageToken'] = nextPageToken
         result = HttpLib().post("https://" + self.host + "/rest/v1/leads.json",args,data,mode='nojsondumps')
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
