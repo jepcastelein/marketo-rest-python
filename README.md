@@ -16,6 +16,8 @@ from pythonmarketo.client import MarketoClient
 mc = MarketoClient(host = <Host>, 
                    client_id = <Client_Id>, 
                    client_secret = <Client_Secret>)
+
+# Example host: "000-AAA-000.mktorest.com"
 ```
 Get Leads
 ---------
@@ -75,6 +77,26 @@ API Ref: http://developers.marketo.com/documentation/rest/createupdate-leads/
 mc.execute(method = 'update_lead', lookupField = 'email', lookupValue = 'test@test.com', values = {'firstName':'Test1', 'lastName':'Test2'})
 ```
 
+Get Multiple Leads by Filter Type
+---------------------------------
+API Ref: http://developers.marketo.com/documentation/rest/get-multiple-leads-by-filter-type/
+```python
+lead = mc.execute(method='get_multiple_leads_by_filter_type', filterType='email', filterValues='a@b.com,c@d.com', fields='firstName, middleName, lastName', nextPageToken=None)
+
+# fields and nextPageToken are optional; max 100 filterValues; batch size is 300 (fixed); if more than 300 results, pass in nextPageToken
+```
+
+Create/Update Leads
+-------------------
+API Ref: http://developers.marketo.com/documentation/rest/createupdate-leads/
+```python
+leads = [{"email":"joe@example.com","firstName":"Joe"},{"email":"jill@example.com","firstName":"Jill"}]
+lead = mc.execute(method = 'create_update_leads', leads= leads, lookupField='email', asyncProcessing='false', partitionName='Default')
+
+# lookupField and asyncProcessing are optional (defaults are 'email' and 'false')
+# partitionName is only required if Marketo instance has > 1 Lead Partition
+# max batch size is 300
+```
 
 TODO
 ====
