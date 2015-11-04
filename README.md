@@ -83,7 +83,9 @@ API Ref: http://developers.marketo.com/documentation/rest/get-multiple-leads-by-
 ```python
 lead = mc.execute(method='get_multiple_leads_by_filter_type', filterType='email', filterValues='a@b.com,c@d.com', fields='firstName, middleName, lastName', nextPageToken=None)
 
-# fields and nextPageToken are optional; max 100 filterValues; batch size is 300 (fixed); if more than 300 results, pass in nextPageToken
+# fields and nextPageToken are optional
+# max 100 filterValues; batch size is 300 (fixed)
+# if more than 300 results, pass in nextPageToken
 ```
 
 Create/Update Leads
@@ -91,11 +93,29 @@ Create/Update Leads
 API Ref: http://developers.marketo.com/documentation/rest/createupdate-leads/
 ```python
 leads = [{"email":"joe@example.com","firstName":"Joe"},{"email":"jill@example.com","firstName":"Jill"}]
-lead = mc.execute(method = 'create_update_leads', leads= leads, lookupField='email', asyncProcessing='false', partitionName='Default')
+lead = mc.execute(method='create_update_leads', leads=leads, lookupField='email', asyncProcessing='false', partitionName='Default')
 
 # lookupField and asyncProcessing are optional (defaults are 'email' and 'false')
 # partitionName is only required if Marketo instance has > 1 Lead Partition
 # max batch size is 300
+```
+
+Add Leads to List
+-----------------
+API Ref: http://developers.marketo.com/documentation/rest/add-leads-to-list/ 
+```python
+lead = mc.execute(method='add_to_list', listId=1, leadIds=[1,2,3])
+
+# can handle 300 Leads at a time
+```
+
+Remove Leads from List
+----------------------
+API Ref: http://developers.marketo.com/documentation/rest/remove-leads-from-list/
+```python
+lead = mc.execute(method = 'remove_from_list', listId = 1, leadIds = [1,2,3])
+
+# can handle 300 Leads at a time
 ```
 
 TODO
