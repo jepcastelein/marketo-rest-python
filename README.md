@@ -118,6 +118,45 @@ lead = mc.execute(method = 'remove_from_list', listId = 1, leadIds = [1,2,3])
 # can handle 300 Leads at a time
 ```
 
+Browse Folders
+--------------
+API Ref: http://developers.marketo.com/documentation/asset-api/browse-folders
+```python
+lead = mc.execute(method='browse_folders', root=3, maxDepth=5, maxReturn=200, workSpace='Default')
+
+# maxDepth, maxReturn and workSpace are optional
+# the folder ID for 'root' is not always the same as the folder ID you see in the UI of the Marketo app
+```
+
+Get Folder by Id
+----------------
+API Ref: http://developers.marketo.com/documentation/asset-api/get-folder-by-id/
+```python
+lead = mc.execute(method='get_folder_by_id', id=3, type='Folder')
+
+# type is optional (even though the docs say it's required); type is 'Folder' or 'Program'
+# returns False when no folder found
+```
+
+Get Folder by Name
+------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/get-folder-by-name/
+```python
+lead = mc.execute(method='get_folder_by_name', name='pytest', type='Folder', root=115, workSpace='Europe')
+
+# type, root and workSpace are optional
+# returns False when no folders found
+```
+
+Create Folder
+-------------
+API Ref: http://developers.marketo.com/documentation/asset-api/create-folder/
+```python
+lead = mc.execute(method='create_folder', name='pytest2', parent=115, description='optional description')
+
+# description is optional
+```
+
 TODO
 ====
 Remaining API

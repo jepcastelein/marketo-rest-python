@@ -433,7 +433,10 @@ class MarketoClient:
         if result is None: raise Exception("Empty Response")
         self.last_request_id = result['requestId']
         if not result['success'] : raise MarketoException(result['errors'][0])
-        return result['result']
+        try:
+            return result['result']
+        except KeyError:
+            return False
 
     def get_folder_by_name(self, name, type=None, root=None, workSpace=None):
         self.authenticate()
@@ -452,7 +455,10 @@ class MarketoClient:
         if result is None: raise Exception("Empty Response")
         self.last_request_id = result['requestId']
         if not result['success'] : raise MarketoException(result['errors'][0])
-        return result['result']
+        try:
+            return result['result']
+        except KeyError:
+            return False
 
     def create_folder(self, name, parent, description=None):
         self.authenticate()
