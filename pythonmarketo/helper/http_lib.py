@@ -18,8 +18,9 @@ class HttpLib:
             try:
                 url = endpoint
                 if args:
-                    url = endpoint + "?" + urlencode(args)
-                r = requests.get(url)
+                    r = requests.get(url, params=args)
+                else:
+                    r = requests.get(url)
                 if mode is 'nojson':
                     return r
                 else:
