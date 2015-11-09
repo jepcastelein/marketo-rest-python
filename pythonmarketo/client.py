@@ -419,7 +419,10 @@ class MarketoClient:
         if result is None: raise Exception("Empty Response")
         self.last_request_id = result['requestId']
         if not result['success'] : raise MarketoException(result['errors'][0])
-        return result['result']
+        try:
+            return result['result']
+        except KeyError:
+            return False
 
     def get_folder_by_id(self, id, type=None):
         self.authenticate()
@@ -602,7 +605,6 @@ class MarketoClient:
         return data['result']
 
     def get_multiple_campaigns(self, id=None, name=None, programName=None, workspaceName=None, batchSize=None, nextPageToken=None):
-        # this can also use POST, but not implemented
         self.authenticate()
         args = {
             'access_token' : self.token,
@@ -644,6 +646,7 @@ class MarketoClient:
             data['input']['cloneToProgramName'] = cloneToProgramName
         elif tokens is not None:
             token_list = [{'name':'{{' + k + '}}', 'value':v} for k, v in tokens.items()]
+            print(token_list)
             data['input']['tokens'] = token_list
         args = {
             'access_token' : self.token
