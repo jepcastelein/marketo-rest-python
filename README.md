@@ -1,7 +1,8 @@
 python_marketo
 ==============
 
-Python interface to marketo REST api <br />
+Python interface to marketo REST api. It covers all of the basic REST API for Lead, List, Activity and Campaign Objects. It also includes some Email, Folder and File APIs. 
+It does not yet cover Custom Objects, Opportunity, Company and Sales Person Objects.<br />
 Detailed Doc - http://developers.marketo.com/documentation/rest/
 
 Installation
@@ -13,12 +14,16 @@ Usage
 =====
 ```python
 from pythonmarketo.client import MarketoClient
-mc = MarketoClient(host = <Host>, 
-                   client_id = <Client_Id>, 
-                   client_secret = <Client_Secret>)
+mc = MarketoClient(host=<Host>, 
+                   client_id=<Client_Id>, 
+                   client_secret=<Client_Secret>)
 
 # Example host: "000-AAA-000.mktorest.com"
 ```
+
+Lead, List, Activity and Campaign Objects
+=========================================
+
 Get Leads
 ---------
 API Ref: http://developers.marketo.com/documentation/rest/get-multiple-leads-by-filter-type/ 
@@ -118,6 +123,94 @@ lead = mc.execute(method = 'remove_from_list', listId = 1, leadIds = [1,2,3])
 # can handle 300 Leads at a time
 ```
 
+Associate Lead
+--------------
+API Ref: http://developers.marketo.com/documentation/rest/associate-lead/
+```python
+lead = mc.execute(method='associate_lead', id=2234, cookie='id:287-GTJ-838%26token:_mch-marketo.com-1396310362214-46169')
+```
+
+Get Lead Partitions
+-------------------
+API Ref: http://developers.marketo.com/documentation/rest/get-lead-partitions/
+```python
+lead = mc.execute(method='get_lead_partitions')
+```
+
+Get List by Id
+--------------
+API Ref: http://developers.marketo.com/documentation/rest/get-list-by-id/
+```python
+lead = mc.execute(method='get_list_by_id', id=724)
+```
+
+Get Multiple Lists
+------------------
+API Ref: http://developers.marketo.com/documentation/rest/get-multiple-lists/
+```python
+lead = mc.execute(method='get_multiple_lists', id=[724,725], name=None, programName=None, workspaceName=None, batchSize=300, nextPageToken=None)
+
+# all parameters are optional
+```
+
+Member of List
+--------------
+API Ref: http://developers.marketo.com/documentation/rest/member-of-list/
+```python
+lead = mc.execute(method='member_of_list', listId=728, id=[3482093,3482095,3482096])
+```
+
+Get Campaign by Id
+------------------
+API Ref: http://developers.marketo.com/documentation/rest/get-campaign-by-id/
+```python
+lead = mc.execute(method='get_campaign_by_id', id=1170)
+```
+
+Get Multiple Campaigns
+----------------------
+API Ref: http://developers.marketo.com/documentation/rest/get-multiple-campaigns/
+```python
+lead = mc.execute(method='get_multiple_campaigns', id=[1170,1262], name=None, programName=None, workspaceName=None, batchSize=None, nextPageToken=None)
+
+# all parameters are optional
+# batchSize defaults to the maximum (300)
+# while it's theoretically possible to pass in a nextPageToken, the nextPageToken is currently not returned in 'lead'
+```
+
+Schedule Campaign
+-----------------
+API Ref: http://developers.marketo.com/documentation/rest/schedule-campaign/
+```python
+# date format: 2015-11-08T15:43:12-08:00
+from datetime import datetime, timezone, timedelta
+now = datetime.now(timezone.utc)
+now_no_ms = now.replace(microsecond=0)
+now_plus_7 = now_no_ms + timedelta(minutes = 7)
+time_as_txt = now_plus_7.astimezone().isoformat()
+print(time_as_txt)
+lead = mc.execute(method='schedule_campaign', id=1878, runAt=time_as_txt, tokens={'Campaign Name': 'new token value'}, cloneToProgramName=None)
+
+# runAt is optional; default is 5 minutes from now; if specified, it needs to be at least 5 minutes from now
+# tokens and cloneToProgramName are optional
+# token override only works for tokens without spaces
+# returns True or False
+
+Request Campaign
+----------------
+API Ref: http://developers.marketo.com/documentation/rest/request-campaign/
+```python
+lead = mc.execute(method='request_campaign', id=1880, leads=[46,38], tokens={'my.increment': '+2'})
+
+# tokens is optional; not tested on tokens with spaces 
+```
+
+
+
+
+Asset Objects
+=============
+
 Browse Folders
 --------------
 API Ref: http://developers.marketo.com/documentation/asset-api/browse-folders
@@ -156,6 +249,26 @@ lead = mc.execute(method='create_folder', name='pytest2', parent=115, descriptio
 
 # description is optional
 ```
+
+List Files
+----------
+API Ref: http://developers.marketo.com/documentation/asset-api/list-files/
+```python
+lead = mc.execute(method='list_files', folder=709, offset=0, maxReturn=200)
+
+# offset and maxReturn are optional
+```
+
+Create a File
+-------------
+API Ref: http://developers.marketo.com/documentation/asset-api/create-a-file/
+```python
+lead = mc.execute(method='create_file', name='Marketo-Logo3.jpg', file='Marketo-Logo.jpg', folder=115, description='test file', insertOnly=False)
+
+# description and insertOnly are optional
+# in 'file', specify a path if file is not in the same folder as the Python script
+```
+
 
 TODO
 ====
