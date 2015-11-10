@@ -1,9 +1,10 @@
 python_marketo
 ==============
 
-Python interface to marketo REST api. It covers all of the basic REST API for Lead, List, Activity and Campaign Objects. It also includes some Email, Folder and File APIs. 
+Python interface to Marketo REST api. It covers all of the basic REST API for Lead, List, Activity and Campaign Objects. It also includes some Email, Folder and File APIs. 
 It does not yet cover Custom Objects, Opportunity, Company and Sales Person Objects.<br />
-Detailed Doc - http://developers.marketo.com/documentation/rest/
+
+Full Marketo REST API documentation - http://developers.marketo.com/documentation/rest/
 
 Installation
 ============
@@ -25,47 +26,31 @@ Lead, List, Activity and Campaign Objects
 =========================================
 
 Get Leads
----------
+---------------------------------
 API Ref: http://developers.marketo.com/documentation/rest/get-multiple-leads-by-filter-type/ 
 ```python
-#values could be either "v1 v2 v3" or [v1,v2,v3]
+mc.execute(method='get_leads', filtr='email', values='test@test.com', fields=['email','firstName','lastName','company','postalCode'])
 
-mc.execute(method = 'get_leads', filtr = 'email', values = 'test@test.com', fields=['email','firstName','lastName','company','postalCode'])
+# values could be either "v1 v2 v3" or [v1,v2,v3]
 ```
 
-Get Leads from listId
----------------------
+Get Multiple Leads by Filter Type (alternate implementation)
+---------------------------------
+API Ref: http://developers.marketo.com/documentation/rest/get-multiple-leads-by-filter-type/
+```python
+lead = mc.execute(method='get_multiple_leads_by_filter_type', filterType='email', filterValues='a@b.com,c@d.com', 
+                  fields='firstName, middleName, lastName', nextPageToken=None)
+
+# fields and nextPageToken are optional
+# max 100 filterValues
+# theoretically, pass in nextPageToken if more than 300 results, however nextPageToken is not returned at this time 
+```
+
+Get Leads by List Id
+-----------------------------
 API Ref: http://developers.marketo.com/documentation/rest/get-multiple-leads-by-list-id/
 ```python
-mc.execute(method = 'get_leads_by_listId', listId = '676', fields=['email','firstName','lastName','company','postalCode'])
-```
-
-Get Activity Types
-------------------
-API Ref: http://developers.marketo.com/documentation/rest/get-activity-types/
-```python
-mc.execute(method = 'get_activity_types')
-```
-
-Get PagingToken
-----------------
-API Ref: http://developers.marketo.com/documentation/rest/get-paging-token/
-```python
-#sinceDatetime format: 
-#2014-10-06T13:22:17-08:00
-#2014-10-06T13:22-07:00
-#2014-10-06
-
-mc.execute(method = 'get_paging_token', sinceDatetime = '2014-10-06')
-```
-
-Get Lead Activity
-----------------
-API Ref: http://developers.marketo.com/documentation/rest/get-lead-activities/
-```python
-#activityTypeIds could be either "v1 v2 v3" or [v1,v2,v3]
-
-mc.execute(method = 'get_lead_activity', activityTypeIds = ['23','22'], sinceDatetime = '2014-10-06', batchSize = None, listId = None)
+mc.execute(method='get_leads_by_listId', listId='676', fields=['email','firstName','lastName','company','postalCode'])
 ```
 
 Create Lead
@@ -82,17 +67,6 @@ API Ref: http://developers.marketo.com/documentation/rest/createupdate-leads/
 mc.execute(method = 'update_lead', lookupField = 'email', lookupValue = 'test@test.com', values = {'firstName':'Test1', 'lastName':'Test2'})
 ```
 
-Get Multiple Leads by Filter Type
----------------------------------
-API Ref: http://developers.marketo.com/documentation/rest/get-multiple-leads-by-filter-type/
-```python
-lead = mc.execute(method='get_multiple_leads_by_filter_type', filterType='email', filterValues='a@b.com,c@d.com', fields='firstName, middleName, lastName', nextPageToken=None)
-
-# fields and nextPageToken are optional
-# max 100 filterValues; batch size is 300 (fixed)
-# if more than 300 results, pass in nextPageToken
-```
-
 Create/Update Leads
 -------------------
 API Ref: http://developers.marketo.com/documentation/rest/createupdate-leads/
@@ -105,29 +79,20 @@ lead = mc.execute(method='create_update_leads', leads=leads, lookupField='email'
 # max batch size is 300
 ```
 
-Add Leads to List
------------------
-API Ref: http://developers.marketo.com/documentation/rest/add-leads-to-list/ 
-```python
-lead = mc.execute(method='add_to_list', listId=1, leadIds=[1,2,3])
-
-# can handle 300 Leads at a time
-```
-
-Remove Leads from List
-----------------------
-API Ref: http://developers.marketo.com/documentation/rest/remove-leads-from-list/
-```python
-lead = mc.execute(method = 'remove_from_list', listId = 1, leadIds = [1,2,3])
-
-# can handle 300 Leads at a time
-```
-
 Associate Lead
 --------------
 API Ref: http://developers.marketo.com/documentation/rest/associate-lead/
 ```python
 lead = mc.execute(method='associate_lead', id=2234, cookie='id:287-GTJ-838%26token:_mch-marketo.com-1396310362214-46169')
+```
+
+Merge Lead
+----------
+API Ref: http://developers.marketo.com/documentation/rest/merge-lead/
+```python
+lead = mc.execute(method='merge_leads', winning_ld=3482183, loosing_leads_list=[3482182], mergeInCRM=False)
+
+# mergeInCRM is optional
 ```
 
 Get Lead Partitions
@@ -151,6 +116,24 @@ API Ref: http://developers.marketo.com/documentation/rest/get-multiple-lists/
 lead = mc.execute(method='get_multiple_lists', id=[724,725], name=None, programName=None, workspaceName=None, batchSize=300, nextPageToken=None)
 
 # all parameters are optional
+```
+
+Add Leads to List
+-----------------
+API Ref: http://developers.marketo.com/documentation/rest/add-leads-to-list/ 
+```python
+lead = mc.execute(method='add_to_list', listId=1, leadIds=[1,2,3])
+
+# can handle 300 Leads at a time
+```
+
+Remove Leads from List
+----------------------
+API Ref: http://developers.marketo.com/documentation/rest/remove-leads-from-list/
+```python
+lead = mc.execute(method = 'remove_from_list', listId = 1, leadIds = [1,2,3])
+
+# can handle 300 Leads at a time
 ```
 
 Member of List
@@ -221,6 +204,8 @@ Get Import Lead Status
 API Ref: http://developers.marketo.com/documentation/rest/get-import-lead-status/
 ```python
 lead = mc.execute(method='get_import_lead_status', id=900)
+
+# specify the batch ID that is returned in 'Import Lead'
 ```
 
 Get Import Failure File
@@ -234,6 +219,8 @@ if failed_leads is not '':
     f = open(file_name, encoding='utf-8', mode='w')
     f.write(failed_leads)
     f.close()
+
+# specify the batch ID that is returned in 'Import Lead'
 ```
 
 Get Import Warning File
@@ -247,13 +234,43 @@ if warning_leads is not '':
     f = open(file_name, encoding='utf-8', mode='w')
     f.write(warning_leads)
     f.close()
+
+# specify the batch ID that is returned in 'Import Lead'
 ```
 
 Describe
 --------
-API Ref: 
+API Ref: http://developers.marketo.com/documentation/rest/describe/
 ```python
 lead = mc.execute(method='describe')
+```
+
+Get Activity Types
+------------------
+API Ref: http://developers.marketo.com/documentation/rest/get-activity-types/
+```python
+mc.execute(method = 'get_activity_types')
+```
+
+Get PagingToken
+----------------
+API Ref: http://developers.marketo.com/documentation/rest/get-paging-token/
+```python
+#sinceDatetime format: 
+#2014-10-06T13:22:17-08:00
+#2014-10-06T13:22-07:00
+#2014-10-06
+
+mc.execute(method='get_paging_token', sinceDatetime='2014-10-06')
+```
+
+Get Lead Activity
+----------------
+API Ref: http://developers.marketo.com/documentation/rest/get-lead-activities/
+```python
+#activityTypeIds could be either "v1 v2 v3" or [v1,v2,v3]
+
+mc.execute(method = 'get_lead_activity', activityTypeIds = ['23','22'], sinceDatetime = '2014-10-06', batchSize = None, listId = None)
 ```
 
 Get Lead Changes
@@ -327,14 +344,13 @@ lead = mc.execute(method='update_leads_partition', idAndPartitionName=idAndParti
 Asset Objects
 =============
 
-Browse Folders
---------------
-API Ref: http://developers.marketo.com/documentation/asset-api/browse-folders
+Create Folder
+-------------
+API Ref: http://developers.marketo.com/documentation/asset-api/create-folder/
 ```python
-lead = mc.execute(method='browse_folders', root=3, maxDepth=5, maxReturn=200, workSpace='Default')
+lead = mc.execute(method='create_folder', name='pytest2', parent=115, description='optional description')
 
-# maxDepth, maxReturn and workSpace are optional
-# the folder ID for 'root' is not always the same as the folder ID you see in the UI of the Marketo app
+# description is optional
 ```
 
 Get Folder by Id
@@ -357,22 +373,14 @@ lead = mc.execute(method='get_folder_by_name', name='pytest', type='Folder', roo
 # returns False when no folders found
 ```
 
-Create Folder
--------------
-API Ref: http://developers.marketo.com/documentation/asset-api/create-folder/
+Browse Folders
+--------------
+API Ref: http://developers.marketo.com/documentation/asset-api/browse-folders
 ```python
-lead = mc.execute(method='create_folder', name='pytest2', parent=115, description='optional description')
+lead = mc.execute(method='browse_folders', root=3, maxDepth=5, maxReturn=200, workSpace='Default')
 
-# description is optional
-```
-
-List Files
-----------
-API Ref: http://developers.marketo.com/documentation/asset-api/list-files/
-```python
-lead = mc.execute(method='list_files', folder=709, offset=0, maxReturn=200)
-
-# offset and maxReturn are optional
+# maxDepth, maxReturn and workSpace are optional
+# the folder ID for 'root' is not always the same as the folder ID you see in the UI of the Marketo app
 ```
 
 Create a File
@@ -383,6 +391,15 @@ lead = mc.execute(method='create_file', name='Marketo-Logo3.jpg', file='Marketo-
 
 # description and insertOnly are optional
 # in 'file', specify a path if file is not in the same folder as the Python script
+```
+
+List Files
+----------
+API Ref: http://developers.marketo.com/documentation/asset-api/list-files/
+```python
+lead = mc.execute(method='list_files', folder=709, offset=0, maxReturn=200)
+
+# offset and maxReturn are optional
 ```
 
 
