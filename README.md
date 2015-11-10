@@ -206,6 +206,121 @@ lead = mc.execute(method='request_campaign', id=1880, leads=[46,38], tokens={'my
 # tokens is optional; not tested on tokens with spaces 
 ```
 
+Import Lead
+-----------
+API Ref: http://developers.marketo.com/documentation/rest/import-lead/
+```python
+lead = mc.execute(method='import_lead', file='test.csv', format='csv', lookupField='email', listId=None, partitionName='Default')
+
+# lookupField and listId are optional. Email is the default for lookupField.
+# partitionName is required when the Marketo instance has more than 1 Lead Partition
+```
+
+Get Import Lead Status
+----------------------
+API Ref: http://developers.marketo.com/documentation/rest/get-import-lead-status/
+```python
+lead = mc.execute(method='get_import_lead_status', id=900)
+```
+
+Get Import Failure File
+-----------------------
+API Ref: http://developers.marketo.com/documentation/rest/get-import-failure-file/
+```python
+batch_id = 899
+failed_leads = mc.execute(method='get_import_failure_file', id=batch_id)
+file_name = "import-failure-for-batch-" + str(batch_id) + ".csv"
+if failed_leads is not '':
+    f = open(file_name, encoding='utf-8', mode='w')
+    f.write(failed_leads)
+    f.close()
+```
+
+Get Import Warning File
+-----------------------
+API Ref: http://developers.marketo.com/documentation/rest/get-import-warning-file/
+```python
+batch_id = 899
+warning_leads = mc.execute(method='get_import_warning_file', id=batch_id)
+file_name = "import-warning-for-batch-" + str(batch_id) + ".csv"
+if warning_leads is not '':
+    f = open(file_name, encoding='utf-8', mode='w')
+    f.write(warning_leads)
+    f.close()
+```
+
+Describe
+--------
+API Ref: 
+```python
+lead = mc.execute(method='describe')
+```
+
+Get Lead Changes
+----------------
+API Ref: http://developers.marketo.com/documentation/rest/get-lead-changes/
+```python
+lead = mc.execute(method='get_lead_changes', fields='firstName', sinceDatetime='2015-09-01', listId=None)
+
+# sinceDateTime and listId are optional
+# this will potentially return a lot of records: the function loops until it has all activities, then returns them
+```
+
+Get Daily Usage
+---------------
+API Ref: http://developers.marketo.com/documentation/rest/get-daily-usage/
+```python
+lead = mc.execute(method='get_daily_usage')
+```
+
+Get Last 7 Days Usage
+---------------------
+API Ref: http://developers.marketo.com/documentation/rest/get-last-7-days-usage/
+```python
+lead = mc.execute(method='get_last_7_days_usage')
+```
+
+Get Daily Errors
+----------------
+API Ref: http://developers.marketo.com/documentation/rest/get-daily-errors/
+```python
+lead = mc.execute(method='get_daily_errors')
+```
+
+Get Last 7 Days Errors
+----------------------
+API Ref: http://developers.marketo.com/documentation/rest/get-last-7-days-errors/
+```python
+lead = mc.execute(method='get_last_7_days_errors')
+```
+
+Delete Lead
+-----------
+API Ref: http://developers.marketo.com/documentation/rest/delete-lead/
+```python
+lead = mc.execute(method='delete_lead', id=[1,2])
+
+# max number of leads to pass in is 300
+```
+
+Get Deleted Leads
+-----------------
+API Ref: http://developers.marketo.com/documentation/rest/get-deleted-leads/
+```python
+lead = mc.execute(method='get_deleted_leads', sinceDatetime=date.today(), batchSize=None)
+
+# batchSize is optional; default batchSize is 300
+# function will loop to download all deleted leads since the specified time
+# will return first and last name, Marketo ID and time of deletion, but no additional Lead attributes
+```
+
+Update Leads Partition
+----------------------
+API Ref: http://developers.marketo.com/documentation/rest/update-leads-partition/
+```python
+idAndPartitionName = [{'id': 3482156, 'partitionName': 'Default'}, {'id': 3482141, 'partitionName': 'Europe'}]
+lead = mc.execute(method='update_leads_partition', idAndPartitionName=idAndPartitionName)
+```
 
 
 
