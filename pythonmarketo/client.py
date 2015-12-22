@@ -541,11 +541,7 @@ class MarketoClient:
         result = HttpLib().post("https://" + self.host + "/rest/asset/v1/files.json", args, files=file)
         if result is None: raise Exception("Empty Response")
         self.last_request_id = result['requestId']
-        if not result['success']:
-            if result['errors'][0]['code'] == "709" and insertOnly == True:
-                return False
-            else:
-                raise MarketoException(result['errors'][0])
+        if not result['success'] : raise MarketoException(result['errors'][0])
         return result
 
 
