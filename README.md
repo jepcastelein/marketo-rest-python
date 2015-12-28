@@ -1,25 +1,26 @@
-python_marketo
-==============
+Marketo REST Python
+===================
 
-Python interface to Marketo REST api. It covers all of the basic REST API for Lead, List, Activity and Campaign Objects. It also includes some Email, Folder and File APIs. 
-It does not yet cover Custom Objects, Opportunity, Company and Sales Person Objects.<br />
+Python Client for the Marketo REST API. It covers all of the basic REST API for Lead, List, Activity and Campaign 
+Objects. It also includes some Email, Folder and File APIs. It does not yet cover Custom Objects, Opportunity, 
+Company and Sales Person Objects. This is a fork of the project started by Arunim Samat at 
+https://github.com/asamat/python_marketo, which had stalled. <br />
 
 Full Marketo REST API documentation - http://developers.marketo.com/documentation/rest/
 
 Installation
 ============
 
-pip install pythonmarketo
+pip install marketorestpython
 
 Usage
 =====
 ```python
-from pythonmarketo.client import MarketoClient
-mc = MarketoClient(host=<Host>, 
-                   client_id=<Client_Id>, 
-                   client_secret=<Client_Secret>)
-
-# Example host: "000-AAA-000.mktorest.com"
+from marketorestpython.client import MarketoClient
+munchkin_id = "" # fill in Munchkin ID, typical format 000-AAA-000
+mc = MarketoClient(munchkin_id, 
+                   client_id="", 
+                   client_secret="") # enter Client ID and Secret from Admin > LaunchPoint > View Details 
 ```
 
 Lead, List, Activity and Campaign Objects

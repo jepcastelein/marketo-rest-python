@@ -1,4 +1,4 @@
-from pythonmarketo.client import MarketoClient
+from marketorestpython.client import MarketoClient
 import json
 
 mc = MarketoClient(host = <HOST>, 

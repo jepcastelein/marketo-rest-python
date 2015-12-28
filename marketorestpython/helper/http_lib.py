@@ -40,23 +40,18 @@ class HttpLib:
                 url = endpoint + "?" + urlencode(args)
                 headers = {'Content-type': 'application/json'}
                 if mode is 'nojsondumps':
-                    #print("mode is nojsondumps")
                     r = requests.post(url, data=data)
                 elif data is None and files is None:
-                    #print('only args')
                     r = requests.post(url, headers=headers)
                 elif data is not None and files is None:
-                    #print('args plus data')
                     r = requests.post(url, data=json.dumps(data), headers=headers)
                 elif data is None and files is not None:
-                    #print('args plus files')
                     # removed the headers with JSON content type, because the file is not JSON
-                    # in future try to infer the correct content type based on file extension (create separate function)
+                    # in future try to infer the correct content type based on file extension
                     with open(files,'rb') as f:
                         files = {'file': f}
                         r = requests.post(url, files=files)
                 else:
-                    #print('args plus data plus files')
                     # removed the headers with JSON content type, because the file is not JSON
                     with open(files,'rb') as f:
                         files = {'file': f}
