@@ -23,6 +23,7 @@ mc = MarketoClient(munchkin_id,
                    client_secret="") # enter Client ID and Secret from Admin > LaunchPoint > View Details 
 ```
 
+
 Lead, List, Activity and Campaign Objects
 =========================================
 

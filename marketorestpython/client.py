@@ -3,6 +3,7 @@ from marketorestpython.helper.exceptions import MarketoException
 import time
 import requests
 
+
 class MarketoClient:    
     host = None
     client_id = None
