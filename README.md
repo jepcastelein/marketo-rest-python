@@ -27,32 +27,38 @@ mc = MarketoClient(munchkin_id,
 Lead, List, Activity and Campaign Objects
 =========================================
 
-Get Leads
----------------------------------
-API Ref: http://developers.marketo.com/documentation/rest/get-multiple-leads-by-filter-type/ 
-```python
-mc.execute(method='get_leads', filtr='email', values='test@test.com', fields=['email','firstName','lastName','company','postalCode'])
-
-# values could be either "v1 v2 v3" or [v1,v2,v3]
-```
-
-Get Multiple Leads by Filter Type (alternate implementation)
+Get Multiple Leads by Filter Type
 ---------------------------------
 API Ref: http://developers.marketo.com/documentation/rest/get-multiple-leads-by-filter-type/
 ```python
-lead = mc.execute(method='get_multiple_leads_by_filter_type', filterType='email', filterValues='a@b.com,c@d.com', 
-                  fields='firstName, middleName, lastName', nextPageToken=None)
+lead = mc.execute(method='get_multiple_leads_by_filter_type', filterType='email', filterValues=['a@b.com','c@d.com'], 
+                  fields=['firstName', 'middleName', 'lastName'], batchSize=None)
 
-# fields and nextPageToken are optional
+# fields and batchSize are optional
 # max 100 filterValues
-# theoretically, pass in nextPageToken if more than 300 results, however nextPageToken is not returned at this time 
+# max 1000 results, otherwise you'll get error 1003 ('Too many results match the filter')
+# you can also specify filterValues and fields as a comma-separated string (for example: 'a@b.com,c@d.com')
 ```
 
-Get Leads by List Id
+Get Multiple Leads by List Id
 -----------------------------
 API Ref: http://developers.marketo.com/documentation/rest/get-multiple-leads-by-list-id/
 ```python
-mc.execute(method='get_leads_by_listId', listId='676', fields=['email','firstName','lastName','company','postalCode'])
+mc.execute(method='get_multiple_leads_by_list_id', listId='676', 
+                fields=['email','firstName','lastName','company','postalCode'], batchSize=None)
+
+# fields and batchSize are optional
+# static lists only (does not work with smart lists)
+```
+
+Get Multiple Leads by Program Id
+--------------------------------
+API Ref: http://developers.marketo.com/documentation/rest/get-multiple-leads-by-program-id/
+```python
+mc.execute(method='get_multiple_leads_by_program_id', programId='1014', 
+                fields=['email','firstName','lastName','company','postalCode'], batchSize=None)
+
+# fields and batchSize are optional
 ```
 
 Create Lead
@@ -92,7 +98,7 @@ Merge Lead
 ----------
 API Ref: http://developers.marketo.com/documentation/rest/merge-lead/
 ```python
-lead = mc.execute(method='merge_leads', winning_ld=3482183, loosing_leads_list=[3482182], mergeInCRM=False)
+lead = mc.execute(method='merge_lead', winning_ld=3482183, loosing_leads_list=[3482182], mergeInCRM=False)
 
 # mergeInCRM is optional
 ```
@@ -124,7 +130,7 @@ Add Leads to List
 -----------------
 API Ref: http://developers.marketo.com/documentation/rest/add-leads-to-list/ 
 ```python
-lead = mc.execute(method='add_to_list', listId=1, leadIds=[1,2,3])
+lead = mc.execute(method='add_leads_to_list', listId=1, leadIds=[1,2,3])
 
 # can handle 300 Leads at a time
 ```
@@ -133,7 +139,7 @@ Remove Leads from List
 ----------------------
 API Ref: http://developers.marketo.com/documentation/rest/remove-leads-from-list/
 ```python
-lead = mc.execute(method = 'remove_from_list', listId = 1, leadIds = [1,2,3])
+lead = mc.execute(method = 'remove_leads_from_list', listId = 1, leadIds = [1,2,3])
 
 # can handle 300 Leads at a time
 ```
@@ -408,3 +414,23 @@ lead = mc.execute(method='list_files', folder=709, offset=0, maxReturn=200)
 TODO
 ====
 Remaining API
+
+
+Programming Conventions
+=======================
+Conventions used for functions: 
+* functions mirror as closely as possible how the functions work in the Marketo REST API
+* name of the function is exactly the same as on the Marketo Developer website, but lowercase with spaces replaced by 
+underscores
+* variables are written exactly the same as in the Marketo REST API, even though they should be lower case according to 
+PEP8
+* all required variables are checked on whether they're passed in, if not we raise a ValueError
+* if possible, functions return the 'result' node from the Marketo REST API response
+* if the Marketo REST API returns an error, it will raise a Python error with error code and details, which can be 
+handled in your code through try/except
+* the variable in with the API response is loaded is called 'result' also (so result['result'] is what is returned)
+* the client will loop and return all results together; this is not always ideal, because some calls could take up to 
+10 seconds for 300 results, so it could take hours or days to get a result and it would not be advisable to load it all
+in memory and return it in one giant chunk
+* batchSize is offered as a parameter (if available), but should usually be left blank
+* calls that support both GET and POST are implemented as POST to handle more data (for example: long lists of fields)
