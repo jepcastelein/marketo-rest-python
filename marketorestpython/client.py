@@ -41,8 +41,6 @@ class MarketoClient:
                     'get_multiple_leads_by_filter_type':self.get_multiple_leads_by_filter_type,
                     'get_multiple_leads_by_list_id':self.get_multiple_leads_by_list_id,
                     'get_multiple_leads_by_program_id':self.get_multiple_leads_by_program_id,
-                    'update_lead':self.update_lead,
-                    'create_lead':self.create_lead,
                     'create_update_leads':self.create_update_leads,
                     'associate_lead':self.associate_lead,
                     'merge_lead':self.merge_lead,
@@ -201,6 +199,28 @@ class MarketoClient:
             args['nextPageToken'] = result['nextPageToken']
         return result_list
 
+    def create_update_leads(self, leads, action=None, lookupField=None, asyncProcessing=None, partitionName=None):
+        # expected format for 'leads': [{"email":"joe@example.com","firstName":"Joe"},{"email":"jill@example.com","firstName":"Jill"}]
+        self.authenticate()
+        args = {
+            'access_token' : self.token
+        }
+        data = {
+            'input' : leads
+        }
+        if action is not None:
+            data['action'] = action
+        if lookupField is not None:
+            data['lookupField'] = lookupField
+        if asyncProcessing is not None:
+            data['asyncProcessing '] = asyncProcessing
+        if partitionName is not None:
+            data['partitionName'] = partitionName
+        result = HttpLib().post(self.host + "/rest/v1/leads.json" , args, data)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
     def get_email_templates(self, offset, maxreturn, status=None):
         self.authenticate()
         if id is None: raise ValueError("Invalid argument: required argument id is none.")
@@ -296,62 +316,6 @@ class MarketoClient:
         if data is None: raise Exception("Empty Response")
         if not data['success'] : raise MarketoException(data['errors'][0])
         return data['nextPageToken']
-
-    def update_lead(self, lookupField, lookupValue, values):
-        updated_lead = dict(list({lookupField : lookupValue}.items()) + list(values.items()))
-        data = {
-            'action' : 'updateOnly',
-            'lookupField' : lookupField,
-            'input' : [
-             updated_lead
-            ]
-        }
-        return self.post(data)
-
-    def create_lead(self, lookupField, lookupValue, values):
-        new_lead = dict(list({lookupField : lookupValue}.items()) + list(values.items()))
-        data = {
-            'action' : 'createOnly',
-            'lookupField' : lookupField,
-            'input' : [
-             new_lead
-            ]
-        }
-        return self.post(data)
-
-    def upsert_lead(self, lookupField, lookupValue, values):
-        new_lead = dict(list({lookupField : lookupValue}.items()) + list(values.items()))
-        data = {
-            'action' : 'createOrUpdate',
-            'lookupField' : lookupField,
-            'input' : [
-             new_lead
-            ]
-        }
-        return self.post(data)
-
-    def create_update_leads(self, leads, action='createOrUpdate', lookupField=None, asyncProcessing=None, partitionName=None):
-        # expected format for 'leads': [{"email":"joe@example.com","firstName":"Joe"},{"email":"jill@example.com","firstName":"Jill"}]
-        data = {
-            'action' : action,
-            'input' : leads
-        }
-        if lookupField is not None:
-            data['lookupField'] = lookupField
-        if asyncProcessing is not None:
-            data['asyncProcessing '] = asyncProcessing
-        if partitionName is not None:
-            data['partitionName'] = partitionName
-        return self.post(data)
-
-    def post(self, data):
-        self.authenticate()
-        args = {
-            'access_token' : self.token
-        }
-        data = HttpLib().post(self.host + "/rest/v1/leads.json" , args, data)
-        if not data['success'] : raise MarketoException(data['errors'][0])
-        return data['result']
 
     def run_request_campaign(self, campaignID, leadsID, values):
         token_list = [{'name':'{{' + k + '}}', 'value':v} for k, v in values.items()]

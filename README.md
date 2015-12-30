@@ -70,29 +70,17 @@ mc.execute(method='get_multiple_leads_by_program_id', programId='1014',
 # fields and batchSize are optional
 ```
 
-Create Lead
-------------
-API Ref: http://developers.marketo.com/documentation/rest/createupdate-leads/
-```python
-mc.execute(method = 'create_lead', lookupField = 'email', lookupValue = 'test@test.com', values = {'firstName':'Test1', 'lastName':'Test2'})
-```
-
-Update Lead
-------------
-API Ref: http://developers.marketo.com/documentation/rest/createupdate-leads/
-```python
-mc.execute(method = 'update_lead', lookupField = 'email', lookupValue = 'test@test.com', values = {'firstName':'Test1', 'lastName':'Test2'})
-```
-
 Create/Update Leads
 -------------------
 API Ref: http://developers.marketo.com/documentation/rest/createupdate-leads/
 ```python
 leads = [{"email":"joe@example.com","firstName":"Joe"},{"email":"jill@example.com","firstName":"Jill"}]
-lead = mc.execute(method='create_update_leads', leads=leads, lookupField='email', asyncProcessing='false', partitionName='Default')
+lead = mc.execute(method='create_update_leads', leads=leads, action='createOnly', lookupField='email', 
+                asyncProcessing='false', partitionName='Default')
 
-# lookupField and asyncProcessing are optional (defaults are 'email' and 'false')
-# partitionName is only required if Marketo instance has > 1 Lead Partition
+# action, lookupField and asyncProcessing are optional (defaults are 'email' and 'false')
+# action can be "createOrUpdate" (default if omitted), "createOnly", "updateOnly" or "createDuplicate"
+# partitionName is required if Marketo instance has more than 1 Lead Partition
 # max batch size is 300
 ```
 
@@ -434,12 +422,11 @@ underscores
 * variables are written exactly the same as in the Marketo REST API, even though they should be lower case according to 
 PEP8
 * all required variables are checked on whether they're passed in, if not we raise a ValueError
-* if possible, functions return the 'result' node from the Marketo REST API response
+* if applicable, functions return the 'result' node from the Marketo REST API response
 * if the Marketo REST API returns an error, it will raise a Python error with error code and details, which can be 
 handled in your code through try/except
 * the variable in with the API response is loaded is called 'result' also (so result['result'] is what is returned)
-* the client will loop and return all results together; this is not always ideal, because some calls could take up to 
-10 seconds for 300 results, so it could take hours or days to get a result and it would not be advisable to load it all
-in memory and return it in one giant chunk
+* the client will loop if the number of results is greater than the batch size; it will then return all results 
+together; this is not always ideal, because large data sets may take lots of processing time and memory; 
 * batchSize is offered as a parameter (if available), but should usually be left blank
 * calls that support both GET and POST are implemented as POST to handle more data (for example: long lists of fields)
