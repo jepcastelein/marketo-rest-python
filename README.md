@@ -27,6 +27,15 @@ mc = MarketoClient(munchkin_id,
 Lead, List, Activity and Campaign Objects
 =========================================
 
+Get Lead by Id
+--------------
+API Ref: http://developers.marketo.com/documentation/rest/get-lead-by-id/
+```python
+lead = mc.execute(method='get_lead_by_id', id=3482141, fields=['firstName', 'middleName', 'lastName', 'department'])
+
+# you can also specify fields as a comma-separated string (for example: 'firstName, middleName, lastName, department')
+```
+
 Get Multiple Leads by Filter Type
 ---------------------------------
 API Ref: http://developers.marketo.com/documentation/rest/get-multiple-leads-by-filter-type/
