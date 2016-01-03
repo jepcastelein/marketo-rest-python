@@ -95,9 +95,10 @@ Merge Lead
 ----------
 API Ref: http://developers.marketo.com/documentation/rest/merge-lead/
 ```python
-lead = mc.execute(method='merge_lead', winning_ld=3482183, loosing_leads_list=[3482182], mergeInCRM=False)
+lead = mc.execute(method='merge_lead', id=3482183, leadIds=[3482182], mergeInCRM=False)
 
-# mergeInCRM is optional
+# mergeInCRM is optional (default is False)
+# returns True if successful
 ```
 
 Get Lead Partitions
@@ -118,16 +119,16 @@ Get Multiple Lists
 ------------------
 API Ref: http://developers.marketo.com/documentation/rest/get-multiple-lists/
 ```python
-lead = mc.execute(method='get_multiple_lists', id=[724,725], name=None, programName=None, workspaceName=None, batchSize=300, nextPageToken=None)
+lead = mc.execute(method='get_multiple_lists', id=[724,725], name=None, programName=None, workspaceName=None, batchSize=300)
 
-# all parameters are optional
+# all parameters are optional; no parameters returns all lists
 ```
 
 Add Leads to List
 -----------------
 API Ref: http://developers.marketo.com/documentation/rest/add-leads-to-list/ 
 ```python
-lead = mc.execute(method='add_leads_to_list', listId=1, leadIds=[1,2,3])
+lead = mc.execute(method='add_leads_to_list', listId=1, id=[1,2,3])
 
 # can handle 300 Leads at a time
 ```
@@ -136,7 +137,7 @@ Remove Leads from List
 ----------------------
 API Ref: http://developers.marketo.com/documentation/rest/remove-leads-from-list/
 ```python
-lead = mc.execute(method = 'remove_leads_from_list', listId = 1, leadIds = [1,2,3])
+lead = mc.execute(method='remove_leads_from_list', listId=1, id=[1,2,3])
 
 # can handle 300 Leads at a time
 ```
