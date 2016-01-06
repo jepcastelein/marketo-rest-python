@@ -32,8 +32,6 @@ Get Lead by Id
 API Ref: http://developers.marketo.com/documentation/rest/get-lead-by-id/
 ```python
 lead = mc.execute(method='get_lead_by_id', id=3482141, fields=['firstName', 'middleName', 'lastName', 'department'])
-
-# you can also specify fields as a comma-separated string (for example: 'firstName, middleName, lastName, department')
 ```
 
 Get Multiple Leads by Filter Type
@@ -46,7 +44,6 @@ lead = mc.execute(method='get_multiple_leads_by_filter_type', filterType='email'
 # fields and batchSize are optional
 # max 100 filterValues
 # max 1000 results, otherwise you'll get error 1003 ('Too many results match the filter')
-# you can also specify filterValues and fields as a comma-separated string (for example: 'a@b.com,c@d.com')
 ```
 
 Get Multiple Leads by List Id
@@ -130,7 +127,7 @@ API Ref: http://developers.marketo.com/documentation/rest/add-leads-to-list/
 ```python
 lead = mc.execute(method='add_leads_to_list', listId=1, id=[1,2,3])
 
-# can handle 300 Leads at a time
+# max batch size is 300
 ```
 
 Remove Leads from List
@@ -139,7 +136,7 @@ API Ref: http://developers.marketo.com/documentation/rest/remove-leads-from-list
 ```python
 lead = mc.execute(method='remove_leads_from_list', listId=1, id=[1,2,3])
 
-# can handle 300 Leads at a time
+# max batch size is 300
 ```
 
 Member of List
@@ -160,11 +157,9 @@ Get Multiple Campaigns
 ----------------------
 API Ref: http://developers.marketo.com/documentation/rest/get-multiple-campaigns/
 ```python
-lead = mc.execute(method='get_multiple_campaigns', id=[1170,1262], name=None, programName=None, workspaceName=None, batchSize=None, nextPageToken=None)
+lead = mc.execute(method='get_multiple_campaigns', id=[1170,1262], name=None, programName=None, workspaceName=None, batchSize=None)
 
 # all parameters are optional
-# batchSize defaults to the maximum (300)
-# while it's theoretically possible to pass in a nextPageToken, the nextPageToken is currently not returned in 'lead'
 ```
 
 Schedule Campaign
@@ -178,12 +173,11 @@ now_no_ms = now.replace(microsecond=0)
 now_plus_7 = now_no_ms + timedelta(minutes = 7)
 time_as_txt = now_plus_7.astimezone().isoformat()
 print(time_as_txt)
-lead = mc.execute(method='schedule_campaign', id=1878, runAt=time_as_txt, tokens={'Campaign Name': 'new token value'}, cloneToProgramName=None)
+lead = mc.execute(method='schedule_campaign', id=1878, runAt=time_as_txt, tokens={'my.Campaign Name': 'new token value'}, cloneToProgramName=None)
 
 # runAt is optional; default is 5 minutes from now; if specified, it needs to be at least 5 minutes from now
 # tokens and cloneToProgramName are optional
-# token override only works for tokens without spaces
-# returns True or False
+# returns True
 ```
 
 Request Campaign
@@ -192,14 +186,15 @@ API Ref: http://developers.marketo.com/documentation/rest/request-campaign/
 ```python
 lead = mc.execute(method='request_campaign', id=1880, leads=[46,38], tokens={'my.increment': '+2'})
 
-# tokens is optional; not tested on tokens with spaces 
+# tokens is optional
+# returns True
 ```
 
 Import Lead
 -----------
 API Ref: http://developers.marketo.com/documentation/rest/import-lead/
 ```python
-lead = mc.execute(method='import_lead', file='test.csv', format='csv', lookupField='email', listId=None, partitionName='Default')
+lead = mc.execute(method='import_lead', file='../folder/test.csv', format='csv', lookupField='email', listId=None, partitionName='Default')
 
 # lookupField and listId are optional. Email is the default for lookupField.
 # partitionName is required when the Marketo instance has more than 1 Lead Partition
@@ -211,7 +206,7 @@ API Ref: http://developers.marketo.com/documentation/rest/get-import-lead-status
 ```python
 lead = mc.execute(method='get_import_lead_status', id=900)
 
-# specify the batch ID that is returned in 'Import Lead'
+# specify the batchId that is returned in 'Import Lead'
 ```
 
 Get Import Failure File
@@ -226,7 +221,7 @@ if failed_leads is not '':
     f.write(failed_leads)
     f.close()
 
-# specify the batch ID that is returned in 'Import Lead'
+# specify the batchId that is returned in 'Import Lead'
 ```
 
 Get Import Warning File
@@ -241,7 +236,7 @@ if warning_leads is not '':
     f.write(warning_leads)
     f.close()
 
-# specify the batch ID that is returned in 'Import Lead'
+# specify the batchId that is returned in 'Import Lead'
 ```
 
 Describe
@@ -258,34 +253,38 @@ API Ref: http://developers.marketo.com/documentation/rest/get-activity-types/
 mc.execute(method = 'get_activity_types')
 ```
 
-Get PagingToken
+Get Paging Token
 ----------------
 API Ref: http://developers.marketo.com/documentation/rest/get-paging-token/
 ```python
-#sinceDatetime format: 
-#2014-10-06T13:22:17-08:00
-#2014-10-06T13:22-07:00
-#2014-10-06
-
 mc.execute(method='get_paging_token', sinceDatetime='2014-10-06')
+
+# sinceDatetime format: 2015-10-06T13:22:17-08:00 or 2015-10-06T13:22-0700 or 2015-10-06
+# This call is optional, you can directly pass in the datetime into 'Get Lead Activity' and 'Get Lead Changes'
+# Returns the paging token
 ```
 
-Get Lead Activity
-----------------
+Get Lead Activities
+-------------------
 API Ref: http://developers.marketo.com/documentation/rest/get-lead-activities/
 ```python
-#activityTypeIds could be either "v1 v2 v3" or [v1,v2,v3]
+mc.execute(method='get_lead_activities', activityTypeIds=['23','22'], nextPageToken=None, sinceDatetime='2015-10-06', batchSize=None, listId=None)
 
-mc.execute(method = 'get_lead_activity', activityTypeIds = ['23','22'], sinceDatetime = '2014-10-06', batchSize = None, listId = None)
+# sinceDatetime format: 2015-10-06T13:22:17-08:00 or 2015-10-06T13:22-0700 or 2015-10-06
+# either nextPageToken or sinceDatetime need to be specified
+# batchSize and listId are optional
+# this will potentially return a lot of records: the function loops until it has all activities, then returns them
 ```
 
 Get Lead Changes
 ----------------
 API Ref: http://developers.marketo.com/documentation/rest/get-lead-changes/
 ```python
-lead = mc.execute(method='get_lead_changes', fields='firstName', sinceDatetime='2015-09-01', listId=None)
+lead = mc.execute(method='get_lead_changes', fields=['firstName','lastName'], nextPageToken=None, sinceDatetime='2015-09-01', batchSize=None, listId=None)
 
-# sinceDateTime and listId are optional
+# sinceDatetime format: 2015-10-06T13:22:17-08:00 or 2015-10-06T13:22-0700 or 2015-10-06
+# either nextPageToken or sinceDatetime need to be specified
+# batchSize and listId are optional
 # this will potentially return a lot of records: the function loops until it has all activities, then returns them
 ```
 
@@ -323,17 +322,18 @@ API Ref: http://developers.marketo.com/documentation/rest/delete-lead/
 ```python
 lead = mc.execute(method='delete_lead', id=[1,2])
 
-# max number of leads to pass in is 300
+# max batch size is 300
 ```
 
 Get Deleted Leads
 -----------------
 API Ref: http://developers.marketo.com/documentation/rest/get-deleted-leads/
 ```python
-lead = mc.execute(method='get_deleted_leads', sinceDatetime=date.today(), batchSize=None)
+lead = mc.execute(method='get_deleted_leads', nextPageToken=None, sinceDatetime=date.today(), batchSize=None)
 
-# batchSize is optional; default batchSize is 300
-# function will loop to download all deleted leads since the specified time
+# sinceDatetime format: 2015-10-06T13:22:17-08:00 or 2015-10-06T13:22-0700 or 2015-10-06
+# either nextPageToken or sinceDatetime need to be specified
+# batchSize is optional
 # will return first and last name, Marketo ID and time of deletion, but no additional Lead attributes
 ```
 
@@ -341,8 +341,10 @@ Update Leads Partition
 ----------------------
 API Ref: http://developers.marketo.com/documentation/rest/update-leads-partition/
 ```python
-idAndPartitionName = [{'id': 3482156, 'partitionName': 'Default'}, {'id': 3482141, 'partitionName': 'Europe'}]
-lead = mc.execute(method='update_leads_partition', idAndPartitionName=idAndPartitionName)
+input_ = [{'id': 3482156, 'partitionName': 'Default'}, {'id': 3482141, 'partitionName': 'Europe'}]
+lead = mc.execute(method='update_leads_partition', input_=input_)
+
+# please note there is an underscore behind 'input' to avoid confusion with the built-in 'input'
 ```
 
 
@@ -417,13 +419,16 @@ Remaining API
 Programming Conventions
 =======================
 Conventions used for functions: 
-* functions mirror as closely as possible how the functions work in the Marketo REST API
+* functions mirror as closely as possible how the functions work in the Marketo REST API; the only exceptions are 
+get_lead_activities, get_lead_changes and get_deleted_leads where you can pass in a datetime directly rather than having to use 
+get_paging_token (which you can still use, if you want to)
 * name of the function is exactly the same as on the Marketo Developer website, but lowercase with spaces replaced by 
 underscores
 * variables are written exactly the same as in the Marketo REST API, even though they should be lower case according to 
 PEP8
 * all required variables are checked on whether they're passed in, if not we raise a ValueError
-* if applicable, functions return the 'result' node from the Marketo REST API response
+* functions return the 'result' node from the Marketo REST API response; if there is no 'result' node, 'success' is 
+returned (which is true/false)
 * if the Marketo REST API returns an error, it will raise a Python error with error code and details, which can be 
 handled in your code through try/except
 * the variable in with the API response is loaded is called 'result' also (so result['result'] is what is returned)
