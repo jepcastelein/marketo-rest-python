@@ -511,10 +511,8 @@ company = mc.execute(method='delete_companies', input=companies, deleteBy='idFie
 Get Companies
 -----------
 API Ref: http://developers.marketo.com/documentation/company-api/get-companies/
-```python
-company = mc.execute(method='get_companies')
-```
 
+To be implemented. 
 
 TODO
 ====
