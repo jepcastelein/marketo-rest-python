@@ -466,7 +466,7 @@ result3 = mc.execute(method='get_custom_objects', input=query3, name='Campaigns'
 
 # fields and batchSize are optional
 # in the first example there are two dedupeFields, which is why the dictionary has two keys; the 'link' field is also
-searchable, but then 'filterType' needs to be the name of that field. 
+#   searchable, but then 'filterType' needs to be the name of that field. 
 ```
 
 
@@ -518,14 +518,15 @@ TODO
 ====
 * Implement remaining Asset APIs
 * Implement Opportunity APIs
+* Finish implementing "Get Companies"
 * Implement Sales Person APIs
 
 
 Programming Conventions
 =======================
 Conventions used for functions: 
-* functions mirror as closely as possible how the functions work in the Marketo REST API; exceptions:
-** get_lead_activities, get_lead_changes and get_deleted_leads where you can pass in a datetime directly rather 
+* functions mirror as closely as possible how the functions work in the Marketo REST API; exceptions: 
+get_lead_activities, get_lead_changes and get_deleted_leads where you can pass in a datetime directly rather 
 than having to use get_paging_token (which you can still use, if you want to)
 * name of the function is exactly the same as on the Marketo Developer website, but lowercase with spaces replaced by 
 underscores
