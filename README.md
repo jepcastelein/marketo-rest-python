@@ -341,12 +341,9 @@ Update Leads Partition
 ----------------------
 API Ref: http://developers.marketo.com/documentation/rest/update-leads-partition/
 ```python
-input_ = [{'id': 3482156, 'partitionName': 'Default'}, {'id': 3482141, 'partitionName': 'Europe'}]
-lead = mc.execute(method='update_leads_partition', input_=input_)
-
-# please note there is an underscore behind 'input' to avoid confusion with the built-in 'input'
+new_partitions = [{'id': 3482156, 'partitionName': 'Default'}, {'id': 3482141, 'partitionName': 'Europe'}]
+lead = mc.execute(method='update_leads_partition', input=new_partitions)
 ```
-
 
 
 Asset Objects
@@ -356,8 +353,9 @@ Create Folder
 -------------
 API Ref: http://developers.marketo.com/documentation/asset-api/create-folder/
 ```python
-lead = mc.execute(method='create_folder', name='pytest2', parent=115, description='optional description')
+lead = mc.execute(method='create_folder', name='folder2', parentId=115, parentType="Folder", description='optional')
 
+# parentType is "Folder" or "Program"
 # description is optional
 ```
 
@@ -367,18 +365,18 @@ API Ref: http://developers.marketo.com/documentation/asset-api/get-folder-by-id/
 ```python
 lead = mc.execute(method='get_folder_by_id', id=3, type='Folder')
 
-# type is optional (even though the docs say it's required); type is 'Folder' or 'Program'
-# returns False when no folder found
+# type is 'Folder' or 'Program'; this is required because a Folder and a Program can have the same Id
+# will throw KeyError when no folder found
 ```
 
 Get Folder by Name
 ------------------
 API Ref: http://developers.marketo.com/documentation/asset-api/get-folder-by-name/
 ```python
-lead = mc.execute(method='get_folder_by_name', name='pytest', type='Folder', root=115, workSpace='Europe')
+lead = mc.execute(method='get_folder_by_name', name='test', type='Folder', root=115, workSpace='Europe')
 
 # type, root and workSpace are optional
-# returns False when no folders found
+# will throw KeyError when no folder found
 ```
 
 Browse Folders
@@ -389,6 +387,7 @@ lead = mc.execute(method='browse_folders', root=3, maxDepth=5, maxReturn=200, wo
 
 # maxDepth, maxReturn and workSpace are optional
 # the folder ID for 'root' is not always the same as the folder ID you see in the UI of the Marketo app
+# will throw KeyError when no folder found
 ```
 
 Create a File
@@ -410,18 +409,126 @@ lead = mc.execute(method='list_files', folder=709, offset=0, maxReturn=200)
 # offset and maxReturn are optional
 ```
 
+Custom Objects
+==============
+
+Get List of Custom Objects
+--------------------------
+API Ref: http://developers.marketo.com/documentation/custom-api/get-list-of-custom-objects/
+```python
+result = mc.execute(method='get_list_of_custom_objects', names=['Order', 'Test'])
+
+# names is optional
+```
+
+Describe Custom Object
+----------------------
+API Ref: http://developers.marketo.com/documentation/custom-api/describe-custom-object/
+```python
+result = mc.execute(method='describe_custom_object', name='Campaigns')
+```
+
+Create/Update Custom Objects
+----------------------------
+API Ref: http://developers.marketo.com/documentation/custom-api/createupdateupsert-custom-objects/
+```python
+custom_objects = [{'TK_ID': 'abc123', 'PartNo_1': 'ABC', 'CatalogDescription_1': 'ABC Description'},
+                  {'TK_ID': 'abc123', 'PartNo_1': 'DEF', 'CatalogDescription_1': 'DEF Description'}]
+result = mc.execute(method='create_update_custom_objects', name='Campaigns', input=custom_objects, action=None, dedupeBy=None)
+
+# action and dedupeBy are optional
+```
+
+Delete Custom Objects
+---------------------
+API Ref: http://developers.marketo.com/documentation/custom-api/delete-custom-objects/
+```python
+custom_objects = [{'TK_ID': 'abc123', 'PartNo_1': 'ABC'}]
+result = mc.execute(method='delete_custom_objects', name='Campaigns', input=custom_objects, deleteBy=None)
+
+# dedupeBy is optional
+# in the example above there are 2 dedupe fields
+```
+
+Get Custom Objects
+------------------
+API Ref: http://developers.marketo.com/documentation/custom-api/get-custom-objects/
+```python
+query = [{'TK_ID': 'abc123', 'ListID': 123}]
+result = mc.execute(method='get_custom_objects', input=query, name='Campaigns', filterType='dedupeFields', 
+         fields=['TK_ID', 'ListID', 'PartNo_1'], batchSize=None)
+
+query2 = [{'marketoGUID': 'eadc92fb-17ef-4e4d-bb20-73aee1a0d57e'}]
+result2 = mc.execute(method='get_custom_objects', input=query2, name='Campaigns', filterType='idField')
+
+query3 = [{'TK_ID': 'abc123'}]
+result3 = mc.execute(method='get_custom_objects', input=query3, name='Campaigns', filterType='TK_ID')
+
+# fields and batchSize are optional
+# in the first example there are two dedupeFields, which is why the dictionary has two keys; the 'link' field is also
+searchable, but then 'filterType' needs to be the name of that field. 
+```
+
+
+Company Object
+==============
+
+Describe Company
+----------------
+API Ref: http://developers.marketo.com/documentation/company-api/describe-company/
+```python
+company = mc.execute(method='describe_company')
+```
+
+Create/Update Companies
+-----------------------
+API Ref: http://developers.marketo.com/documentation/company-api/createupdateupsert-companies/
+```python
+companies = [{'externalCompanyId': 'C000001', 'company': 'Acme 1', 'website': 'http://www.acme1.com', 
+             'numberOfEmployees': 856, 'billingCity': 'San Mateo', 'billingState': 'CA'},
+             {'externalCompanyId': 'C000002', 'company': 'Acme 2', 'website': 'http://www.acme2.com', 
+             'numberOfEmployees': 114, 'billingCity': 'Redmond', 'billingState': 'WA'}]
+company = mc.execute(method='create_update_companies', input=companies, action=None, dedupeBy=None)
+
+# action and dedupeBy are optional
+```
+
+Delete Companies
+-----------
+API Ref: http://developers.marketo.com/documentation/company-api/delete-companies/
+```python
+companies = [{'externalCompanyId': 'C000003'}]
+company = mc.execute(method='delete_companies', input=companies, deleteBy=None)
+
+# deleteBy is optional; values can be dedupeFields (default) or idField
+```
+OR: 
+```python
+companies = [{'id': 8}]
+company = mc.execute(method='delete_companies', input=companies, deleteBy='idField')
+```
+
+Get Companies
+-----------
+API Ref: http://developers.marketo.com/documentation/company-api/get-companies/
+```python
+company = mc.execute(method='get_companies')
+```
+
 
 TODO
 ====
-Remaining API
+* Implement remaining Asset APIs
+* Implement Opportunity APIs
+* Implement Sales Person APIs
 
 
 Programming Conventions
 =======================
 Conventions used for functions: 
-* functions mirror as closely as possible how the functions work in the Marketo REST API; the only exceptions are 
-get_lead_activities, get_lead_changes and get_deleted_leads where you can pass in a datetime directly rather than having to use 
-get_paging_token (which you can still use, if you want to)
+* functions mirror as closely as possible how the functions work in the Marketo REST API; exceptions:
+** get_lead_activities, get_lead_changes and get_deleted_leads where you can pass in a datetime directly rather 
+than having to use get_paging_token (which you can still use, if you want to)
 * name of the function is exactly the same as on the Marketo Developer website, but lowercase with spaces replaced by 
 underscores
 * variables are written exactly the same as in the Marketo REST API, even though they should be lower case according to 
@@ -436,3 +543,5 @@ handled in your code through try/except
 together; this is not always ideal, because large data sets may take lots of processing time and memory; 
 * batchSize is offered as a parameter (if available), but should usually be left blank
 * calls that support both GET and POST are implemented as POST to handle more data (for example: long lists of fields)
+* folder IDs are split up in Id and Type parameters
+* some parameters names shadow build-ins, which is not ideal, but done for consistency with the Marketo API parameters

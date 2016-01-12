@@ -37,49 +37,58 @@ class MarketoClient:
         for i in range(0,10):
             try:
                 method_map={
-                    'get_lead_by_id':self.get_lead_by_id,
-                    'get_multiple_leads_by_filter_type':self.get_multiple_leads_by_filter_type,
-                    'get_multiple_leads_by_list_id':self.get_multiple_leads_by_list_id,
-                    'get_multiple_leads_by_program_id':self.get_multiple_leads_by_program_id,
-                    'create_update_leads':self.create_update_leads,
-                    'associate_lead':self.associate_lead,
-                    'merge_lead':self.merge_lead,
-                    'get_lead_partitions':self.get_lead_partitions,
-                    'get_list_by_id':self.get_list_by_id,
-                    'get_multiple_lists':self.get_multiple_lists,
-                    'add_leads_to_list':self.add_leads_to_list,
-                    'remove_leads_from_list':self.remove_leads_from_list,
-                    'member_of_list':self.member_of_list,
-                    'get_campaign_by_id':self.get_campaign_by_id,
-                    'get_multiple_campaigns':self.get_multiple_campaigns,
-                    'schedule_campaign':self.schedule_campaign,
-                    'request_campaign':self.request_campaign,
-                    'import_lead':self.import_lead,
-                    'get_import_lead_status':self.get_import_lead_status,
-                    'get_import_failure_file':self.get_import_failure_file,
-                    'get_import_warning_file':self.get_import_warning_file,
-                    'describe':self.describe,
-                    'get_activity_types':self.get_activity_types,
-                    'get_paging_token':self.get_paging_token,
-                    'get_lead_activities':self.get_lead_activities,
-                    'get_lead_changes':self.get_lead_changes,
-                    'get_daily_usage':self.get_daily_usage,
-                    'get_last_7_days_usage':self.get_last_7_days_usage,
-                    'get_daily_errors':self.get_daily_errors,
-                    'get_last_7_days_errors':self.get_last_7_days_errors,
-                    'delete_lead':self.delete_lead,
-                    'get_deleted_leads':self.get_deleted_leads,
-                    'update_leads_partition':self.update_leads_partition,
-                    'create_folder':self.create_folder,
-                    'create_get_folder':self.create_get_folder,
-                    'get_folder_by_id':self.get_folder_by_id,
-                    'get_folder_by_name':self.get_folder_by_name,
-                    'browse_folders':self.browse_folders,
-                    'get_email_content_by_id':self.get_email_content_by_id,
-                    'get_email_templates':self.get_email_templates,
-                    'get_email_template_content_by_id':self.get_email_template_content_by_id,
-                    'create_file':self.create_file,
-                    'list_files':self.list_files
+                    'get_lead_by_id': self.get_lead_by_id,
+                    'get_multiple_leads_by_filter_type': self.get_multiple_leads_by_filter_type,
+                    'get_multiple_leads_by_list_id': self.get_multiple_leads_by_list_id,
+                    'get_multiple_leads_by_program_id': self.get_multiple_leads_by_program_id,
+                    'create_update_leads': self.create_update_leads,
+                    'associate_lead': self.associate_lead,
+                    'merge_lead': self.merge_lead,
+                    'get_lead_partitions': self.get_lead_partitions,
+                    'get_list_by_id': self.get_list_by_id,
+                    'get_multiple_lists': self.get_multiple_lists,
+                    'add_leads_to_list': self.add_leads_to_list,
+                    'remove_leads_from_list': self.remove_leads_from_list,
+                    'member_of_list': self.member_of_list,
+                    'get_campaign_by_id': self.get_campaign_by_id,
+                    'get_multiple_campaigns': self.get_multiple_campaigns,
+                    'schedule_campaign': self.schedule_campaign,
+                    'request_campaign': self.request_campaign,
+                    'import_lead': self.import_lead,
+                    'get_import_lead_status': self.get_import_lead_status,
+                    'get_import_failure_file': self.get_import_failure_file,
+                    'get_import_warning_file': self.get_import_warning_file,
+                    'describe': self.describe,
+                    'get_activity_types': self.get_activity_types,
+                    'get_paging_token': self.get_paging_token,
+                    'get_lead_activities': self.get_lead_activities,
+                    'get_lead_changes': self.get_lead_changes,
+                    'get_daily_usage': self.get_daily_usage,
+                    'get_last_7_days_usage': self.get_last_7_days_usage,
+                    'get_daily_errors': self.get_daily_errors,
+                    'get_last_7_days_errors': self.get_last_7_days_errors,
+                    'delete_lead': self.delete_lead,
+                    'get_deleted_leads': self.get_deleted_leads,
+                    'update_leads_partition': self.update_leads_partition,
+                    'create_folder': self.create_folder,
+                    'create_get_folder': self.create_get_folder,
+                    'get_folder_by_id': self.get_folder_by_id,
+                    'get_folder_by_name': self.get_folder_by_name,
+                    'browse_folders': self.browse_folders,
+                    'get_email_content_by_id': self.get_email_content_by_id,
+                    'get_email_templates': self.get_email_templates,
+                    'get_email_template_content_by_id': self.get_email_template_content_by_id,
+                    'create_file': self.create_file,
+                    'list_files': self.list_files,
+                    'get_list_of_custom_objects': self.get_list_of_custom_objects,
+                    'describe_custom_object': self.describe_custom_object,
+                    'create_update_custom_objects': self.create_update_custom_objects,
+                    'delete_custom_objects': self.delete_custom_objects,
+                    'get_custom_objects': self.get_custom_objects,
+                    'describe_company': self.describe_company,
+                    'create_update_companies': self.create_update_companies,
+                    'delete_companies': self.delete_companies,
+                    'get_companies': self.get_companies
                 }
 
                 result = method_map[method](*args,**kargs) 
@@ -667,22 +676,72 @@ class MarketoClient:
             args['nextPageToken'] = result['nextPageToken']
         return result_list
 
-    def update_leads_partition(self, input_):
+    def update_leads_partition(self, input):
         self.authenticate()
-        if input_ is None: raise ValueError("Invalid argument: required argument input_ is none.")
-        data={
-          'input': []
-             }
-        for lead in input_:
-            data['input'].append(lead)
+        if input is None: raise ValueError("Invalid argument: required argument input is none.")
         args = {
             'access_token' : self.token
         }
+        data={
+          'input': []
+             }
+        for lead in input:
+            data['input'].append(lead)
         result = HttpLib().post(self.host + "/rest/v1/leads/partitions.json", args, data)
-        if not result['success'] : raise MarketoException(result['errors'][0])
+        if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
 
     # --------- FOLDERS ---------
+
+    def create_folder(self, name, parentId, parentType, description=None):
+        self.authenticate()
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        if parentId is None: raise ValueError("Invalid argument: required argument parentId is none.")
+        if parentType is None or (parentType is not "Folder" and parentType is not "Program"):
+            raise ValueError("Invalid argument: parentType should be 'Folder' or 'Parent'")
+        args = {
+            'access_token': self.token,
+            'name': name,
+            'parent': "{'id': " + str(parentId) + ", 'type': " + parentType + "}"
+        }
+        print(args)
+        if description is not None:
+            args['description'] = description
+        result = HttpLib().post(self.host + "/rest/asset/v1/folders.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_folder_by_id(self, id, type):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if type is None: raise ValueError("Invalid argument: required argument type is none.")
+        args = {
+            'access_token': self.token,
+            'type': type
+        }
+        result = HttpLib().get(self.host + "/rest/asset/v1/folder/" + str(id) + ".json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_folder_by_name(self, name, type=None, root=None, workSpace=None):
+        self.authenticate()
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        args = {
+            'access_token' : self.token,
+            'name' : name
+        }
+        if type is not None:
+            args['type'] = type
+        if root is not None:
+            args['root'] = root
+        if workSpace is not None:
+            args['workSpace'] = workSpace
+        result = HttpLib().get(self.host + "/rest/asset/v1/folder/byName.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
 
     def browse_folders(self, root, offset=None, maxDepth=None, maxReturn=None, workSpace=None):
         # this does not loop, so for now limited to 200 folder; will implement looping in the future
@@ -704,67 +763,9 @@ class MarketoClient:
         if result is None: raise Exception("Empty Response")
         self.last_request_id = result['requestId']
         if not result['success'] : raise MarketoException(result['errors'][0])
-        try:
-            return result['result']
-        except KeyError:
-            return False
-
-    def get_folder_by_id(self, id, type=None):
-        self.authenticate()
-        if id is None: raise ValueError("Invalid argument: required argument id is none.")
-        args = {
-            'access_token' : self.token
-        }
-        if type is not None:
-            args['type'] = type
-        result = HttpLib().get(self.host + "/rest/asset/v1/folder/" + str(id) + ".json", args)
-        if result is None: raise Exception("Empty Response")
-        self.last_request_id = result['requestId']
-        if not result['success'] : raise MarketoException(result['errors'][0])
-        try:
-            return result['result']
-        except KeyError:
-            return False
-
-    def get_folder_by_name(self, name, type=None, root=None, workSpace=None):
-        self.authenticate()
-        if name is None: raise ValueError("Invalid argument: required argument name is none.")
-        args = {
-            'access_token' : self.token,
-            'name' : name
-        }
-        if type is not None:
-            args['type'] = type
-        if root is not None:
-            args['root'] = root
-        if workSpace is not None:
-            args['workSpace'] = workSpace
-        result = HttpLib().get(self.host + "/rest/asset/v1/folder/byName.json", args)
-        if result is None: raise Exception("Empty Response")
-        self.last_request_id = result['requestId']
-        if not result['success'] : raise MarketoException(result['errors'][0])
-        try:
-            return result['result']
-        except KeyError:
-            return False
-
-    def create_folder(self, name, parent, description=None):
-        self.authenticate()
-        if name is None: raise ValueError("Invalid argument: required argument name is none.")
-        if parent is None: raise ValueError("Invalid argument: required argument parent is none.")
-        args = {
-            'access_token' : self.token,
-            'name' : name,
-            'parent' : parent
-        }
-        if description is not None:
-            args['description'] = description
-        result = HttpLib().post(self.host + "/rest/asset/v1/folders.json", args)
-        if result is None: raise Exception("Empty Response")
-        self.last_request_id = result['requestId']
-        if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
 
+    # this function is to be removed; should be implemented outside the library
     def create_get_folder(self, name, parent, description=None):
         self.authenticate()
         if name is None: raise ValueError("Invalid argument: required argument name is none.")
@@ -789,6 +790,7 @@ class MarketoClient:
         else:
             result['result'][0]['status'] = 'new'
             return result['result']
+
 
     # --------- FILES ---------
 
@@ -829,6 +831,7 @@ class MarketoClient:
         self.last_request_id = result['requestId']
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result
+
 
     # --------- EMAILS ---------
 
@@ -874,3 +877,168 @@ class MarketoClient:
         if not data['success'] : raise MarketoException(data['errors'][0])
         return data['result']
 
+
+    # --------- CUSTOM OBJECTS ---------
+
+    def get_list_of_custom_objects(self, names=None):
+        self.authenticate()
+        args = {
+            'access_token' : self.token
+        }
+        if names is not None:
+            args['names'] = names
+        result = HttpLib().get(self.host + "/rest/v1/customobjects.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def describe_custom_object(self, name):
+        self.authenticate()
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        args = {
+            'access_token' : self.token
+        }
+        result = HttpLib().get(self.host + "/rest/v1/customobjects/" + name + "/describe.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def create_update_custom_objects(self, name, input, action=None, dedupeBy=None):
+        self.authenticate()
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        if input is None: raise ValueError("Invalid argument: required argument input is none.")
+        args = {
+            'access_token' : self.token
+        }
+        data={
+          'input': []
+             }
+        for record in input:
+            data['input'].append(record)
+        if action is not None:
+            data['action'] = action
+        if dedupeBy is not None:
+            data['dedupeBy'] = dedupeBy
+        result = HttpLib().post(self.host + "/rest/v1/customobjects/" + name + ".json", args, data)
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def delete_custom_objects(self, name, input, deleteBy=None):
+        self.authenticate()
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        if input is None: raise ValueError("Invalid argument: required argument input is none.")
+        args = {
+            'access_token' : self.token
+        }
+        data={
+          'input': []
+             }
+        for record in input:
+            data['input'].append(record)
+        if deleteBy is not None:
+            data['deleteBy'] = deleteBy
+        result = HttpLib().post(self.host + "/rest/v1/customobjects/" + name + "/delete.json", args, data)
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_custom_objects(self, name, input, filterType=None, fields=None, batchSize=None):
+        self.authenticate()
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        if input is None: raise ValueError("Invalid argument: required argument input is none.")
+        args = {
+            'access_token': self.token,
+            '_method': 'GET'
+        }
+        data={
+          'input': input
+             }
+        if filterType is not None:
+            data['filterType'] = filterType
+        if fields is not None:
+            data['fields'] = fields
+        if batchSize is not None:
+            data['batchSize'] = batchSize
+        result_list = []
+        while True:
+            result = HttpLib().post(self.host + "/rest/v1/customobjects/" + name + ".json", args, data)
+            if result is None: raise Exception("Empty Response")
+            if not result['success'] : raise MarketoException(result['errors'][0])
+            result_list.extend(result['result'])
+            if len(result['result']) == 0 or 'nextPageToken' not in result:
+                break
+            data['nextPageToken'] = result['nextPageToken']
+        return result_list
+
+
+    # --------- COMPANY ---------
+
+    def describe_company(self):
+        self.authenticate()
+        args = {
+            'access_token' : self.token
+        }
+        result = HttpLib().get(self.host + "/rest/v1/companies/describe.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def create_update_companies(self, input, action=None, dedupeBy=None):
+        self.authenticate()
+        if input is None: raise ValueError("Invalid argument: required argument input is none.")
+        args = {
+            'access_token' : self.token
+        }
+        data={
+          'input': []
+             }
+        for company in input:
+            data['input'].append(company)
+        if action is not None:
+            data['action'] = action
+        if dedupeBy is not None:
+            data['dedupeBy'] = dedupeBy
+        result = HttpLib().post(self.host + "/rest/v1/companies.json", args, data)
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def delete_companies(self, input, deleteBy=None):
+        self.authenticate()
+        if input is None: raise ValueError("Invalid argument: required argument input is none.")
+        args = {
+            'access_token' : self.token
+        }
+        data={
+          'input': []
+             }
+        for company in input:
+            data['input'].append(company)
+        if deleteBy is not None:
+            data['deleteBy'] = deleteBy
+        result = HttpLib().post(self.host + "/rest/v1/companies/delete.json", args, data)
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_companies(self, filterType, filterValues, fields=None, batchSize=None):
+        self.authenticate()
+        if filterType is None: raise ValueError("Invalid argument: required argument filterType is none.")
+        if filterValues is None: raise ValueError("Invalid argument: required argument filter_values is none.")
+        args = {
+            'access_token': self.token,
+            '_method': 'GET'
+        }
+        filterValues = filterValues.split() if type(filterValues) is str else filterValues
+        data=[('filterValues',(',').join(filterValues)), ('filterType', filterType)]
+        if fields is not None:
+            data.append(('fields',fields))
+        if batchSize is not None:
+            data.append(('batchSize',batchSize))
+        result_list = []
+        while True:
+            result = HttpLib().post(self.host + "/rest/v1/companies.json", args, data, mode='nojsondumps')
+            if result is None: raise Exception("Empty Response")
+            if not result['success'] : raise MarketoException(result['errors'][0])
+            result_list.extend(result['result'])
+            if len(result['result']) == 0 or 'nextPageToken' not in result:
+                break
+            args['nextPageToken'] = result['nextPageToken']
+        return result_list
