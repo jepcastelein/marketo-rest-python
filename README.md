@@ -353,7 +353,7 @@ Create Folder
 -------------
 API Ref: http://developers.marketo.com/documentation/asset-api/create-folder/
 ```python
-lead = mc.execute(method='create_folder', name='folder2', parentId=115, parentType="Folder", description='optional')
+folder = mc.execute(method='create_folder', name='folder2', parentId=115, parentType="Folder", description='optional')
 
 # parentType is "Folder" or "Program"
 # description is optional
@@ -363,7 +363,7 @@ Get Folder by Id
 ----------------
 API Ref: http://developers.marketo.com/documentation/asset-api/get-folder-by-id/
 ```python
-lead = mc.execute(method='get_folder_by_id', id=3, type='Folder')
+folder = mc.execute(method='get_folder_by_id', id=3, type='Folder')
 
 # type is 'Folder' or 'Program'; this is required because a Folder and a Program can have the same Id
 # will throw KeyError when no folder found
@@ -373,10 +373,41 @@ Get Folder by Name
 ------------------
 API Ref: http://developers.marketo.com/documentation/asset-api/get-folder-by-name/
 ```python
-lead = mc.execute(method='get_folder_by_name', name='test', type='Folder', root=115, workSpace='Europe')
+folder = mc.execute(method='get_folder_by_name', name='test', type='Folder', root=115, workSpace='Europe')
 
 # type, root and workSpace are optional
 # will throw KeyError when no folder found
+```
+
+Get Folder Contents
+-------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/get-folder-contents/
+```python
+assets = mc.execute(method='get_folder_contents', id=1205, type='Program', maxReturn=None)
+
+# type is Folder or Program
+# maxReturn is optional; default is 20, max is 200
+# function will loop and return all results
+```
+
+Update Folder
+-------------
+API Ref: http://developers.marketo.com/documentation/asset-api/update-folder/
+```python
+folder = mc.execute(method='update_folder', id=141, name="New Name", description=None, isArchive=None)
+
+# name, description and isArchive are optional
+# use the id as returned by 'Browse Folders' or 'Get Folder by Name
+# can only be used to update Folders, not Programs
+```
+
+Delete Folder by Id
+-------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/delete-folder-by-id/
+```python
+folder = mc.execute(method='delete_folder_by_id', id=789)
+
+# can only be used to delete Folders, not Programs
 ```
 
 Browse Folders
@@ -385,8 +416,9 @@ API Ref: http://developers.marketo.com/documentation/asset-api/browse-folders
 ```python
 lead = mc.execute(method='browse_folders', root=3, maxDepth=5, maxReturn=200, workSpace='Default')
 
-# maxDepth, maxReturn and workSpace are optional
-# the folder ID for 'root' is not always the same as the folder ID you see in the UI of the Marketo app
+# maxDepth, maxReturn and workSpace are optional; default for maxReturn is 20, max is 200
+# use the id as returned by 'Browse Folders' or 'Get Folder by Name
+# function will loop and return all results
 # will throw KeyError when no folder found
 ```
 
@@ -454,7 +486,7 @@ Get Custom Objects
 ------------------
 API Ref: http://developers.marketo.com/documentation/custom-api/get-custom-objects/
 ```python
-query = [{'TK_ID': 'abc123', 'ListID': 123}]
+query = [{'TK_ID': 'abc123', 'ListID': 123},{'TK_ID': 'abc123', 'ListID': 12396}]
 result = mc.execute(method='get_custom_objects', input=query, name='Campaigns', filterType='dedupeFields', 
          fields=['TK_ID', 'ListID', 'PartNo_1'], batchSize=None)
 
@@ -511,14 +543,18 @@ company = mc.execute(method='delete_companies', input=companies, deleteBy='idFie
 Get Companies
 -----------
 API Ref: http://developers.marketo.com/documentation/company-api/get-companies/
-
-To be implemented. 
+```python
+result = mc.execute(method='get_companies', filterType='company', filterValues=['Acme 1', 'Acme 2'],
+                    fields=['company', 'billingCity', 'billingState', 'website', 'numberOfEmployees'], batchSize=None)
+                    
+# fields and batchSize are optional
+# filterType can be: externalCompanyId, id, externalSalesPersonId, company 
+```
 
 TODO
 ====
 * Implement remaining Asset APIs
 * Implement Opportunity APIs
-* Finish implementing "Get Companies"
 * Implement Sales Person APIs
 
 
