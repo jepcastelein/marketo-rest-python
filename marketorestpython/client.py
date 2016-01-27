@@ -91,7 +91,19 @@ class MarketoClient:
                     'describe_company': self.describe_company,
                     'create_update_companies': self.create_update_companies,
                     'delete_companies': self.delete_companies,
-                    'get_companies': self.get_companies
+                    'get_companies': self.get_companies,
+                    'create_program': self.create_program,
+                    'get_program_by_id': self.get_program_by_id,
+                    'get_program_by_name': self.get_program_by_name,
+                    'update_program': self.update_program,
+                    'delete_program': self.delete_program,
+                    'clone_program': self.clone_program,
+                    'browse_programs': self.browse_programs,
+                    'change_program_status': self.change_program_status,
+                    'get_channels': self.get_channels,
+                    'get_channel_by_name': self.get_channel_by_name,
+                    'get_tags': self.get_tags,
+                    'get_tag_by_name': self.get_tag_by_name
                 }
 
                 result = method_map[method](*args,**kargs) 
@@ -1113,3 +1125,232 @@ class MarketoClient:
                 break
             args['nextPageToken'] = result['nextPageToken']
         return result_list
+
+    # --------- PROGRAM ---------
+
+    def create_program(self, folderId, folderType, name, type, channel, description=None, tags=None):
+        self.authenticate()
+        if folderId is None: raise ValueError("Invalid argument: required argument folderId is none.")
+        if folderType is None: raise ValueError("Invalid argument: required argument folderType is none.")
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        if type is None: raise ValueError("Invalid argument: required argument type is none.")
+        if channel is None: raise ValueError("Invalid argument: required argument channel is none.")
+        args = {
+            'access_token': self.token,
+            'folder': "{'id': " + str(folderId) + ", 'type': " + folderType + "}",
+            'name': name,
+            'type': type,
+            'channel': channel
+        }
+        if description is not None:
+            args['description'] = description
+        if tags is not None:
+            tags_formatted =[]
+            for key, elem in tags.items():
+                tag_pair = {'tagType': key, 'tagValue': elem}
+                tags_formatted.append(tag_pair)
+            args['tags'] = str(tags_formatted)
+        result = HttpLib().post(self.host + "/rest/asset/v1/programs.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_program_by_id(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().get(self.host + "/rest/asset/v1/program/" + str(id) + ".json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_program_by_name(self, name):
+        self.authenticate()
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        args = {
+            'access_token': self.token,
+            'name': name
+        }
+        result = HttpLib().get(self.host + "/rest/asset/v1/program/byName.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def update_program(self, id, name=None, description=None, tags=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        data=[]
+        if name is not None:
+            data.append(('name',name))
+        if description is not None:
+            data.append(('description',description))
+        if tags is not None:
+            tags_formatted =[]
+            for key, elem in tags.items():
+                tag_pair = {'tagType': key, 'tagValue': elem}
+                tags_formatted.append(tag_pair)
+            data.append(('tags',str(tags_formatted)))
+        result = HttpLib().post(self.host + "/rest/asset/v1/program/" + str(id) + ".json", args, data, mode='nojsondumps')
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def delete_program(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/program/" + str(id) + "/delete.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def clone_program(self, id, name, folderId, folderType, description=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        if folderId is None: raise ValueError("Invalid argument: required argument folderId is none.")
+        if folderType is None: raise ValueError("Invalid argument: required argument folderType is none.")
+        args = {
+            'access_token': self.token,
+            'folder': "{'id': " + str(folderId) + ", 'type': " + folderType + "}",
+            'name': name
+        }
+        if description is not None:
+            args['description'] = description
+        result = HttpLib().post(self.host + "/rest/asset/v1/program/" + str(id) + "/clone.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def browse_programs(self, status=None, maxReturn=None):
+        self.authenticate()
+        args = {
+            'access_token' : self.token
+        }
+        if status is not None:
+            args['status'] = status
+        if maxReturn is not None:
+            args['maxReturn'] = maxReturn
+        else:
+            maxReturn = 20
+        result_list = []
+        offset = 0
+        while True:
+            result = HttpLib().get(self.host + "/rest/asset/v1/programs.json", args)
+            if result is None: raise Exception("Empty Response")
+            if not result['success'] : raise MarketoException(result['errors'][0])
+            if 'result' in result:
+                if len(result['result']) < maxReturn:
+                    result_list.extend(result['result'])
+                    break
+            else:
+                break
+            result_list.extend(result['result'])
+            offset += maxReturn
+            args['offset'] = offset
+        return result_list
+
+    def change_program_status(self, id, leadIds, status):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if leadIds is None: raise ValueError("Invalid argument: required argument input is none.")
+        if status is None: raise ValueError("Invalid argument: required argument status is none.")
+        args = {
+            'access_token' : self.token
+        }
+        data={
+            'status': status,
+            'input': []
+             }
+        for leadId in leadIds:
+            data['input'].append({'id': leadId})
+        #result={}
+        #result['success'] = True
+        #result['result'] = data
+        result = HttpLib().post(self.host + "/rest/v1/leads/programs/" + str(id) + "/status.json", args, data)
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_channels(self, maxReturn=None):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        if maxReturn is not None:
+            args['maxReturn'] = maxReturn
+        else:
+            maxReturn = 20
+        result_list = []
+        offset = 0
+        while True:
+            result = HttpLib().get(self.host + "/rest/asset/v1/channels.json", args)
+            if result is None: raise Exception("Empty Response")
+            if not result['success']: raise MarketoException(result['errors'][0])
+            if 'result' in result:
+                if len(result['result']) < maxReturn:
+                    result_list.extend(result['result'])
+                    break
+            else:
+                break
+            result_list.extend(result['result'])
+            offset += maxReturn
+            args['offset'] = offset
+        return result_list
+
+    def get_channel_by_name(self, name):
+        self.authenticate()
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        args = {
+            'access_token': self.token,
+            'name': name
+        }
+        result = HttpLib().get(self.host + "/rest/asset/v1/channel/byName.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_tags(self, maxReturn=None):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        if maxReturn is not None:
+            args['maxReturn'] = maxReturn
+        else:
+            maxReturn = 20
+        result_list = []
+        offset = 0
+        while True:
+            result = HttpLib().get(self.host + "/rest/asset/v1/tagTypes.json", args)
+            if result is None: raise Exception("Empty Response")
+            if not result['success']: raise MarketoException(result['errors'][0])
+            if 'result' in result:
+                if len(result['result']) < maxReturn:
+                    result_list.extend(result['result'])
+                    break
+            else:
+                break
+            result_list.extend(result['result'])
+            offset += maxReturn
+            args['offset'] = offset
+        return result_list
+
+    def get_tag_by_name(self, name):
+        self.authenticate()
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        args = {
+            'access_token': self.token,
+            'name': name
+        }
+        result = HttpLib().get(self.host + "/rest/asset/v1/tagType/byName.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
