@@ -268,11 +268,12 @@ Get Lead Activities
 -------------------
 API Ref: http://developers.marketo.com/documentation/rest/get-lead-activities/
 ```python
-mc.execute(method='get_lead_activities', activityTypeIds=['23','22'], nextPageToken=None, sinceDatetime='2015-10-06', batchSize=None, listId=None)
+mc.execute(method='get_lead_activities', activityTypeIds=['23','22'], nextPageToken=None, sinceDatetime='2015-10-06', 
+    batchSize=None, listId=None, leadIds=[1,2])
 
 # sinceDatetime format: 2015-10-06T13:22:17-08:00 or 2015-10-06T13:22-0700 or 2015-10-06
 # either nextPageToken or sinceDatetime need to be specified
-# batchSize and listId are optional
+# batchSize, listId and leadIds are optional
 # this will potentially return a lot of records: the function loops until it has all activities, then returns them
 ```
 
@@ -346,7 +347,7 @@ lead = mc.execute(method='update_leads_partition', input=new_partitions)
 ```
 
 
-Asset Objects
+Folders
 =============
 
 Create Folder
@@ -401,11 +402,11 @@ folder = mc.execute(method='update_folder', id=141, name="New Name", description
 # can only be used to update Folders, not Programs
 ```
 
-Delete Folder by Id
+Delete Folder
 -------------------
 API Ref: http://developers.marketo.com/documentation/asset-api/delete-folder-by-id/
 ```python
-folder = mc.execute(method='delete_folder_by_id', id=789)
+folder = mc.execute(method='delete_folder', id=789)
 
 # can only be used to delete Folders, not Programs
 ```
@@ -421,6 +422,295 @@ lead = mc.execute(method='browse_folders', root=3, maxDepth=5, maxReturn=200, wo
 # function will loop and return all results
 # will throw KeyError when no folder found
 ```
+
+Tokens
+=======
+
+Create Token
+------------
+API Ref: http://developers.marketo.com/documentation/asset-api/create-token-by-folder-id/
+```python
+token = mc.execute(method='create_token', id="28", folderType="Folder", name="test", value="testing 2", type="text")
+
+# this can also be used to update the value of a token
+```
+
+Get Tokens
+----------
+API Ref: http://developers.marketo.com/documentation/asset-api/get-tokens-by-folder-id/
+```python
+tokens = mc.execute(method='get_tokens', id="28", folderType="Folder")
+```
+
+Delete Tokens
+-------------
+API Ref: http://developers.marketo.com/documentation/asset-api/delete-tokens-by-folder-id/
+```python
+tokens = mc.execute(method='delete_tokens', id="28", folderType="Folder", name="test", type="text")
+```
+
+Email Templates
+===============
+
+Create Email Template
+---------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/create-email-template/
+```python
+template = mc.execute(method='create_email_template', folderId=14, folderType="Folder", name="API Email Template", 
+    content="email_template.html", description="Hello Description")
+
+# description is optional
+# content should contain path to HTML file
+```
+
+Get Email Template by Id
+------------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/get-email-template-by-id/
+```python
+template = mc.execute(method='get_email_template_by_id', id=41, status='approved')
+
+# status is optional; values are 'draft' or 'approved'; a single email can have both an approved and a draft version
+```
+
+Get Email Template by Name
+------------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/get-email-template-by-name/
+```python
+template = mc.execute(method='get_email_template_by_name', name='API Email Template', status='approved')
+
+# status is optional: values are 'draft' or 'approved'; a single email can have both an approved and a draft version
+```
+
+Update Email Template
+---------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/update-email-template/
+```python
+template = mc.execute(method='update_email_template', id=41, name='API Email Template', description=None)
+
+# name and description are optional, but - of course - you want to pass in at least 1 of them
+# this is only to update name and description, use 'Update Email Template Content' to update the HTML
+```
+
+Delete Email Template
+---------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/delete-email-template-by-id/
+```python
+template = mc.execute(method='delete_email_template', id=41)
+```
+
+Get Email Templates
+-------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/get-email-templates/
+```python
+template = mc.execute(method='get_email_templates', status='draft', maxReturn=None)
+
+# status and maxReturn are optional; status is 'draft' or 'approved'
+# if you specify status, it will return an approved email with a draft for both status='draft' AND status='approved'
+```
+
+Get Email Template Content
+--------------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/get-email-template-content-by-id/
+```python
+template = mc.execute(method='get_email_template_content', id=39, status='approved')
+with open('email-template-content.html', 'w', encoding='utf-8') as f:
+    f.write(template[0]['content'])
+
+# status is optional: values are 'draft' or 'approved'
+```
+
+Update Email Template Content
+-----------------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/update-email-template-content-by-id/
+```python
+template = mc.execute(method='update_email_template_content', id=42, content='email-template-content.html')
+
+# 'content' points to a file
+```
+
+Approve Email Template
+----------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/approve-email-template-by-id/
+```python
+template = mc.execute(method='approve_email_template', id=42)
+```
+
+Unapprove Email Template
+----------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/unapprove-email-template-by-id/
+```python
+template = mc.execute(method='unapprove_email_template', id=42)
+```
+
+Discard Email Template Draft
+----------------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/discard-email-template-draft-by-id/
+```python
+template = mc.execute(method='discard_email_template_draft', id=42)
+```
+
+Clone Email Template
+--------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/clone-email-template/
+```python
+template = mc.execute(method='clone_email_template', id=42, name='cloned template', folderId=14, folderType='Folder')
+
+# folderId 14 is the Email Templates folder in the Default workspace
+```
+
+Emails
+======
+
+Create Email
+------------
+API Ref: http://developers.marketo.com/documentation/asset-api/create-email/
+```python
+email = mc.execute(method='create_email', folderId=13, folderType="Folder", name="API Email", template=30,
+                      description='Hello Description', subject='Subject for API Email', fromName='Info',
+                      fromEmail='info@example.com', replyEmail=None, operational=None)
+
+# description, subject, fromName, fromEmail, replyEmail and operational are optional
+# without subject, fromName and fromEmail you can't approve the email
+# this is where you create the email shell, in 'Update Email Content in Editable Section' you specify the email body
+```
+
+Get Email by Id
+---------------
+API Ref: http://developers.marketo.com/documentation/asset-api/get-email-by-id/
+```python
+email = mc.execute(method='get_email_by_id', id=263, status='draft')
+
+# status is optional: values are 'draft' or 'approved'
+```
+
+Get Email by Name
+-----------------
+API Ref: http://developers.marketo.com/documentation/asset-api/get-email-by-name/
+```python
+email = mc.execute(method='get_email_by_name', name='API Email', status='draft', folderId=None, folderType=None)
+
+# status, folderId and folderType are optional; folderId and folderType need to be specified together
+```
+
+Delete Email
+------------
+API Ref: http://developers.marketo.com/documentation/asset-api/delete-email-by-id/
+```python
+email = mc.execute(method='delete_email', id=263)
+```
+
+Update Email
+------------
+API Ref: http://developers.marketo.com/documentation/asset-api/update-email/
+```python
+email = mc.execute(method='update_email', id=264, name="API Email 2", description='Hello New Description')
+
+# name and description are optional, but - of course - you want to pass in at least 1 of them
+```
+
+Get Emails
+----------
+API Ref: http://developers.marketo.com/documentation/asset-api/get-emails/
+```python
+email = mc.execute(method='get_emails', status='approved', folderId=13, folderType='Folder', maxReturn=None)
+
+# status, folderId, folderType and maxReturn are optional; folderId and folderType need to be specified together
+# status can be 'draft' or 'approved'
+```
+
+Get Email Content
+-----------------
+API Ref: http://developers.marketo.com/documentation/asset-api/get-email-content-by-id
+```python
+email = mc.execute(method='get_email_content', id=40, status=None)
+
+# status is optional
+```
+
+Update Email Content
+--------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/update-email-content-by-id
+```python
+email = mc.execute(method='update_email_content', id=13, type='Text', subject='New Subject Line',
+                   fromEmail='jep@example.com', fromName='Jep', replyTo='jep@example.com')
+
+# subject, fromEmail, fromName and replyTo are optional
+# type should be 'Text' or 'DynamicContent'; if you need a combination of text and dynamic, make 2 calls
+```
+
+Update Email Content in Editable Section
+----------------------------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/update-email-content-in-editable-section/
+```python
+html_content = '''<span style="color:#d9930e; font-size:27px;">Dear {{lead.First Name:default=friend}}, Donec 
+                  Scelerisque Leosera</span><br /><br /><div style="font-size:18px;">Aliquam nec erat at purus 
+                  cursus interdum<br/>vestibulum ligula augue</div><br />'''
+email = mc.execute(method='update_email_content_in_editable_section', id=275, htmlId='lt-column', type='Text', 
+                   value=html_content, textValue=None)
+
+# textValue is optional
+# type can be 'Text', 'DynamicContent' or 'Snippet'
+```
+
+Get Email Dynamic Content
+-------------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/get-email-dynamic-content-by-id/
+```python
+email = mc.execute(method='get_email_dynamic_content', id=279, dynamicContentId='RVMtU2VjdGlvbiAx')
+```
+
+Update Email Dynamic Content
+----------------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/update-email-dynamic-content-by-id/
+```python
+email = mc.execute(method='update_email_dynamic_content', id=280, dynamicContentId='RVMtY29sdW1uX3N1YnRpdGxl',
+                   segment='Dutch', value='<p>Dutch text</p>', type='HTML')
+```
+
+Approve Email
+-------------
+API Ref: http://developers.marketo.com/documentation/asset-api/approve-email-by-id
+```python
+email = mc.execute(method='approve_email', id=117)
+```
+
+Unapprove Email
+---------------
+API Ref: http://developers.marketo.com/documentation/asset-api/unapprove-email-by-id
+```python
+email = mc.execute(method='unapprove_email', id=117)
+```
+
+Discard Email Draft
+-------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/discard-email-draft-by-id/
+```python
+email = mc.execute(method='discard_email_draft', id=117)
+```
+
+Clone Email
+-----------
+API Ref: http://developers.marketo.com/documentation/asset-api/clone-email
+```python
+email = mc.execute(method='clone_email', id=117, name='clone of MHE', folderId=13, folderType='Folder', 
+                   description='description', isOperational=True)
+
+# description and isOperational are optional; isOperational defaults to false
+# right now, if isOperational is set to True, it doesn't seem to create an Operational email 
+```
+
+Send Sample Email
+-----------------
+API Ref: http://developers.marketo.com/documentation/asset-api/send-sample-email/
+```python
+email = mc.execute(method='send_sample_email', id=117, emailAddress='jep@example.com', textOnly=None, leadId=46)
+
+# textOnly and leadId are optional; textOnly will send the text version of the email in additional to the html version
+```
+
+
+Files
+========
 
 Create a File
 -------------
@@ -440,6 +730,141 @@ lead = mc.execute(method='list_files', folder=709, offset=0, maxReturn=200)
 
 # offset and maxReturn are optional
 ```
+
+
+Programs
+========
+
+Create Program
+--------------
+API Ref: http://developers.marketo.com/documentation/programs/create-a-program/
+```python
+tags = {'Language': 'English'}
+program = mc.execute(method='create_program', folderId=28, folderType='Folder', name='Program Name', 
+        description='new Program', type='Default', channel='Operational', tags=tags)
+
+# description, tags and costs are optional
+# the 'costs' parameter as mentioned in the docs is not implemented yet
+```
+
+Get Program by Id
+-----------------
+API Ref: http://developers.marketo.com/documentation/programs/get-program-by-id/
+```python
+try:
+    lead = mc.execute(method='get_program_by_id', id=1014)
+except KeyError:
+    lead = False
+```
+
+Get Program by Name
+-------------------
+API Ref: http://developers.marketo.com/documentation/programs/get-program-by-name/
+```python
+try:
+    lead = mc.execute(method='get_program_by_name', name='Email Program Test')
+except KeyError:
+    lead = False
+```
+
+Get Program by Tag Type
+-----------------------
+API Ref: http://developers.marketo.com/documentation/programs/get-programs-by-tag-type/
+```python
+try:
+    program = mc.execute(method='get_program_by_tag_type', tagType='Language', tagValue='English')
+except KeyError:
+    program = False
+```
+
+Update Program
+--------------
+API Ref: http://developers.marketo.com/documentation/programs/update-program/
+```python
+tags = {'Language': 'English'}
+program = mc.execute(method='update_program', id=1160, name='Updated Name', description='description update', tags=tags)
+
+# the 'costs' and 'costsDestructiveUpdate' parameters as mentioned in the docs are not implemented yet
+```
+
+Delete Program
+--------------
+API Ref: http://developers.marketo.com/documentation/programs/delete-program-by-id/
+```python
+program = mc.execute(method='delete_program', id=1208)
+```
+
+Browse Programs
+---------------
+API Ref: http://developers.marketo.com/documentation/programs/browse-programs/
+```python
+lead = mc.execute(method='browse_programs', status='completed', maxReturn=200)
+
+# status and maxReturn are optional; default for maxReturn is 20 and max is 200
+```
+
+Clone Program
+-------------
+API Ref: http://developers.marketo.com/documentation/programs/clone-program/
+```python
+program = mc.execute(method='clone_program', id=1207, name="Program Clone", folderId=28, folderType='Folder', 
+                     description="this is a description")
+
+# description is optional
+```
+
+Approve Program
+---------------
+API Ref: http://developers.marketo.com/documentation/programs/approve-program/
+```python
+program = mc.execute(method='approve_program', id=1208)
+```
+
+Unapprove Program
+-----------------
+API Ref: http://developers.marketo.com/documentation/programs/unapprove-program/
+```python
+program = mc.execute(method='approve_program', id=1208)
+```
+
+Get Channels
+------------
+API Ref: http://developers.marketo.com/documentation/programs/get-channels/
+```python
+channels = mc.execute(method='get_channels', maxReturn=None)
+
+# maxReturn is optional
+```
+
+Get Channel by Name
+-------------------
+API Ref: http://developers.marketo.com/documentation/programs/get-channel-by-name/
+```python
+try:
+    channel = mc.execute(method='get_channel_by_name', name="Nurture")
+except KeyError:
+    channel = False
+```
+
+Get Tags
+--------
+API Ref: http://developers.marketo.com/documentation/programs/get-tags/
+```python
+tags = mc.execute(method='get_tags', maxReturn=None)
+
+# maxReturn is optional
+```
+
+Get Tag by Name
+---------------
+API Ref: http://developers.marketo.com/documentation/programs/get-tag-by-name/
+```python
+try:
+    tag = mc.execute(method='get_tag_by_name', name="Language")
+except KeyError:
+    tag = False
+```
+
 
 Custom Objects
 ==============
@@ -551,11 +976,58 @@ result = mc.execute(method='get_companies', filterType='company', filterValues=[
 # filterType can be: externalCompanyId, id, externalSalesPersonId, company 
 ```
 
+Sales Person Object
+==============
+
+Describe Sales Person
+----------------
+API Ref: http://developers.marketo.com/documentation/sales-persons/describe-sales-person/
+```python
+salesperson = mc.execute(method='describe_sales_person')
+```
+
+Create/Update Sales Persons
+-----------------------
+API Ref: http://developers.marketo.com/documentation/sales-persons/createupdateupsert-sales-persons/
+```python
+salespeople = [{"externalSalesPersonId":"sam@test.com", "email":"sam@test.com", "firstName":"Sam", "lastName":"Sanosin"},
+    {"externalSalesPersonId":"david@test.com", "email":"david@test.com", "firstName":"David", "lastName":"Aulassak"}]
+result = mc.execute(method='create_update_sales_persons', input=salespeople, action=None, dedupeBy=None)
+
+# action and dedupeBy are optional
+```
+
+Delete Sales Persons
+-----------
+API Ref: http://developers.marketo.com/documentation/sales-persons/delete-sales-persons/
+```python
+salespeople = [{"externalSalesPersonId":"sam@test.com"}]
+result = mc.execute(method='delete_sales_persons', input=salespeople, deleteBy=None)
+
+# deleteBy is optional; values can be dedupeFields (default) or idField
+```
+
+Get Sales Persons
+-----------
+API Ref: http://developers.marketo.com/documentation/sales-persons/get-sales-persons/
+```python
+result = mc.execute(method='get_sales_persons', filterType='externalSalesPersonId', filterValues=['sam@test.com'], 
+        fields=None, batchSize=None)
+
+# fields and batchSize are optional
+# filterType can be: externalSalesPersonId, id, email
+```
+
+
+
 TODO
 ====
-* Implement remaining Asset APIs
+* Implement Landing Page Template APIs
+* Implement Snippet APIs
 * Implement Opportunity APIs
-* Implement Sales Person APIs
+* for Clone Email, fix isOperational parameter
+* for Create and Update Program, implement 'costs' parameter
+* Implement 'Get File by Id' and 'Get File by Name'
 
 
 Programming Conventions
@@ -565,7 +1037,7 @@ Conventions used for functions:
 get_lead_activities, get_lead_changes and get_deleted_leads where you can pass in a datetime directly rather 
 than having to use get_paging_token (which you can still use, if you want to)
 * name of the function is exactly the same as on the Marketo Developer website, but lowercase with spaces replaced by 
-underscores
+underscores, and "by Id" removed in case "by Id" is the only option
 * variables are written exactly the same as in the Marketo REST API, even though they should be lower case according to 
 PEP8
 * all required variables are checked on whether they're passed in, if not we raise a ValueError

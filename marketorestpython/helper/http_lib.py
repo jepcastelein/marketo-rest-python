@@ -26,7 +26,7 @@ class HttpLib:
                 retries += 1
 
 
-    def post(self, endpoint, args, data=None, files=None, mode=None):
+    def post(self, endpoint, args, data=None, files=None, filename=None, mode=None):
         retries = 0
         while True:
             if retries > self.max_retries:
@@ -44,9 +44,14 @@ class HttpLib:
                 elif data is None and files is not None:
                     # removed the headers with JSON content type, because the file is not JSON
                     # in future try to infer the correct content type based on file extension (create separate function)
-                    with open(files,'rb') as f:
-                        files = {'file': f}
-                        r = requests.post(endpoint, params=args, files=files)
+                    if filename is None:
+                        with open(files,'rb') as f:
+                            files = {'file': f}
+                            r = requests.post(endpoint, params=args, files=files)
+                    else:
+                        with open(files,'rb') as f:
+                            files = {filename: f}
+                            r = requests.post(endpoint, params=args, files=files)
                 else:
                     # removed the headers with JSON content type, because the file is not JSON
                     with open(files,'rb') as f:

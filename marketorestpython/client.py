@@ -76,11 +76,39 @@ class MarketoClient:
                     'get_folder_by_name': self.get_folder_by_name,
                     'get_folder_contents': self.get_folder_contents,
                     'update_folder': self.update_folder,
-                    'delete_folder_by_id': self.delete_folder_by_id,
+                    'delete_folder': self.delete_folder,
                     'browse_folders': self.browse_folders,
-                    'get_email_content_by_id': self.get_email_content_by_id,
+                    'create_token': self.create_token,
+                    'get_tokens': self.get_tokens,
+                    'delete_tokens': self.delete_tokens,
+                    'create_email_template': self.create_email_template,
+                    'get_email_template_by_id': self.get_email_template_by_id,
+                    'get_email_template_by_name': self.get_email_template_by_name,
+                    'update_email_template': self.update_email_template,
+                    'delete_email_template': self.delete_email_template,
                     'get_email_templates': self.get_email_templates,
-                    'get_email_template_content_by_id': self.get_email_template_content_by_id,
+                    'get_email_template_content': self.get_email_template_content,
+                    'update_email_template_content': self.update_email_template_content,
+                    'approve_email_template': self.approve_email_template,
+                    'unapprove_email_template': self.unapprove_email_template,
+                    'discard_email_template_draft': self.discard_email_template_draft,
+                    'clone_email_template': self.clone_email_template,
+                    'create_email': self.create_email,
+                    'get_email_by_id': self.get_email_by_id,
+                    'get_email_by_name': self.get_email_by_name,
+                    'delete_email': self.delete_email,
+                    'update_email': self.update_email,
+                    'get_emails': self.get_emails,
+                    'get_email_content': self.get_email_content,
+                    'update_email_content': self.update_email_content,
+                    'update_email_content_in_editable_section': self.update_email_content_in_editable_section,
+                    'get_email_dynamic_content': self.get_email_dynamic_content,
+                    'update_email_dynamic_content': self.update_email_dynamic_content,
+                    'approve_email': self.approve_email,
+                    'unapprove_email': self.unapprove_email,
+                    'discard_email_draft': self.discard_email_draft,
+                    'clone_email': self.clone_email,
+                    'send_sample_email': self.send_sample_email,
                     'create_file': self.create_file,
                     'list_files': self.list_files,
                     'get_list_of_custom_objects': self.get_list_of_custom_objects,
@@ -95,15 +123,22 @@ class MarketoClient:
                     'create_program': self.create_program,
                     'get_program_by_id': self.get_program_by_id,
                     'get_program_by_name': self.get_program_by_name,
+                    'get_program_by_tag_type': self.get_program_by_tag_type,
                     'update_program': self.update_program,
                     'delete_program': self.delete_program,
                     'clone_program': self.clone_program,
+                    'approve_program': self.approve_program,
+                    'unapprove_program': self.unapprove_program,
                     'browse_programs': self.browse_programs,
                     'change_program_status': self.change_program_status,
                     'get_channels': self.get_channels,
                     'get_channel_by_name': self.get_channel_by_name,
                     'get_tags': self.get_tags,
-                    'get_tag_by_name': self.get_tag_by_name
+                    'get_tag_by_name': self.get_tag_by_name,
+                    'describe_sales_person': self.describe_sales_person,
+                    'create_update_sales_persons': self.create_update_sales_persons,
+                    'delete_sales_persons': self.delete_sales_persons,
+                    'get_sales_persons': self.get_sales_persons
                 }
 
                 result = method_map[method](*args,**kargs) 
@@ -553,7 +588,7 @@ class MarketoClient:
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['nextPageToken']
 
-    def get_lead_activities(self, activityTypeIds, nextPageToken=None, sinceDatetime=None, batchSize = None, listId = None):
+    def get_lead_activities(self, activityTypeIds, nextPageToken=None, sinceDatetime=None, batchSize = None, listId = None, leadIds=None):
         self.authenticate()
         if activityTypeIds is None: raise ValueError("Invalid argument: required argument activityTypeIds is none.")
         if nextPageToken is None and sinceDatetime is None: raise ValueError("Either nextPageToken or sinceDatetime needs to be specified.")
@@ -564,6 +599,8 @@ class MarketoClient:
         }
         if listId is not None:
             args['listId'] = listId
+        if leadIds is not None:
+            args['leadIds'] = leadIds
         if batchSize is not None:
             args['batchSize'] = batchSize
         if nextPageToken is None:
@@ -804,7 +841,7 @@ class MarketoClient:
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
 
-    def delete_folder_by_id(self, id):
+    def delete_folder(self, id):
         self.authenticate()
         if id is None: raise ValueError("Invalid argument: required argument id is none.")
         args = {
@@ -874,6 +911,507 @@ class MarketoClient:
             result['result'][0]['status'] = 'new'
             return result['result']
 
+    # --------- TOKENS ---------
+
+    def create_token(self, id, folderType, type, name, value):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if folderType is not 'Folder' and folderType is not 'Program': raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
+        if type is None: raise ValueError("Invalid argument: required argument type is none.")
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        if value is None: raise ValueError("Invalid argument: required argument value is none.")
+        args = {
+            'access_token': self.token,
+            'folderType': folderType,
+            'type': type,
+            'name': name,
+            'value': value
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/folder/" + str(id) + "/tokens.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_tokens(self, id, folderType):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if folderType is not 'Folder' and folderType is not 'Program': raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
+        args = {
+            'access_token': self.token,
+            'folderType': folderType
+        }
+        result = HttpLib().get(self.host + "/rest/asset/v1/folder/" + str(id) + "/tokens.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def delete_tokens(self, id, folderType, name, type):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if folderType is not 'Folder' and folderType is not 'Program': raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
+        if type is None: raise ValueError("Invalid argument: required argument type is none.")
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        args = {
+            'access_token': self.token,
+            'folderType': folderType,
+            'name': name,
+            'type': type
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/folder/" + str(id) + "/tokens/delete.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    # --------- EMAIL TEMPLATES ---------
+
+    def create_email_template(self, name, folderId, folderType, content, description=None):
+        self.authenticate()
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        if folderId is None: raise ValueError("Invalid argument: required argument folder is none.")
+        if folderType is not 'Folder' and folderType is not 'Program': raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
+        if content is None: raise ValueError("Invalid argument: required argument content is none.")
+        args = {
+            'access_token': self.token,
+            'name': name,
+            'folder': "{'id': " + str(folderId) + ", 'type': " + folderType + "}"
+        }
+        if description is not None:
+            args['description'] = description
+        result = HttpLib().post(self.host + "/rest/asset/v1/emailTemplates.json", args, files=content, filename="content")
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_email_template_by_id(self, id, status=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        if status is not None:
+            args['status'] = status
+        result = HttpLib().get(self.host + "/rest/asset/v1/emailTemplate/" + str(id) + ".json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_email_template_by_name(self, name, status=None):
+        self.authenticate()
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        args = {
+            'access_token': self.token,
+            'name': name
+        }
+        if status is not None:
+            args['status'] = status
+        result = HttpLib().get(self.host + "/rest/asset/v1/emailTemplate/byName.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def update_email_template(self, id, name=None, description=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        if name is not None:
+            args['name'] = name
+        if description is not None:
+            args['description'] = description
+        result = HttpLib().post(self.host + "/rest/asset/v1/emailTemplate/" + str(id) + ".json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def delete_email_template(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/delete.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_email_templates(self, maxReturn=None, status=None):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        if maxReturn is not None:
+            args['maxReturn'] = maxReturn
+        else:
+            maxReturn = 20
+        if status is not None:
+            args['status'] = status
+        result_list = []
+        offset = 0
+        while True:
+            result = HttpLib().get(self.host + "/rest/asset/v1/emailTemplates.json", args)
+            if result is None: raise Exception("Empty Response")
+            if not result['success'] : raise MarketoException(result['errors'][0])
+            if 'result' in result:
+                if len(result['result']) < maxReturn:
+                    result_list.extend(result['result'])
+                    break
+            else:
+                break
+            result_list.extend(result['result'])
+            offset += maxReturn
+            args['offset'] = offset
+        return result_list
+
+    def get_email_template_content(self, id, status=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        if status is not None:
+            args['status'] = status
+        result = HttpLib().get(self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/content", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def update_email_template_content(self, id, content):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if content is None: raise ValueError("Invalid argument: required argument content is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/content.json", args,
+                                files=content, filename="content")
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def approve_email_template(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/approveDraft.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def unapprove_email_template(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/unapprove.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def discard_email_template_draft(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/discardDraft.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def clone_email_template(self, id, name, folderId, folderType):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        if folderId is None: raise ValueError("Invalid argument: required argument folder is none.")
+        if folderType is not 'Folder' and folderType is not 'Program': raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
+        args = {
+            'access_token': self.token,
+            'name': name,
+            'folder': "{'id': " + str(folderId) + ", 'type': " + folderType + "}"
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/clone.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+
+
+    # --------- EMAILS ---------
+
+    def create_email(self, name, folderId, folderType, template, description=None, subject=None, fromName=None,
+                     fromEmail=None, replyEmail=None, operational=None):
+        self.authenticate()
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        if folderId is None: raise ValueError("Invalid argument: required argument folder is none.")
+        if folderType is not 'Folder' and folderType is not 'Program': raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
+        if template is None: raise ValueError("Invalid argument: required argument template is none.")
+        args = {
+            'access_token': self.token,
+            'name': name,
+            'folder': "{'id': " + str(folderId) + ", 'type': " + folderType + "}",
+            'template': template
+        }
+        if description is not None:
+            args['description'] = description
+        if subject is not None:
+            args['subject'] = subject
+        if fromName is not None:
+            args['fromName'] = fromName
+        if fromEmail is not None:
+            args['fromEmail'] = fromEmail
+        if replyEmail is not None:
+            args['replyEmail'] = replyEmail
+        if operational is not None:
+            args['operational'] = operational
+        result = HttpLib().post(self.host + "/rest/asset/v1/emails.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_email_by_id(self, id, status=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        if status is not None:
+            args['status'] = status
+        result = HttpLib().get(self.host + "/rest/asset/v1/email/" + str(id) + ".json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_email_by_name(self, name, status=None, folderId=None, folderType=None):
+        self.authenticate()
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        args = {
+            'access_token': self.token,
+            'name': name
+        }
+        if status is not None:
+            args['status'] = status
+        if folderId is not None:
+            args['folder'] = "{'id': " + str(folderId) + ", 'type': " + folderType + "}"
+        result = HttpLib().get(self.host + "/rest/asset/v1/email/byName.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def delete_email(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + "/delete.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def update_email(self, id, name=None, description=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        if name is not None:
+            args['name'] = name
+        if description is not None:
+            args['description'] = description
+        result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + ".json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_emails(self, maxReturn=None, status=None, folderId=None, folderType=None):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        if maxReturn is not None:
+            args['maxReturn'] = maxReturn
+        else:
+            maxReturn = 20
+        if status is not None:
+            args['status'] = status
+        if folderId is not None:
+            args['folder'] = "{'id': " + str(folderId) + ", 'type': " + folderType + "}"
+        result_list = []
+        offset = 0
+        while True:
+            result = HttpLib().get(self.host + "/rest/asset/v1/emails.json", args)
+            if result is None: raise Exception("Empty Response")
+            if not result['success'] : raise MarketoException(result['errors'][0])
+            if 'result' in result:
+                if len(result['result']) < maxReturn:
+                    result_list.extend(result['result'])
+                    break
+            else:
+                break
+            result_list.extend(result['result'])
+            offset += maxReturn
+            args['offset'] = offset
+        return result_list
+
+    def get_email_content(self, id, status=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token' : self.token
+        }
+        if status is not None:
+            args['status'] = status
+        result = HttpLib().get(self.host + "/rest/asset/v1/email/" + str(id) + "/content.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def update_email_content(self, id, type, subject=None, fromName=None, fromEmail=None, replyTo=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if type is not "Text" and type is not "DynamicContent": raise ValueError("Invalid argument: type should be "
+                                                                                 "'Text' or 'DynamicContent'.")
+        args = {
+            'access_token': self.token
+        }
+        if subject is not None:
+            args['subject'] = '{"type":"' + type + '","value":"' + subject + '"}'
+        if fromName is not None:
+            args['fromName'] = '{"type":"' + type + '","value":"' + fromName + '"}'
+        if fromEmail is not None:
+            args['fromEmail'] = '{"type":"' + type + '","value":"' + fromEmail + '"}'
+        if replyTo is not None:
+            args['replyTO'] = '{"type":"' + type + '","value":"' + replyTo + '"}'
+        result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + "/content.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def update_email_content_in_editable_section(self, id, htmlId, type, value, textValue=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if htmlId is None: raise ValueError("Invalid argument: required argument htmlId is none.")
+        if type is not "Text" and type is not "DynamicContent" and type is not "Snippet": raise ValueError(
+                "Invalid argument: type should be 'Text', 'DynamicContent' or 'Snippet'.")
+        if value is None: raise ValueError("Invalid argument: required argument value is none.")
+        args = {
+            'access_token': self.token,
+            'type': type,
+            'value': value
+        }
+        if textValue is not None:
+            args['textValue'] = textValue
+        result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + "/content/" + str(htmlId) + ".json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_email_dynamic_content(self, id, dynamicContentId):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if dynamicContentId is None: raise ValueError("Invalid argument: required argument dynamicContentId is none.")
+        args = {
+            'access_token' : self.token
+        }
+        result = HttpLib().get(self.host + "/rest/asset/v1/email/" + str(id) + "/dynamicContent/" +
+                               str(dynamicContentId) + ".json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def update_email_dynamic_content(self, id, dynamicContentId, segment=None, value=None, type=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if dynamicContentId is None: raise ValueError("Invalid argument: required argument dynamicContentId is none.")
+        args = {
+            'access_token' : self.token
+        }
+        if segment is not None:
+            args['segment'] = segment
+        if value is not None:
+            args['value'] = value
+        if type is not None:
+            args['type'] = type
+        result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + "/dynamicContent/" +
+                               str(dynamicContentId) + ".json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def approve_email(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + "/approveDraft.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def unapprove_email(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + "/unapprove.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def discard_email_draft(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + "/discardDraft.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def clone_email(self, id, name, folderId, folderType, description=None, isOperational=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        if folderId is None: raise ValueError("Invalid argument: required argument folder is none.")
+        if folderType is not 'Folder' and folderType is not 'Program': raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
+        args = {
+            'access_token': self.token,
+            'name': name,
+            'folder': "{'id': " + str(folderId) + ", 'type': " + folderType + "}"
+        }
+        if description is not None:
+            args['description'] = description
+        if isOperational is not None:
+            args['isOperational'] = isOperational
+        result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + "/clone.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def send_sample_email(self, id, emailAddress, textOnly=None, leadId=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if emailAddress is None: raise ValueError("Invalid argument: required argument emailAddress is none.")
+        args = {
+            'access_token': self.token,
+            'emailAddress': emailAddress
+        }
+        if textOnly is not None:
+            args['textOnly'] = textOnly
+        if leadId is not None:
+            args['leadId'] = leadId
+        result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + "/sendSample.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
 
     # --------- FILES ---------
 
@@ -911,54 +1449,9 @@ class MarketoClient:
             args['insertOnly'] = insertOnly
         result = HttpLib().post(self.host + "/rest/asset/v1/files.json", args, files=file)
         if result is None: raise Exception("Empty Response")
-        self.last_request_id = result['requestId']
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result
 
-
-    # --------- EMAILS ---------
-
-    def get_email_templates(self, offset, maxreturn, status=None):
-        self.authenticate()
-        if id is None: raise ValueError("Invalid argument: required argument id is none.")
-        args = {
-            'access_token' : self.token,
-            'offset' : offset,
-            'maxreturn' : maxreturn
-        }
-        if status is not None:
-            args['status'] = status
-        data = HttpLib().get(self.host + "/rest/asset/v1/emailTemplates.json", args)
-        if data is None: raise Exception("Empty Response")
-        self.last_request_id = data['requestId']
-        if not data['success'] : raise MarketoException(data['errors'][0])
-        return data['result']
-
-    def get_email_content_by_id(self, id):
-        self.authenticate()
-        if id is None: raise ValueError("Invalid argument: required argument id is none.")
-        args = {
-            'access_token' : self.token
-        }
-        data = HttpLib().get(self.host + "/rest/asset/v1/email/" + str(id) + "/content", args)
-        if data is None: raise Exception("Empty Response")
-        self.last_request_id = data['requestId']
-        if not data['success'] : raise MarketoException(data['errors'][0])
-        return data['result']
-
-    def get_email_template_content_by_id(self, id, status = None):
-        self.authenticate()
-        if id is None: raise ValueError("Invalid argument: required argument id is none.")
-        args = {
-            'access_token' : self.token
-        }
-        if status is not None:
-            args['status'] = status
-        data = HttpLib().get(self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/content", args)
-        if data is None: raise Exception("Empty Response")
-        self.last_request_id = data['requestId']
-        if not data['success'] : raise MarketoException(data['errors'][0])
-        return data['result']
 
 
     # --------- CUSTOM OBJECTS ---------
@@ -1128,7 +1621,7 @@ class MarketoClient:
 
     # --------- PROGRAM ---------
 
-    def create_program(self, folderId, folderType, name, type, channel, description=None, tags=None):
+    def create_program(self, folderId, folderType, name, type, channel, description=None, tags=None, costs=None):
         self.authenticate()
         if folderId is None: raise ValueError("Invalid argument: required argument folderId is none.")
         if folderType is None: raise ValueError("Invalid argument: required argument folderType is none.")
@@ -1150,6 +1643,8 @@ class MarketoClient:
                 tag_pair = {'tagType': key, 'tagValue': elem}
                 tags_formatted.append(tag_pair)
             args['tags'] = str(tags_formatted)
+        if costs is not None:
+            args['costs'] = str(costs)
         result = HttpLib().post(self.host + "/rest/asset/v1/programs.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
@@ -1174,6 +1669,20 @@ class MarketoClient:
             'name': name
         }
         result = HttpLib().get(self.host + "/rest/asset/v1/program/byName.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_program_by_tag_type(self, tagType, tagValue):
+        self.authenticate()
+        if tagType is None: raise ValueError("Invalid argument: required argument tagType is none.")
+        if tagValue is None: raise ValueError("Invalid argument: required argument tagValue is none.")
+        args = {
+            'access_token': self.token,
+            'tagType': tagType,
+            'tagValue': tagValue
+        }
+        result = HttpLib().get(self.host + "/rest/asset/v1/program/byTag.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -1225,6 +1734,28 @@ class MarketoClient:
         if description is not None:
             args['description'] = description
         result = HttpLib().post(self.host + "/rest/asset/v1/program/" + str(id) + "/clone.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def approve_program(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/program/" + str(id) + "/approve.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def unapprove_program(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/program/" + str(id) + "/unapprove.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -1354,3 +1885,75 @@ class MarketoClient:
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
 
+    # --------- SALES PERSON ---------
+
+    def describe_sales_person(self):
+        self.authenticate()
+        args = {
+            'access_token' : self.token
+        }
+        result = HttpLib().get(self.host + "/rest/v1/salespersons/describe.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def create_update_sales_persons(self, input, action=None, dedupeBy=None):
+        self.authenticate()
+        if input is None: raise ValueError("Invalid argument: required argument input is none.")
+        args = {
+            'access_token' : self.token
+        }
+        data={
+            'input': []
+             }
+        for person in input:
+            data['input'].append(person)
+        if action is not None:
+            data['action'] = action
+        if dedupeBy is not None:
+            data['dedupeBy'] = dedupeBy
+        result = HttpLib().post(self.host + "/rest/v1/salespersons.json", args, data)
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def delete_sales_persons(self, input, deleteBy=None):
+        self.authenticate()
+        if input is None: raise ValueError("Invalid argument: required argument input is none.")
+        args = {
+            'access_token' : self.token
+        }
+        data={
+            'input': []
+             }
+        for record in input:
+            data['input'].append(record)
+        if deleteBy is not None:
+            data['deleteBy'] = deleteBy
+        result = HttpLib().post(self.host + "/rest/v1/salespersons/delete.json", args, data)
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_sales_persons(self, filterType, filterValues, fields=None, batchSize=None):
+        self.authenticate()
+        if filterType is None: raise ValueError("Invalid argument: required argument filterType is none.")
+        if filterValues is None: raise ValueError("Invalid argument: required argument filter_values is none.")
+        args = {
+            'access_token': self.token,
+            '_method': 'GET'
+        }
+        filterValues = filterValues.split() if type(filterValues) is str else filterValues
+        data=[('filterValues',(',').join(filterValues)), ('filterType', filterType)]
+        if fields is not None:
+            data.append(('fields',fields))
+        if batchSize is not None:
+            data.append(('batchSize',batchSize))
+        result_list = []
+        while True:
+            result = HttpLib().post(self.host + "/rest/v1/salespersons.json", args, data, mode='nojsondumps')
+            if result is None: raise Exception("Empty Response")
+            if not result['success'] : raise MarketoException(result['errors'][0])
+            result_list.extend(result['result'])
+            if len(result['result']) == 0 or 'nextPageToken' not in result:
+                break
+            args['nextPageToken'] = result['nextPageToken']
+        return result_list
