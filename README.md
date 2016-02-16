@@ -716,10 +716,31 @@ Create a File
 -------------
 API Ref: http://developers.marketo.com/documentation/asset-api/create-a-file/
 ```python
-lead = mc.execute(method='create_file', name='Marketo-Logo3.jpg', file='Marketo-Logo.jpg', folder=115, description='test file', insertOnly=False)
+lead = mc.execute(method='create_file', name='Marketo-Logo3.jpg', file='Marketo-Logo.jpg', folder=115, 
+                  description='test file', insertOnly=False)
 
 # description and insertOnly are optional
 # in 'file', specify a path if file is not in the same folder as the Python script
+```
+
+Get File by Id
+--------------
+API Ref: http://developers.marketo.com/documentation/asset-api/get-file-by-id/
+```python
+try:
+    file = mc.execute(method='get_file_by_id', id=16837)
+except KeyError:
+    file = False
+```
+
+Get File by Name
+----------------
+API Ref: http://developers.marketo.com/documentation/asset-api/get-file-by-name/
+```python
+try:
+    file = mc.execute(method='get_file_by_name', name='clogo8.jpg')
+except KeyError:
+    file = False
 ```
 
 List Files
@@ -728,7 +749,128 @@ API Ref: http://developers.marketo.com/documentation/asset-api/list-files/
 ```python
 lead = mc.execute(method='list_files', folder=709, offset=0, maxReturn=200)
 
-# offset and maxReturn are optional
+# offset and maxReturn are optional; max offset is 200, default is 20
+```
+
+Update File Content
+-------------
+API Ref: http://developers.marketo.com/documentation/asset-api/update-file-content/
+```python
+file = mc.execute(method='update_file_content', id=23307, file='Marketo-Logo-Large.jpg')
+
+# in 'file', specify a path if file is not in the same folder as the Python script
+```
+
+
+Landing Page Templates
+===============
+
+Create Landing Page Template
+---------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/create-landing-page-template/
+```python
+template = mc.execute(method='create_landing_page_template', name='API LP Template', folderId=11,
+                      folderType='Folder', description='Description', templateType='freeForm')
+
+# description and templateType are optional; templateType can be freeForm (default) or guided
+```
+
+Get Landing Page Template by Id
+------------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/get-landing-page-template-by-id/
+```python
+template = mc.execute(method='get_landing_page_template_by_id', id=30, status='approved')
+
+# status is optional; values are 'draft' or 'approved'; a single landing page can have both an approved and a draft 
+# version
+```
+
+Get Landing Page Template by Name
+------------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/get-landing-page-template-by-name/
+```python
+template = mc.execute(method='get_landing_page_template_by_name', name='API LP Template', status='draft')
+
+# status is optional: values are 'draft' or 'approved'; a single landing page can have both an approved and a draft 
+# version
+```
+
+Update Landing Page Template
+---------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/update-landing-page-template/
+```python
+template = mc.execute(method='update_landing_page_template', id=59, name='API LP Template 2', description=None)
+
+# name and description are optional, but - of course - you want to pass in at least 1 of them
+# this is only to update name and description, use 'Update Landing Page Template Content' to update the HTML
+```
+
+Delete Landing Page Template
+---------------------
+API Ref: N/A
+```python
+template = mc.execute(method='delete_landing_page_template', id=64)
+```
+
+Get Landing Page Templates
+-------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/get-multiple-landing-page-templates/
+```python
+template = mc.execute(method='get_landing_page_templates', status='approved', folderId=842, folderType='Folder')
+
+# status, folderId, folderType and maxReturn are optional; status is 'draft' or 'approved'
+# if you specify status, it will return an approved landing page with a draft for both status='draft' AND status='approved'
+```
+
+Get Landing Page Template Content
+--------------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/get-landing-page-template-content/
+```python
+template = mc.execute(method='get_landing_page_template_content', id=30)
+with open('landing-page-template-content-2.html', 'w', encoding='utf-8') as f:
+    f.write(template[0]['content'])
+
+# status is optional: values are 'draft' or 'approved'
+```
+
+Update Landing Page Template Content
+-----------------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/update-landing-page-template-content-by-id/
+```python
+template = mc.execute(method='update_landing_page_template_content', id=59, content='LP-template-content.html')
+
+# 'content' points to a file
+```
+
+Approve Landing Page Template
+----------------------
+API Ref: N/A
+```python
+template = mc.execute(method='approve_landing_page_template', id=61)
+```
+
+Unapprove Landing Page Template
+----------------------
+API Ref: N/A
+```python
+template = mc.execute(method='unapprove_landing_page_template', id=61)
+```
+
+Discard Landing Page Template Draft
+----------------------------
+API Ref: N/A
+```python
+template = mc.execute(method='discard_landing_page_template_draft', id=42)
+```
+
+Clone Landing Page Template
+--------------------
+API Ref: N/A
+```python
+template = mc.execute(method='clone_landing_page_template', id=42, name='cloned landing page template', 
+                      folderId=11, folderType='Folder')
+
+# folderId 11 is the Landing Page Templates folder in the Default workspace
 ```
 
 
@@ -1019,15 +1161,12 @@ result = mc.execute(method='get_sales_persons', filterType='externalSalesPersonI
 ```
 
 
-
 TODO
 ====
-* Implement Landing Page Template APIs
 * Implement Snippet APIs
 * Implement Opportunity APIs
 * for Clone Email, fix isOperational parameter
 * for Create and Update Program, implement 'costs' parameter
-* Implement 'Get File by Id' and 'Get File by Name'
 
 
 Programming Conventions

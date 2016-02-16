@@ -36,6 +36,7 @@ class MarketoClient:
         '''
         for i in range(0,10):
             try:
+
                 method_map={
                     'get_lead_by_id': self.get_lead_by_id,
                     'get_multiple_leads_by_filter_type': self.get_multiple_leads_by_filter_type,
@@ -110,7 +111,22 @@ class MarketoClient:
                     'clone_email': self.clone_email,
                     'send_sample_email': self.send_sample_email,
                     'create_file': self.create_file,
+                    'get_file_by_id': self.get_file_by_id,
+                    'get_file_by_name': self.get_file_by_name,
                     'list_files': self.list_files,
+                    'update_file_content': self.update_file_content,
+                    'create_landing_page_template': self.create_landing_page_template,
+                    'get_landing_page_template_by_id': self.get_landing_page_template_by_id,
+                    'get_landing_page_template_by_name': self.get_landing_page_template_by_name,
+                    'get_landing_page_templates': self.get_landing_page_templates,
+                    'get_landing_page_template_content': self.get_landing_page_template_content,
+                    'update_landing_page_template_content': self.update_landing_page_template_content,
+                    'update_landing_page_template': self.update_landing_page_template,
+                    'delete_landing_page_template': self.delete_landing_page_template,
+                    'approve_landing_page_template': self.approve_landing_page_template,
+                    'unapprove_landing_page_template': self.unapprove_landing_page_template,
+                    'discard_landing_page_template_draft': self.discard_landing_page_template_draft,
+                    'clone_landing_page_template': self.clone_landing_page_template,
                     'get_list_of_custom_objects': self.get_list_of_custom_objects,
                     'describe_custom_object': self.describe_custom_object,
                     'create_update_custom_objects': self.create_update_custom_objects,
@@ -140,8 +156,7 @@ class MarketoClient:
                     'delete_sales_persons': self.delete_sales_persons,
                     'get_sales_persons': self.get_sales_persons
                 }
-
-                result = method_map[method](*args,**kargs) 
+                result = method_map[method](*args,**kargs)
                 self.API_CALLS_MADE += 1
             except MarketoException as e:
                 '''
@@ -1415,24 +1430,6 @@ class MarketoClient:
 
     # --------- FILES ---------
 
-    def list_files(self, folder=None, offset=None, maxReturn=None):
-        # this does not loop, so for now limited to 200 files; will implement looping in the future
-        self.authenticate()
-        args = {
-            'access_token' : self.token
-        }
-        if folder is not None:
-            args['folder'] = folder
-        if offset is not None:
-            args['offset'] = offset
-        if maxReturn is not None:
-            args['maxReturn'] = maxReturn
-        result = HttpLib().get(self.host + "/rest/asset/v1/files.json", args)
-        if result is None: raise Exception("Empty Response")
-        self.last_request_id = result['requestId']
-        if not result['success'] : raise MarketoException(result['errors'][0])
-        return result
-
     def create_file(self, name, file, folder, description=None, insertOnly=None):
         self.authenticate()
         if name is None: raise ValueError("Invalid argument: required argument name is none.")
@@ -1450,8 +1447,254 @@ class MarketoClient:
         result = HttpLib().post(self.host + "/rest/asset/v1/files.json", args, files=file)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
-        return result
+        return result['result']
 
+    def get_file_by_id(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token' : self.token
+        }
+        result = HttpLib().get(self.host + "/rest/asset/v1/file/" + str(id) + ".json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_file_by_name(self, name):
+        self.authenticate()
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        args = {
+            'access_token' : self.token,
+            'name' : name
+        }
+        result = HttpLib().get(self.host + "/rest/asset/v1/file/byName.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def list_files(self, folder=None, offset=None, maxReturn=None):
+        self.authenticate()
+        args = {
+            'access_token' : self.token
+        }
+        if folder is not None:
+            args['folder'] = folder
+        if offset is not None:
+            args['offset'] = offset
+        if maxReturn is not None:
+            args['maxReturn'] = maxReturn
+        else:
+            maxReturn = 20
+        result_list = []
+        while True:
+            result = HttpLib().get(self.host + "/rest/asset/v1/files.json", args)
+            if result is None: raise Exception("Empty Response")
+            if not result['success']: raise MarketoException(result['errors'][0])
+            if 'result' in result:
+                if len(result['result']) < maxReturn:
+                    result_list.extend(result['result'])
+                    break
+            else:
+                break
+            result_list.extend(result['result'])
+            offset += maxReturn
+            args['offset'] = offset
+        return result_list
+
+    def update_file_content(self, id, file):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if file is None: raise ValueError("Invalid argument: required argument file is none.")
+        args = {
+            'access_token' : self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/file/" + str(id) + "/content.json", args, files=file)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    # --------- SNIPPETS ---------------
+
+    # TODO
+
+    # ----- LANDING PAGE TEMPLATES -----
+
+    def create_landing_page_template(self, name, folderId, folderType, description=None, templateType=None):
+        self.authenticate()
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        if folderId is None: raise ValueError("Invalid argument: required argument folder is none.")
+        if folderType is not 'Folder' and folderType is not 'Program': raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
+        args = {
+            'access_token': self.token,
+            'name': name,
+            'folder': "{'id': " + str(folderId) + ", 'type': " + folderType + "}"
+        }
+        if description is not None:
+            args['description'] = description
+        if templateType is not None:
+            args['templateType'] = templateType
+        result = HttpLib().post(self.host + "/rest/asset/v1/landingPageTemplates.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_landing_page_template_by_id(self, id, status=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        if status is not None:
+            args['status'] = status
+        result = HttpLib().get(self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + ".json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_landing_page_template_by_name(self, name, status=None):
+        self.authenticate()
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        args = {
+            'access_token': self.token,
+            'name': name
+        }
+        if status is not None:
+            args['status'] = status
+        result = HttpLib().get(self.host + "/rest/asset/v1/landingPageTemplate/byName.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_landing_page_templates(self, maxReturn=None, status=None, folderId=None, folderType=None):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        if maxReturn is not None:
+            args['maxReturn'] = maxReturn
+        else:
+            maxReturn = 20
+        if status is not None:
+            args['status'] = status
+        if folderId is not None and folderType is not None:
+            args['folder'] = "{'id': " + str(folderId) + ", 'type': " + folderType + "}"
+        result_list = []
+        offset = 0
+        while True:
+            result = HttpLib().get(self.host + "/rest/asset/v1/landingPageTemplates.json", args)
+            if result is None: raise Exception("Empty Response")
+            if not result['success'] : raise MarketoException(result['errors'][0])
+            if 'result' in result:
+                if len(result['result']) < maxReturn:
+                    result_list.extend(result['result'])
+                    break
+            else:
+                break
+            result_list.extend(result['result'])
+            offset += maxReturn
+            args['offset'] = offset
+        return result_list
+
+    def get_landing_page_template_content(self, id, status=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        if status is not None:
+            args['status'] = status
+        result = HttpLib().get(self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/content.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def update_landing_page_template_content(self, id, content):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if content is None: raise ValueError("Invalid argument: required argument content is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/content.json", args,
+                                files=content, filename="content")
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def update_landing_page_template(self, id, name=None, description=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        if name is not None:
+            args['name'] = name
+        if description is not None:
+            args['description'] = description
+        result = HttpLib().post(self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + ".json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def delete_landing_page_template(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/delete.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def approve_landing_page_template(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/approveDraft.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def unapprove_landing_page_template(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/unapprove.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def discard_landing_page_template_draft(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/discardDraft.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def clone_landing_page_template(self, id, name, folderId, folderType):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        if folderId is None: raise ValueError("Invalid argument: required argument folder is none.")
+        if folderType is not 'Folder' and folderType is not 'Program': raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
+        args = {
+            'access_token': self.token,
+            'name': name,
+            'folder': "{'id': " + str(folderId) + ", 'type': " + folderType + "}"
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/clone.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
 
 
     # --------- CUSTOM OBJECTS ---------

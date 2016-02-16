@@ -1,5 +1,6 @@
 import requests
 import time
+import mimetypes
 
 class HttpLib:
     max_retries = 3
@@ -45,18 +46,23 @@ class HttpLib:
                     # removed the headers with JSON content type, because the file is not JSON
                     # in future try to infer the correct content type based on file extension (create separate function)
                     if filename is None:
+                        # print("I'm in open files with NO custom name")
+                        headers = {'Content-type': mimetypes.guess_type(files)[0]}
                         with open(files,'rb') as f:
                             files = {'file': f}
-                            r = requests.post(endpoint, params=args, files=files)
+                            r = requests.post(endpoint, params=args, files=files, headers=headers)
                     else:
+                        # print("I'm in open files with custom name")
                         with open(files,'rb') as f:
                             files = {filename: f}
                             r = requests.post(endpoint, params=args, files=files)
                 else:
                     # removed the headers with JSON content type, because the file is not JSON
+                    # print("I'm in 'else'")
+                    headers = {'Content-type': mimetypes.guess_type(files)[0]}
                     with open(files,'rb') as f:
                         files = {'file': f}
-                        r = requests.post(endpoint, params=args, json=data, files=files)
+                        r = requests.post(endpoint, params=args, json=data, files=files, headers=headers)
                 return r.json()
             except Exception as e:
                 print("HTTP Post Exception!!! Retrying....."+ str(e))
