@@ -805,12 +805,14 @@ template = mc.execute(method='update_landing_page_template', id=59, name='API LP
 # this is only to update name and description, use 'Update Landing Page Template Content' to update the HTML
 ```
 
+<!--
 Delete Landing Page Template
 ---------------------
 API Ref: N/A
 ```python
 template = mc.execute(method='delete_landing_page_template', id=64)
 ```
+-->
 
 Get Landing Page Templates
 -------------------
@@ -842,6 +844,7 @@ template = mc.execute(method='update_landing_page_template_content', id=59, cont
 # 'content' points to a file
 ```
 
+<!--
 Approve Landing Page Template
 ----------------------
 API Ref: N/A
@@ -872,7 +875,7 @@ template = mc.execute(method='clone_landing_page_template', id=42, name='cloned 
 
 # folderId 11 is the Landing Page Templates folder in the Default workspace
 ```
-
+-->
 
 Programs
 ========
