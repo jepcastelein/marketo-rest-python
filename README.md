@@ -885,11 +885,12 @@ Create Program
 API Ref: http://developers.marketo.com/documentation/programs/create-a-program/
 ```python
 tags = {'Language': 'English'}
+costs = '[{"startDate":"2015-01-01","cost":2000,"note":""}]'
 program = mc.execute(method='create_program', folderId=28, folderType='Folder', name='Program Name', 
-        description='new Program', type='Default', channel='Operational', tags=tags)
+        description='new Program', type='Default', channel='Operational', tags=tags, costs=costs)
 
 # description, tags and costs are optional
-# the 'costs' parameter as mentioned in the docs is not implemented yet
+# the 'note' parameter in 'costs' is currently required but will be made optional in a future release  
 ```
 
 Get Program by Id
