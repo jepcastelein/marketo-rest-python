@@ -131,6 +131,14 @@ class MarketoClient:
                     'describe_custom_object': self.describe_custom_object,
                     'create_update_custom_objects': self.create_update_custom_objects,
                     'delete_custom_objects': self.delete_custom_objects,
+                    'describe_opportunity': self.describe_opportunity,
+                    'create_update_opportunities': self.create_update_opportunities,
+                    'delete_opportunities': self.delete_opportunities,
+                    'get_opportunities': self.get_opportunities,
+                    'describe_opportunity_role': self.describe_opportunity_role,
+                    'create_update_opportunities_roles': self.create_update_opportunities_roles,
+                    'delete_opportunity_roles': self.delete_opportunity_roles,
+                    'get_opportunity_roles': self.get_opportunity_roles,
                     'get_custom_objects': self.get_custom_objects,
                     'describe_company': self.describe_company,
                     'create_update_companies': self.create_update_companies,
@@ -1787,6 +1795,152 @@ class MarketoClient:
                 break
             data['nextPageToken'] = result['nextPageToken']
         return result_list
+
+    # ------ OPPORTUNITY -------
+
+    def describe_opportunity(self):
+        self.authenticate()
+        args = {
+            'access_token' : self.token
+        }
+        result = HttpLib().get(self.host + "/rest/v1/opportunities/describe.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def create_update_opportunities(self, input, action=None, dedupeBy=None):
+        self.authenticate()
+        if input is None: raise ValueError("Invalid argument: required argument input is none.")
+        args = {
+            'access_token' : self.token
+        }
+        data={
+            'input': []
+             }
+        for opportunity in input:
+            data['input'].append(opportunity)
+        if action is not None:
+            data['action'] = action
+        if dedupeBy is not None:
+            data['dedupeBy'] = dedupeBy
+        result = HttpLib().post(self.host + "/rest/v1/opportunities.json", args, data)
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def delete_opportunities(self, input, deleteBy=None):
+        self.authenticate()
+        if input is None: raise ValueError("Invalid argument: required argument input is none.")
+        args = {
+            'access_token' : self.token
+        }
+        data={
+            'input': []
+             }
+        for opportunity in input:
+            data['input'].append(opportunity)
+        if deleteBy is not None:
+            data['deleteBy'] = deleteBy
+        result = HttpLib().post(self.host + "/rest/v1/opportunities/delete.json", args, data)
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_opportunities(self, filterType, filterValues, fields=None, batchSize=None):
+        self.authenticate()
+        if filterType is None: raise ValueError("Invalid argument: required argument filterType is none.")
+        if filterValues is None: raise ValueError("Invalid argument: required argument filter_values is none.")
+        args = {
+            'access_token': self.token,
+            '_method': 'GET'
+        }
+        filterValues = filterValues.split() if type(filterValues) is str else filterValues
+        data=[('filterValues',(',').join(filterValues)), ('filterType', filterType)]
+        if fields is not None:
+            data.append(('fields',fields))
+        if batchSize is not None:
+            data.append(('batchSize',batchSize))
+        result_list = []
+        while True:
+            result = HttpLib().post(self.host + "/rest/v1/opportunities.json", args, data, mode='nojsondumps')
+            if result is None: raise Exception("Empty Response")
+            if not result['success'] : raise MarketoException(result['errors'][0])
+            result_list.extend(result['result'])
+            if len(result['result']) == 0 or 'nextPageToken' not in result:
+                break
+            args['nextPageToken'] = result['nextPageToken']
+        return result_list
+
+    def describe_opportunity_role(self):
+        self.authenticate()
+        args = {
+            'access_token' : self.token
+        }
+        result = HttpLib().get(self.host + "/rest/v1/opportunities/roles/describe.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def create_update_opportunities_roles(self, input, action=None, dedupeBy=None):
+        self.authenticate()
+        if input is None: raise ValueError("Invalid argument: required argument input is none.")
+        args = {
+            'access_token' : self.token
+        }
+        data={
+            'input': []
+             }
+        for opportunity in input:
+            data['input'].append(opportunity)
+        if action is not None:
+            data['action'] = action
+        if dedupeBy is not None:
+            data['dedupeBy'] = dedupeBy
+        result = HttpLib().post(self.host + "/rest/v1/opportunities/roles.json", args, data)
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def delete_opportunity_roles(self, input, deleteBy=None):
+        self.authenticate()
+        if input is None: raise ValueError("Invalid argument: required argument input is none.")
+        args = {
+            'access_token' : self.token
+        }
+        data={
+            'input': []
+             }
+        for opportunity in input:
+            data['input'].append(opportunity)
+        if deleteBy is not None:
+            data['deleteBy'] = deleteBy
+        result = HttpLib().post(self.host + "/rest/v1/opportunities/roles/delete.json", args, data)
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_opportunity_roles(self, filterType, filterValues, fields=None, batchSize=None):
+        self.authenticate()
+        if filterType is None: raise ValueError("Invalid argument: required argument filterType is none.")
+        if filterValues is None: raise ValueError("Invalid argument: required argument filter_values is none.")
+        args = {
+            'access_token': self.token,
+            '_method': 'GET'
+        }
+        filterValues = filterValues.split() if type(filterValues) is str else filterValues
+        data=[('filterValues',(',').join(filterValues)), ('filterType', filterType)]
+        if fields is not None:
+            data.append(('fields',fields))
+        if batchSize is not None:
+            data.append(('batchSize',batchSize))
+        result_list = []
+        while True:
+            result = HttpLib().post(self.host + "/rest/v1/opportunities/roles.json", args, data, mode='nojsondumps')
+            if result is None: raise Exception("Empty Response")
+            if not result['success'] : raise MarketoException(result['errors'][0])
+            result_list.extend(result['result'])
+            if len(result['result']) == 0 or 'nextPageToken' not in result:
+                break
+            args['nextPageToken'] = result['nextPageToken']
+        return result_list
+
+
 
 
     # --------- COMPANY ---------

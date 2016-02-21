@@ -1072,6 +1072,91 @@ result3 = mc.execute(method='get_custom_objects', input=query3, name='Campaigns'
 #   searchable, but then 'filterType' needs to be the name of that field. 
 ```
 
+Opportunity Object
+==================
+
+Describe Opportunity
+--------------------
+API Ref: http://developers.marketo.com/documentation/opportunity-api/describe-opportunity/
+```python
+result = mc.execute(method='describe_opportunity')
+```
+
+Create/Update Opportunities
+---------------------------
+API Ref: http://developers.marketo.com/documentation/opportunity-api/createupdateupsert-opportunities/
+```python
+opportunities = [{'externalOpportunityId': 'O000004', 'externalCompanyId': 'C000003', 'name': 'Test Opportunity',
+                  'amount': 5000, 'closeDate': '2016-06-30', 'isClosed': False, 'stage': 'Qualification',
+                  'externalSalesPersonId': 'sam@test.com'}]
+result = mc.execute(method='create_update_opportunities', input=opportunities, action=None, dedupeBy=None)
+
+# action and dedupeBy are optional 
+# action can be createOnly, updateOnly or createOrUpdate (default)
+# dedupeBy is dedupeFields (default) or idField 
+```
+
+Delete Opportunities
+--------------------
+API Ref: http://developers.marketo.com/documentation/opportunity-api/delete-opportunities/
+```python
+opportunities = [{"externalOpportunityId": "O000004"}]
+result = mc.execute(method='delete_opportunities', input=opportunities, deleteBy=None)
+
+# deleteBy is optional; it can be dedupeFields (default) or idField
+```
+
+Get Opportunities
+-----------------
+API Ref: http://developers.marketo.com/documentation/opportunity-api/get-opportunities/
+```python
+result = mc.execute(method='get_opportunities', filterType='externalOpportunityId', filterValues=['O000003'],
+                    fields=['name', 'amount', 'closeDate', 'stage'])
+#result = mc.execute(method='get_opportunities', filterType='externalCompanyId', filterValues=['C000003'])
+
+# fields and batchSize are optional; default and maximum batch size is 300
+```
+
+Describe Opportunity Roles
+--------------------
+API Ref: http://developers.marketo.com/documentation/opportunity-api/describe-opportunity-role/
+```python
+result = mc.execute(method='describe_opportunity_role')
+```
+
+Create/Update Opportunities Roles
+---------------------------------
+API Ref: http://developers.marketo.com/documentation/opportunity-api/createupdateupsert-opportunities-roles/
+```python
+opportunities_roles = [{'externalOpportunityId': 'O000004', 'leadId': 2, 'role': 'Technical Buyer', 'isPrimary': False}]
+result = mc.execute(method='create_update_opportunities_roles', input=opportunities_roles, action=None, dedupeBy=None)
+
+# action and dedupeBy are optional 
+# action can be createOnly, updateOnly or createOrUpdate (default)
+# dedupeBy is dedupeFields (default) or idField 
+```
+
+Delete Opportunity Roles
+------------------------
+API Ref: http://developers.marketo.com/documentation/opportunity-api/delete-opportunity-roles/
+```python
+opportunities = [{'externalOpportunityId': 'O000004', 'leadId': 2, 'role': 'Technical Buyer'}]
+result = mc.execute(method='delete_opportunity_roles', input=opportunities, deleteBy=None)
+
+# deleteBy is optional; it can be dedupeFields (default, all 3 fields shown) or idField
+```
+
+Get Opportunity Roles
+---------------------
+API Ref: http://developers.marketo.com/documentation/opportunity-api/get-opportunity-roles/
+```python
+result = mc.execute(method='get_opportunity_roles', filterType='externalOpportunityId', filterValues=['O000003'])
+#result = mc.execute(method='get_opportunity_roles', filterType='marketoGUID', filterValues=['63ea3a3f-1b35-4723-850e-99b41b14a636'])
+#result = mc.execute(method='get_opportunity_roles', filterType='leadId', filterValues=['2'])
+
+# fields and batchSize are optional; default and maximum batch size is 300
+```
+
 
 Company Object
 ==============
@@ -1168,9 +1253,7 @@ result = mc.execute(method='get_sales_persons', filterType='externalSalesPersonI
 TODO
 ====
 * Implement Snippet APIs
-* Implement Opportunity APIs
 * for Clone Email, fix isOperational parameter
-* for Create and Update Program, implement 'costs' parameter
 
 
 Programming Conventions
