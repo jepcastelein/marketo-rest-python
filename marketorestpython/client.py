@@ -1,7 +1,6 @@
 from marketorestpython.helper.http_lib  import  HttpLib
 from marketorestpython.helper.exceptions import MarketoException
 import time
-import requests
 
 
 class MarketoClient:    
@@ -42,6 +41,7 @@ class MarketoClient:
                     'get_multiple_leads_by_filter_type': self.get_multiple_leads_by_filter_type,
                     'get_multiple_leads_by_list_id': self.get_multiple_leads_by_list_id,
                     'get_multiple_leads_by_program_id': self.get_multiple_leads_by_program_id,
+                    'change_lead_program_status': self.change_lead_program_status,
                     'create_update_leads': self.create_update_leads,
                     'associate_lead': self.associate_lead,
                     'merge_lead': self.merge_lead,
@@ -154,7 +154,6 @@ class MarketoClient:
                     'approve_program': self.approve_program,
                     'unapprove_program': self.unapprove_program,
                     'browse_programs': self.browse_programs,
-                    'change_program_status': self.change_program_status,
                     'get_channels': self.get_channels,
                     'get_channel_by_name': self.get_channel_by_name,
                     'get_tags': self.get_tags,
@@ -540,7 +539,7 @@ class MarketoClient:
             args['listId'] = listId
         if partitionName is not None:
             args['partitionName'] = partitionName
-        result = HttpLib().post(self.host + "/bulk/v1/leads.json", args, files=file)
+        result = HttpLib().post(self.host + "/bulk/v1/leads.json", args, files=file, filename="file")
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1452,7 +1451,7 @@ class MarketoClient:
             args['description'] = description
         if insertOnly is not None:
             args['insertOnly'] = insertOnly
-        result = HttpLib().post(self.host + "/rest/asset/v1/files.json", args, files=file)
+        result = HttpLib().post(self.host + "/rest/asset/v1/files.json", args, files=file, filename="file")
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1516,7 +1515,8 @@ class MarketoClient:
         args = {
             'access_token' : self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/file/" + str(id) + "/content.json", args, files=file)
+        result = HttpLib().post(self.host + "/rest/asset/v1/file/" + str(id) + "/content.json", args, files=file,
+                                filename="file")
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2185,7 +2185,7 @@ class MarketoClient:
             args['offset'] = offset
         return result_list
 
-    def change_program_status(self, id, leadIds, status):
+    def change_lead_program_status(self, id, leadIds, status):
         self.authenticate()
         if id is None: raise ValueError("Invalid argument: required argument id is none.")
         if leadIds is None: raise ValueError("Invalid argument: required argument input is none.")

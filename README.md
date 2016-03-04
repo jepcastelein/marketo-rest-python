@@ -67,6 +67,13 @@ mc.execute(method='get_multiple_leads_by_program_id', programId='1014',
 # fields and batchSize are optional
 ```
 
+Change Lead Program Status
+--------------------------
+API Ref: http://developers.marketo.com/documentation/rest/change-lead-program-status/
+```python
+status = mc.execute(method = 'change_lead_program_status', id=1097, leadIds=[51,10,11,24], status="Registered")
+```
+
 Create/Update Leads
 -------------------
 API Ref: http://developers.marketo.com/documentation/rest/createupdate-leads/
@@ -693,10 +700,10 @@ Clone Email
 API Ref: http://developers.marketo.com/documentation/asset-api/clone-email
 ```python
 email = mc.execute(method='clone_email', id=117, name='clone of MHE', folderId=13, folderType='Folder', 
-                   description='description', isOperational=True)
+                   description='description', isOperational=None)
 
 # description and isOperational are optional; isOperational defaults to false
-# right now, if isOperational is set to True, it doesn't seem to create an Operational email 
+# isOperational currently doesn't work
 ```
 
 Send Sample Email
@@ -712,14 +719,17 @@ email = mc.execute(method='send_sample_email', id=117, emailAddress='jep@example
 Files
 ========
 
-Create a File
+Create File
 -------------
 API Ref: http://developers.marketo.com/documentation/asset-api/create-a-file/
 ```python
-lead = mc.execute(method='create_file', name='Marketo-Logo3.jpg', file='Marketo-Logo.jpg', folder=115, 
-                  description='test file', insertOnly=False)
+lead = mc.execute(method='create_file', name='Marketo-Logo.jpg', file='Marketo-Logo.jpg', folder=115, description=None)
 
-# description and insertOnly are optional
+# NOTE: the behavior of the call will change; this describes current behavior
+# description is optional
+# insertOnly is documented in the API Ref but it is non-functional
+# 'name' needs to match the 'file' name, otherwise you get error 709 "Upload file name and/or extension is 
+#   different from name in parameter"
 # in 'file', specify a path if file is not in the same folder as the Python script
 ```
 
@@ -1253,7 +1263,8 @@ result = mc.execute(method='get_sales_persons', filterType='externalSalesPersonI
 TODO
 ====
 * Implement Snippet APIs
-* for Clone Email, fix isOperational parameter
+* Implement Custom Activity API: http://developers.marketo.com/documentation/rest/add-custom-activities/
+* find alternative for mode='nojsondumps'
 
 
 Programming Conventions
