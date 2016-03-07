@@ -296,6 +296,35 @@ lead = mc.execute(method='get_lead_changes', fields=['firstName','lastName'], ne
 # this will potentially return a lot of records: the function loops until it has all activities, then returns them
 ```
 
+Add Custom Activities
+---------------------
+API Ref: http://developers.marketo.com/documentation/rest/add-custom-activities/
+```python
+custom_activities = [
+    {
+        "leadId": 46,
+        "activityDate": "2016-03-05T09:51:00-08:00",
+        "activityTypeId": 100004,
+        "primaryAttributeValue":"Blue",
+        "attributes":[
+            {
+                "name": "Attribute 1",
+                "value": "First Attribute"
+            },
+            {
+                "name": "Attribute 2",
+                "value": "Second Attribute"
+            }
+        ]
+    }
+]
+result = mc.execute(method = 'add_custom_activities', input=custom_activities)
+
+# Currently, Custom Activities need to be set up by Marketo Technical Support or Consulting Services
+# max batch size is 300
+```
+
+
 Get Daily Usage
 ---------------
 API Ref: http://developers.marketo.com/documentation/rest/get-daily-usage/
@@ -769,6 +798,130 @@ API Ref: http://developers.marketo.com/documentation/asset-api/update-file-conte
 file = mc.execute(method='update_file_content', id=23307, file='Marketo-Logo-Large.jpg')
 
 # in 'file', specify a path if file is not in the same folder as the Python script
+```
+
+Snippets
+========
+
+Create Snippet
+--------------
+API Ref: http://developers.marketo.com/documentation/asset-api/create-snippet/
+```python
+snippet = mc.execute(method='create_snippet', folderId=132, folderType="Folder", name="API Snippet", description=None)
+
+# description is optional
+```
+
+Get Snippet By Id
+-----------------
+API Ref: http://developers.marketo.com/documentation/asset-api/get-snippet-by-id/
+```python
+snippet = mc.execute(method='get_snippet_by_id', id=9)
+```
+
+Delete Snippet
+--------------
+API Ref: http://developers.marketo.com/documentation/asset-api/delete-snippet-by-id/
+```python
+snippet = mc.execute(method='delete_snippet', id=9)
+```
+
+Update Snippet
+--------------
+API Ref: http://developers.marketo.com/documentation/asset-api/update-snippet/
+```python
+snippet = mc.execute(method='update_snippet', id=9, name="API Snippet 2", description='Hello New Description')
+```
+
+Get Snippets
+------------
+API Ref: http://developers.marketo.com/documentation/asset-api/update-snippet/
+```python
+snippets = mc.execute(method='get_snippets', maxReturn=None)
+
+# maxReturn is optional
+```
+
+Get Snippet Content
+-------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/get-snippet-content-by-id/
+```python
+snippet = mc.execute(method='get_snippet_content', id=9)
+```
+
+Update Snippet Content
+----------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/update-snippet-content-by-id/
+```python
+html_content = '<html><head></head><body><p>Hello World</p></body></html>'
+snippet = mc.execute(method='update_snippet_content', id=9, type='HTML', content=html_content)
+```
+
+Approve Snippet
+---------------
+API Ref: http://developers.marketo.com/documentation/asset-api/approve-snippet-by-id/
+```python
+snippet = mc.execute(method='approve_snippet', id=9)
+```
+
+Unapprove Snippet
+-------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/unapprove-snippet-by-id/
+```python
+snippet = mc.execute(method='unapprove_snippet', id=9)
+```
+
+Discard Snippet Draft
+---------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/discard-snippet-draft-by-id/
+```python
+snippet = mc.execute(method='discard_snippet_draft', id=9)
+```
+
+Clone Snippet
+--------------
+API Ref: http://developers.marketo.com/documentation/asset-api/clone-snippet/
+```python
+snippet = mc.execute(method='clone_snippet', id=9, name='Cloned Snippet', folderId=132, folderType='Folder', 
+                     description=None)
+
+# description is optional
+```
+
+Update Snippet Dynamic Content
+-------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/update-snippet-dynamic-content-by-id/    
+```python
+snippet = mc.execute(method='update_snippet_dynamic_content', id=9, segmentId=1008, 
+                     value='<p>Text in Dutch</p>', type='HTML')
+```
+
+Get Snippet Dynamic Content
+-------------------
+API Ref: http://developers.marketo.com/documentation/asset-api/get-snippet-dynamic-content-by-id/
+```python
+snippet = mc.execute(method='get_snippet_dynamic_content', id=9)
+```
+
+Segmentations
+=============
+
+Get Segmentations
+-----------------
+API Ref: http://developers.marketo.com/documentation/asset-api/get-segmentation-by-id/
+```python
+segmentations = mc.execute(method='get_segmentations', status='approved')
+
+# status is optional; values are 'draft' or 'approved'
+```
+
+Get Segments
+-----------------
+API Ref: http://developers.marketo.com/documentation/asset-api/get-segments/
+```python
+segments = mc.execute(method='get_segments', id=1001, status=None)
+
+# status is optional; values are 'draft' or 'approved'
 ```
 
 
@@ -1258,13 +1411,6 @@ result = mc.execute(method='get_sales_persons', filterType='externalSalesPersonI
 # fields and batchSize are optional
 # filterType can be: externalSalesPersonId, id, email
 ```
-
-
-TODO
-====
-* Implement Snippet APIs
-* Implement Custom Activity API: http://developers.marketo.com/documentation/rest/add-custom-activities/
-* find alternative for mode='nojsondumps'
 
 
 Programming Conventions
