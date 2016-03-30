@@ -1,10 +1,9 @@
 Marketo REST Python
 ===================
 
-Python Client for the Marketo REST API. It covers all of the basic REST API for Lead, List, Activity and Campaign 
-Objects. It also includes some Email, Folder and File APIs. It does not yet cover Custom Objects, Opportunity, 
-Company and Sales Person Objects. This is a fork of the project started by Arunim Samat at 
-https://github.com/asamat/python_marketo, which had stalled. <br />
+Python Client that covers the complete Marketo REST API. It handles authentication, error handling and rate limiting
+to the standard limit of 100 calls in 20 seconds (defined in http_lib module). This is a fork of the project started by 
+Arunim Samat at https://github.com/asamat/python_marketo, which had stalled. <br />
 
 Full Marketo REST API documentation - http://developers.marketo.com/documentation/rest/
 
@@ -18,11 +17,11 @@ Usage
 ```python
 from marketorestpython.client import MarketoClient
 munchkin_id = "" # fill in Munchkin ID, typical format 000-AAA-000
-mc = MarketoClient(munchkin_id, 
-                   client_id="", 
-                   client_secret="") # enter Client ID and Secret from Admin > LaunchPoint > View Details 
+client_id = "" # enter Client ID from Admin > LaunchPoint > View Details
+client_secret= "" # enter Client ID and Secret from Admin > LaunchPoint > View Details
+mc = MarketoClient(munchkin_id, client_id, client_secret)
 ```
-
+Then use mc.execute(method='') to call the various methods (see documentation below) 
 
 Lead, List, Activity and Campaign Objects
 =========================================
@@ -32,6 +31,8 @@ Get Lead by Id
 API Ref: http://developers.marketo.com/documentation/rest/get-lead-by-id/
 ```python
 lead = mc.execute(method='get_lead_by_id', id=3482141, fields=['firstName', 'middleName', 'lastName', 'department'])
+
+# fields is optional
 ```
 
 Get Multiple Leads by Filter Type
@@ -423,7 +424,7 @@ API Ref: http://developers.marketo.com/documentation/asset-api/get-folder-conten
 assets = mc.execute(method='get_folder_contents', id=1205, type='Program', maxReturn=None)
 
 # type is Folder or Program
-# maxReturn is optional; default is 20, max is 200
+# maxReturn is optional; default for maxReturn is 20 and max is 200
 # function will loop and return all results
 ```
 
@@ -453,7 +454,7 @@ API Ref: http://developers.marketo.com/documentation/asset-api/browse-folders
 ```python
 lead = mc.execute(method='browse_folders', root=3, maxDepth=5, maxReturn=200, workSpace='Default')
 
-# maxDepth, maxReturn and workSpace are optional; default for maxReturn is 20, max is 200
+# maxDepth, maxReturn and workSpace are optional; default for maxReturn is 20 and max is 200
 # use the id as returned by 'Browse Folders' or 'Get Folder by Name
 # function will loop and return all results
 # will throw KeyError when no folder found
@@ -540,7 +541,7 @@ API Ref: http://developers.marketo.com/documentation/asset-api/get-email-templat
 ```python
 template = mc.execute(method='get_email_templates', status='draft', maxReturn=None)
 
-# status and maxReturn are optional; status is 'draft' or 'approved'
+# status and maxReturn are optional; status is 'draft' or 'approved'; default for maxReturn is 20 and max is 200
 # if you specify status, it will return an approved email with a draft for both status='draft' AND status='approved'
 ```
 
@@ -651,6 +652,7 @@ API Ref: http://developers.marketo.com/documentation/asset-api/get-emails/
 email = mc.execute(method='get_emails', status='approved', folderId=13, folderType='Folder', maxReturn=None)
 
 # status, folderId, folderType and maxReturn are optional; folderId and folderType need to be specified together
+# default for maxReturn is 20 and max is 200
 # status can be 'draft' or 'approved'
 ```
 
@@ -786,9 +788,9 @@ List Files
 ----------
 API Ref: http://developers.marketo.com/documentation/asset-api/list-files/
 ```python
-lead = mc.execute(method='list_files', folder=709, offset=0, maxReturn=200)
+lead = mc.execute(method='list_files', folder=709, maxReturn=None)
 
-# offset and maxReturn are optional; max offset is 200, default is 20
+# maxReturn is optional; default for maxReturn is 20 and max is 200
 ```
 
 Update File Content
@@ -839,7 +841,7 @@ API Ref: http://developers.marketo.com/documentation/asset-api/update-snippet/
 ```python
 snippets = mc.execute(method='get_snippets', maxReturn=None)
 
-# maxReturn is optional
+# maxReturn is optional; default for maxReturn is 20 and max is 200
 ```
 
 Get Snippet Content
@@ -984,6 +986,7 @@ API Ref: http://developers.marketo.com/documentation/asset-api/get-multiple-land
 template = mc.execute(method='get_landing_page_templates', status='approved', folderId=842, folderType='Folder')
 
 # status, folderId, folderType and maxReturn are optional; status is 'draft' or 'approved'
+# default for maxReturn is 20 and max is 200
 # if you specify status, it will return an approved landing page with a draft for both status='draft' AND status='approved'
 ```
 
@@ -1142,7 +1145,7 @@ API Ref: http://developers.marketo.com/documentation/programs/get-channels/
 ```python
 channels = mc.execute(method='get_channels', maxReturn=None)
 
-# maxReturn is optional
+# maxReturn is optional; default for maxReturn is 20 and max is 200
 ```
 
 Get Channel by Name
@@ -1161,7 +1164,7 @@ API Ref: http://developers.marketo.com/documentation/programs/get-tags/
 ```python
 tags = mc.execute(method='get_tags', maxReturn=None)
 
-# maxReturn is optional
+# maxReturn is optional; default for maxReturn is 20 and max is 200
 ```
 
 Get Tag by Name

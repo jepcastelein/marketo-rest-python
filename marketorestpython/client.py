@@ -73,7 +73,6 @@ class MarketoClient:
                     'get_deleted_leads': self.get_deleted_leads,
                     'update_leads_partition': self.update_leads_partition,
                     'create_folder': self.create_folder,
-                    'create_get_folder': self.create_get_folder,
                     'get_folder_by_id': self.get_folder_by_id,
                     'get_folder_by_name': self.get_folder_by_name,
                     'get_folder_contents': self.get_folder_contents,
@@ -347,10 +346,10 @@ class MarketoClient:
             'id': id,
             'cookie': cookie
         }
-        result = HttpLib().post(self.host + "/rest/v1/leads/" + str(id) + "associate.json", args)
+        result = HttpLib().post(self.host + "/rest/v1/leads/" + str(id) + "/associate.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
-        return result['result']
+        return result['success'] # there is no 'result' node returned in this call
 
     def merge_lead(self, id, leadIds, mergeInCRM=False):
         self.authenticate()
@@ -958,32 +957,6 @@ class MarketoClient:
             args['offset'] = offset
         return result_list
 
-    # this function is to be removed; should be implemented outside the library
-    def create_get_folder(self, name, parent, description=None):
-        self.authenticate()
-        if name is None: raise ValueError("Invalid argument: required argument name is none.")
-        if parent is None: raise ValueError("Invalid argument: required argument parent is none.")
-        args = {
-            'access_token' : self.token,
-            'name' : name,
-            'parent' : parent
-        }
-        if description is not None:
-            args['description'] = description
-        result = HttpLib().post(self.host + "/rest/asset/v1/folders.json", args)
-        if result is None: raise Exception("Empty Response")
-        self.last_request_id = result['requestId']
-        if not result['success']:
-            if result['errors'][0]['code'] == "709":
-                get_fldr = self.get_folder_by_name(name, type='Folder', root=parent)
-                get_fldr[0]['status'] = 'existing'
-            else:
-                raise MarketoException(result['errors'][0])
-            return get_fldr
-        else:
-            result['result'][0]['status'] = 'new'
-            return result['result']
-
     # --------- TOKENS ---------
 
     def create_token(self, id, folderType, type, name, value):
@@ -1528,20 +1501,19 @@ class MarketoClient:
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
 
-    def list_files(self, folder=None, offset=None, maxReturn=None):
+    def list_files(self, folder=None, maxReturn=None):
         self.authenticate()
         args = {
             'access_token' : self.token
         }
         if folder is not None:
             args['folder'] = folder
-        if offset is not None:
-            args['offset'] = offset
         if maxReturn is not None:
             args['maxReturn'] = maxReturn
         else:
             maxReturn = 20
         result_list = []
+        offset = 0
         while True:
             result = HttpLib().get(self.host + "/rest/asset/v1/files.json", args)
             if result is None: raise Exception("Empty Response")
