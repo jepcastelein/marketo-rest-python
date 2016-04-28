@@ -821,8 +821,7 @@ class MarketoClient:
         self.authenticate()
         if name is None: raise ValueError("Invalid argument: required argument name is none.")
         if parentId is None: raise ValueError("Invalid argument: required argument parentId is none.")
-        if parentType is None or (parentType is not "Folder" and parentType is not "Program"):
-            raise ValueError("Invalid argument: parentType should be 'Folder' or 'Parent'")
+        if parentType is None: raise ValueError("Invalid argument: parentType should be 'Folder' or 'Parent'")
         args = {
             'access_token': self.token,
             'name': name,
@@ -962,7 +961,7 @@ class MarketoClient:
     def create_token(self, id, folderType, type, name, value):
         self.authenticate()
         if id is None: raise ValueError("Invalid argument: required argument id is none.")
-        if folderType is not 'Folder' and folderType is not 'Program': raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
+        if folderType is None: raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
         if type is None: raise ValueError("Invalid argument: required argument type is none.")
         if name is None: raise ValueError("Invalid argument: required argument name is none.")
         if value is None: raise ValueError("Invalid argument: required argument value is none.")
@@ -981,7 +980,7 @@ class MarketoClient:
     def get_tokens(self, id, folderType):
         self.authenticate()
         if id is None: raise ValueError("Invalid argument: required argument id is none.")
-        if folderType is not 'Folder' and folderType is not 'Program': raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
+        if folderType is None: raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
         args = {
             'access_token': self.token,
             'folderType': folderType
@@ -994,7 +993,7 @@ class MarketoClient:
     def delete_tokens(self, id, folderType, name, type):
         self.authenticate()
         if id is None: raise ValueError("Invalid argument: required argument id is none.")
-        if folderType is not 'Folder' and folderType is not 'Program': raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
+        if folderType is None: raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
         if type is None: raise ValueError("Invalid argument: required argument type is none.")
         if name is None: raise ValueError("Invalid argument: required argument name is none.")
         args = {
@@ -1014,7 +1013,7 @@ class MarketoClient:
         self.authenticate()
         if name is None: raise ValueError("Invalid argument: required argument name is none.")
         if folderId is None: raise ValueError("Invalid argument: required argument folder is none.")
-        if folderType is not 'Folder' and folderType is not 'Program': raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
+        if folderType is None: raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
         if content is None: raise ValueError("Invalid argument: required argument content is none.")
         args = {
             'access_token': self.token,
@@ -1173,7 +1172,7 @@ class MarketoClient:
         if id is None: raise ValueError("Invalid argument: required argument id is none.")
         if name is None: raise ValueError("Invalid argument: required argument name is none.")
         if folderId is None: raise ValueError("Invalid argument: required argument folder is none.")
-        if folderType is not 'Folder' and folderType is not 'Program': raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
+        if folderType is None: raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
         args = {
             'access_token': self.token,
             'name': name,
@@ -1191,7 +1190,7 @@ class MarketoClient:
         self.authenticate()
         if name is None: raise ValueError("Invalid argument: required argument name is none.")
         if folderId is None: raise ValueError("Invalid argument: required argument folder is none.")
-        if folderType is not 'Folder' and folderType is not 'Program': raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
+        if folderType is None: raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
         if template is None: raise ValueError("Invalid argument: required argument template is none.")
         args = {
             'access_token': self.token,
@@ -1343,13 +1342,16 @@ class MarketoClient:
                 "Invalid argument: type should be 'Text', 'DynamicContent' or 'Snippet'.")
         if value is None: raise ValueError("Invalid argument: required argument value is none.")
         args = {
-            'access_token': self.token,
+            'access_token': self.token
+        }
+        data = {
             'type': type,
-            'value': value
+            'value': value.encode('ascii', 'xmlcharrefreplace')
         }
         if textValue is not None:
-            args['textValue'] = textValue
-        result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + "/content/" + str(htmlId) + ".json", args)
+            data['textValue'] = textValue
+        result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + "/content/" + str(htmlId) +
+                                ".json", args, data, mode='nojsondumps')
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1367,21 +1369,25 @@ class MarketoClient:
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
 
-    def update_email_dynamic_content(self, id, dynamicContentId, segment=None, value=None, type=None):
+    def update_email_dynamic_content(self, id, dynamicContentId, segment, value, type):
         self.authenticate()
         if id is None: raise ValueError("Invalid argument: required argument id is none.")
         if dynamicContentId is None: raise ValueError("Invalid argument: required argument dynamicContentId is none.")
+        if segment is None: raise ValueError("Invalid argument: required argument segment is none.")
+        if value is None: raise ValueError("Invalid argument: required argument value is none.")
+        if type is None: raise ValueError("Invalid argument: required argument type is none.")
         args = {
             'access_token' : self.token
         }
-        if segment is not None:
-            args['segment'] = segment
-        if value is not None:
-            args['value'] = value
-        if type is not None:
-            args['type'] = type
+        if type == 'HTML':
+            value = value.encode('ascii', 'xmlcharrefreplace')
+        data = {
+            'segment': segment,
+            'value': value,
+            'type': type
+        }
         result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + "/dynamicContent/" +
-                               str(dynamicContentId) + ".json", args)
+                               str(dynamicContentId) + ".json", args, data, mode='nojsondumps')
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1419,12 +1425,12 @@ class MarketoClient:
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
 
-    def clone_email(self, id, name, folderId, folderType, description=None, isOperational=None):
+    def clone_email(self, id, name, folderId, folderType, description=None, operational=None):
         self.authenticate()
         if id is None: raise ValueError("Invalid argument: required argument id is none.")
         if name is None: raise ValueError("Invalid argument: required argument name is none.")
         if folderId is None: raise ValueError("Invalid argument: required argument folder is none.")
-        if folderType is not 'Folder' and folderType is not 'Program': raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
+        if folderType is None: raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
         args = {
             'access_token': self.token,
             'name': name,
@@ -1432,8 +1438,8 @@ class MarketoClient:
         }
         if description is not None:
             args['description'] = description
-        if isOperational is not None:
-            args['isOperational'] = isOperational
+        if operational is not None:
+            args['operational'] = operational
         result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + "/clone.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
@@ -1548,7 +1554,7 @@ class MarketoClient:
         self.authenticate()
         if name is None: raise ValueError("Invalid argument: required argument name is none.")
         if folderId is None: raise ValueError("Invalid argument: required argument folder is none.")
-        if folderType is not 'Folder' and folderType is not 'Program': raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
+        if folderType is None: raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
         args = {
             'access_token': self.token,
             'name': name,
@@ -1694,7 +1700,7 @@ class MarketoClient:
         if id is None: raise ValueError("Invalid argument: required argument id is none.")
         if name is None: raise ValueError("Invalid argument: required argument name is none.")
         if folderId is None: raise ValueError("Invalid argument: required argument folder is none.")
-        if folderType is not 'Folder' and folderType is not 'Program': raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
+        if folderType is None: raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
         args = {
             'access_token': self.token,
             'name': name,
@@ -1801,7 +1807,7 @@ class MarketoClient:
         self.authenticate()
         if name is None: raise ValueError("Invalid argument: required argument name is none.")
         if folderId is None: raise ValueError("Invalid argument: required argument folder is none.")
-        if folderType is not 'Folder' and folderType is not 'Program': raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
+        if folderType is None: raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
         args = {
             'access_token': self.token,
             'name': name,
@@ -1963,7 +1969,7 @@ class MarketoClient:
         if id is None: raise ValueError("Invalid argument: required argument id is none.")
         if name is None: raise ValueError("Invalid argument: required argument name is none.")
         if folderId is None: raise ValueError("Invalid argument: required argument folder is none.")
-        if folderType is not 'Folder' and folderType is not 'Program': raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
+        if folderType is None: raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
         args = {
             'access_token': self.token,
             'name': name,

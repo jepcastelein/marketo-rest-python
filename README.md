@@ -731,10 +731,9 @@ Clone Email
 API Ref: http://developers.marketo.com/documentation/asset-api/clone-email
 ```python
 email = mc.execute(method='clone_email', id=117, name='clone of MHE', folderId=13, folderType='Folder', 
-                   description='description', isOperational=None)
+                   description='description', operational=None)
 
-# description and isOperational are optional; isOperational defaults to false
-# isOperational currently doesn't work
+# description and operational are optional; operational defaults to false
 ```
 
 Send Sample Email
