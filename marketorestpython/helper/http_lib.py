@@ -30,17 +30,17 @@ class HttpLib:
                 return None
             try:
                 r = requests.get(endpoint, params=args)
-                r_json = r.json()
-                # if we still hit the rate limiter, raise an error so the call will be retried
-                if 'success' in r_json:
-                    if r_json['success'] == False:
-                        print(r_json['errors'][0])
-                        if r_json['errors'][0]['code'] == 606:
-                            print('error 606, rate limiter')
-                            raise
                 if mode is 'nojson':
                     return r
                 else:
+                    r_json = r.json()
+                    # if we still hit the rate limiter, raise an error so the call will be retried
+                    if 'success' in r_json:
+                        if r_json['success'] == False:
+                            print(r_json['errors'][0])
+                            if r_json['errors'][0]['code'] == 606:
+                                print('error 606, rate limiter')
+                                raise
                     return r_json
             except Exception as e:
                 print("HTTP Get Exception! Retrying.....")
