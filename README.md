@@ -58,6 +58,28 @@ mc.execute(method='get_multiple_leads_by_list_id', listId='676',
 # static lists only (does not work with smart lists)
 ```
 
+Get Multiple Leads by List Id (Generator)
+-----------------------------------------
+API Ref: http://developers.marketo.com/documentation/rest/get-multiple-leads-by-list-id/
+```python
+for leads in mc.execute(method='get_multiple_leads_by_list_id_yield', listId='676', 
+                fields=['email','firstName','lastName'], batchSize=None, chunksize=300):
+    print(len(leads))
+
+# OR: 
+
+leads = mc.execute(method='get_multiple_leads_by_list_id_yield', listId='676', 
+                fields=['email','firstName','lastName'], batchSize=None, chunksize=300)
+lead_chunk = next(leads) # keep calling next until no more Leads
+
+# this is a generator, so it will return chunks of Leads rather that all Leads on the 
+#   List at once; therefore, it's useful for Lists with large numbers of Leads 
+# fields, batchSize and chunksize are optional; batchSize defaults to 300, which is the max
+# chunksize defaults '-1', which returns all Leads on the List in one chunk; specify
+#  multiples of the batchSize to get it returned in chunks
+# static lists only (does not work with smart lists)
+```
+
 Get Multiple Leads by Program Id
 --------------------------------
 API Ref: http://developers.marketo.com/documentation/rest/get-multiple-leads-by-program-id/
@@ -276,13 +298,15 @@ Get Lead Activities
 -------------------
 API Ref: http://developers.marketo.com/documentation/rest/get-lead-activities/
 ```python
-mc.execute(method='get_lead_activities', activityTypeIds=['23','22'], nextPageToken=None, sinceDatetime='2015-10-06', 
+mc.execute(method='get_lead_activities', activityTypeIds=['23','22'], nextPageToken=None, 
+    sinceDatetime='2015-10-06', untilDatetime='2016-04-30' 
     batchSize=None, listId=None, leadIds=[1,2])
 
 # sinceDatetime format: 2015-10-06T13:22:17-08:00 or 2015-10-06T13:22-0700 or 2015-10-06
 # either nextPageToken or sinceDatetime need to be specified
-# batchSize, listId and leadIds are optional
-# this will potentially return a lot of records: the function loops until it has all activities, then returns them
+# untilDatetime, batchSize, listId and leadIds are optional
+# unless you specify untilDatetime, the function loops until it has all activities until right now, 
+#  then returns them (which could potentially be a lot of data)
 ```
 
 Get Lead Changes
@@ -662,7 +686,7 @@ API Ref: http://developers.marketo.com/documentation/asset-api/get-email-content
 ```python
 email = mc.execute(method='get_email_content', id=40, status=None)
 
-# status is optional
+# status is optional and can be 'draft' or 'approved'
 ```
 
 Update Email Content
@@ -694,7 +718,9 @@ Get Email Dynamic Content
 -------------------------
 API Ref: http://developers.marketo.com/documentation/asset-api/get-email-dynamic-content-by-id/
 ```python
-email = mc.execute(method='get_email_dynamic_content', id=279, dynamicContentId='RVMtU2VjdGlvbiAx')
+email = mc.execute(method='get_email_dynamic_content', id=279, dynamicContentId='RVMtU2VjdGlvbiAx', status=None)
+
+# status is optional and can be 'draft' or 'approved'
 ```
 
 Update Email Dynamic Content
@@ -745,6 +771,150 @@ email = mc.execute(method='send_sample_email', id=117, emailAddress='jep@example
 # textOnly and leadId are optional; textOnly will send the text version of the email in additional to the html version
 ```
 
+Landing pages
+=============
+
+Create Landing Page
+-------------------
+API Ref: 
+```python
+lp = mc.execute(method='create_landing_page', name='API LP', folderId=894,
+                folderType='Folder', template=42, description=None, title=None, 
+                keywords=None, robots=None, customHeadHTML=None, facebookOgTags=None,
+                prefillForm=None, mobileEnabled=None)
+
+# description, title, keywords, robots, customHeadHTML, facebookOgTags, 
+#  prefillForm and mobileEnabled are optional
+# prefillForm and mobileEnabled default to false
+```
+
+Get Landing Page by Id
+-----------------------
+API Ref: 
+```python
+lp = mc.execute(method='get_landing_page_by_id', id=360, status=None)
+
+# status is optional and can be 'draft' or 'approved'
+```
+
+Get Landing Page by Name
+------------------------
+API Ref: 
+```python
+lp = mc.execute(method='get_landing_page_by_name', name='Landing page Demo', status=None)
+
+# status is optional and can be 'draft' or 'approved'
+```
+
+Delete Landing Page
+-------------------
+API Ref: 
+```python
+lp = mc.execute(method='delete_landing_page', id=411)
+```
+
+Update Landing Page
+-------------------
+API Ref: 
+```python
+lp = mc.execute(method='update_landing_page', id=410, description=None, title=None,
+                keywords=None, robots=None, customHeadHTML=None, facebookOgTags=None, 
+                prefillForm=None, mobileEnabled=None, styleOverRide=None, urlPageName=None)
+
+# description, title, keywords, robots, customHeadHTML, facebookOgTags, 
+#  prefillForm, mobileEnabled, styleOverRide and urlPageName are optional
+# urlPageName is used to change the URL of the page
+```
+
+Get Landing Pages
+-----------------
+API Ref: 
+```python
+lp = mc.execute(method='get_landing_pages', maxReturn=None, status=None, folderId=None, folderType=None)
+
+# status, folderId, folderType and maxReturn are optional; folderId and folderType need to be specified together
+# default for maxReturn is 20 and max is 200
+# status can be 'draft' or 'approved'
+```
+
+Create Landing Page Content Section
+-----------------------------------
+API Ref: 
+```python
+lp = mc.execute(method='create_landing_page_content_section', id=410, type='RichText', value='<p>Subtitle</p>',
+                backgroundColor=None, borderColor=None, borderStyle=None, borderWidth=None, height=None,
+                layer=None, left=100, opacity=1.0, top=50, width=300, hideDesktop=None, hideMobile=None,
+                contentId=None)
+
+# contentId is required for Guided Landing pages
+# backgroundColor, borderColor, borderStyle, borderWidth, height, layer, left, opacity, top, width, 
+#  hideDesktop and hideMobile are optional
+# height defaults to auto; layer defaults to 15; specify opacity as fractional and use 1.0 for 100%
+# backgroundColor, borderColor, borderStyle and borderWidth don't seem to do anything at this time
+```
+
+Update Landing Page Content Section
+-----------------------------------
+API Ref: 
+```python
+lp = mc.execute(method='update_landing_page_content_section', id=410, contentId=2200, type='RichText',
+                value='<p>Updated Title</p>', backgroundColor=None, borderColor=None, borderStyle=None,
+                borderWidth=None, height=None, layer=15, left=50, opacity=1.0, top=50, width=300, 
+                hideDesktop=None, hideMobile=None)
+
+# make section dynamic: 
+lp = mc.execute(method='update_landing_page_content_section', id=410, contentId=2218,
+                                  type='DynamicContent', value=1003)
+
+# backgroundColor, borderColor, borderStyle, borderWidth, height, layer, left, opacity, top, width, 
+#  hideDesktop and hideMobile are optional
+# height defaults to auto; layer defaults to 15; specify opacity as fractional and use 1.0 for 100%
+# contentId changes when the page is approved
+# in case of type=DynamicContent, the value is the id of the Segmentation
+# backgroundColor, borderColor, borderStyle and borderWidth don't seem to do anything
+```
+
+Delete Landing Page Content Section
+-----------------------------------
+API Ref: 
+```python
+lp = mc.execute(method='delete_landing_page_content_section', id=410, contentId=2215)
+
+# use 'Get Landing page Content' to find the contentId (which changes when page is approved)
+```
+
+Approve Landing Page
+--------------------
+API Ref: 
+```python
+lp = mc.execute(method='approve_landing_page', id=410)
+```
+
+Unapprove Landing Page
+----------------------
+API Ref: 
+```python
+lp = mc.execute(method='unapprove_landing_page', id=410)
+```
+
+Discard Landing Page Draft
+--------------------------
+API Ref: 
+```python
+lp = mc.execute(method='discard_landing_page_draft', id=410)
+```
+
+Clone Landing Page
+------------------
+API Ref: 
+```python
+lp = mc.execute(method='clone_landing_page', id=410, name='cloned landing page', folderId=894, 
+                folderType='Folder', description=None, template=42)
+                
+# description is optional
+# template should be optional but is currently required
+```
+
 
 Files
 ========
@@ -789,7 +959,7 @@ API Ref: http://developers.marketo.com/documentation/asset-api/list-files/
 ```python
 lead = mc.execute(method='list_files', folder=709, maxReturn=None)
 
-# maxReturn is optional; default for maxReturn is 20 and max is 200
+# folder and maxReturn are optional; default for maxReturn is 20 and max is 200
 ```
 
 Update File Content
@@ -847,7 +1017,9 @@ Get Snippet Content
 -------------------
 API Ref: http://developers.marketo.com/documentation/asset-api/get-snippet-content-by-id/
 ```python
-snippet = mc.execute(method='get_snippet_content', id=9)
+snippet = mc.execute(method='get_snippet_content', id=9, status=None)
+
+# status is optional and can be 'draft' or 'approved'
 ```
 
 Update Snippet Content
@@ -969,14 +1141,12 @@ template = mc.execute(method='update_landing_page_template', id=59, name='API LP
 # this is only to update name and description, use 'Update Landing Page Template Content' to update the HTML
 ```
 
-<!--
 Delete Landing Page Template
 ---------------------
 API Ref: N/A
 ```python
 template = mc.execute(method='delete_landing_page_template', id=64)
 ```
--->
 
 Get Landing Page Templates
 -------------------
@@ -1009,7 +1179,6 @@ template = mc.execute(method='update_landing_page_template_content', id=59, cont
 # 'content' points to a file
 ```
 
-<!--
 Approve Landing Page Template
 ----------------------
 API Ref: N/A
@@ -1040,7 +1209,7 @@ template = mc.execute(method='clone_landing_page_template', id=42, name='cloned 
 
 # folderId 11 is the Landing Page Templates folder in the Default workspace
 ```
--->
+
 
 Programs
 ========

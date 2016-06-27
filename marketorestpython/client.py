@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 from marketorestpython.helper.http_lib import HttpLib
 from marketorestpython.helper.exceptions import MarketoException
 
@@ -40,6 +41,7 @@ class MarketoClient:
                     'get_lead_by_id': self.get_lead_by_id,
                     'get_multiple_leads_by_filter_type': self.get_multiple_leads_by_filter_type,
                     'get_multiple_leads_by_list_id': self.get_multiple_leads_by_list_id,
+                    'get_multiple_leads_by_list_id_yield': self.get_multiple_leads_by_list_id_yield,
                     'get_multiple_leads_by_program_id': self.get_multiple_leads_by_program_id,
                     'change_lead_program_status': self.change_lead_program_status,
                     'create_update_leads': self.create_update_leads,
@@ -110,6 +112,36 @@ class MarketoClient:
                     'discard_email_draft': self.discard_email_draft,
                     'clone_email': self.clone_email,
                     'send_sample_email': self.send_sample_email,
+                    'create_landing_page': self.create_landing_page,
+                    'get_landing_page_by_id': self.get_landing_page_by_id,
+                    'get_landing_page_by_name': self.get_landing_page_by_name,
+                    'delete_landing_page': self.delete_landing_page,
+                    'update_landing_page': self.update_landing_page,
+                    'get_landing_pages': self.get_landing_pages,
+                    'get_landing_page_content': self.get_landing_page_content,
+                    'create_landing_page_content_section': self.create_landing_page_content_section,
+                    'update_landing_page_content_section': self.update_landing_page_content_section,
+                    'delete_landing_page_content_section': self.delete_landing_page_content_section,
+                    'get_landing_page_dynamic_content': self.get_landing_page_dynamic_content,
+                    'update_landing_page_dynamic_content': self.update_landing_page_dynamic_content,
+                    'approve_landing_page': self.approve_landing_page,
+                    'unapprove_landing_page': self.unapprove_landing_page,
+                    'discard_landing_page_draft': self.discard_landing_page_draft,
+                    'clone_landing_page': self.clone_landing_page,
+                    'create_form': self.create_form,
+                    'get_form_by_id': self.get_form_by_id,
+                    'get_form_by_name': self.get_form_by_name,
+                    'delete_form': self.delete_form,
+                    'update_form': self.update_form,
+                    'get_forms': self.get_forms,
+                    'get_form_fields': self.get_form_fields,
+                    'create_form_field': self.create_form_field,
+                    'update_form_field': self.update_form_field,
+                    'delete_form_field': self.delete_form_field,
+                    'approve_form': self.approve_form,
+                    'unapprove_form': self.unapprove_form,
+                    'discard_form_draft': self.discard_form_draft,
+                    'clone_form': self.clone_form,
                     'create_file': self.create_file,
                     'get_file_by_id': self.get_file_by_id,
                     'get_file_by_name': self.get_file_by_name,
@@ -204,6 +236,9 @@ class MarketoClient:
         }
         data = HttpLib().get(self.host + "/identity/oauth/token", args)
         if data is None: raise Exception("Empty Response")
+        if 'error' in data:
+            if data['error'] in ['unauthorized', 'invalid_client']:
+                raise Exception(data['error_description'])
         self.token = data['access_token']
         self.token_type = data['token_type']
         self.expires_in = data['expires_in']
@@ -272,6 +307,36 @@ class MarketoClient:
                 break
             args['nextPageToken'] = result['nextPageToken']
         return result_list
+
+    def get_multiple_leads_by_list_id_yield(self, listId, fields=None, batchSize=None, chunksize=-1):
+        self.authenticate()
+        if listId is None: raise ValueError("Invalid argument: required argument listId is none.")
+        args = {
+            'access_token': self.token,
+            '_method': 'GET'
+        }
+        data = []
+        if fields is not None:
+            data.append(('fields',fields))
+        if batchSize is not None:
+            data.append(('batchSize',batchSize))
+        result_list = []
+        count = 0
+        while True:
+            result = HttpLib().post(self.host + "/rest/v1/list/" + str(listId)+ "/leads.json", args, data, mode='nojsondumps')
+            if result is None: raise Exception("Empty Response")
+            if not result['success']: raise MarketoException(result['errors'][0])
+            result_list.extend(result['result'])
+            count += len(result['result'])
+            if len(result['result']) == 0 or 'nextPageToken' not in result:
+                if result_list:
+                    yield result_list  # yield remaining records at the end (or all records with chunk size -1)
+                break
+            args['nextPageToken'] = result['nextPageToken']
+            if count >= chunksize != -1:  # yield when enough records to meet the chunk size; never yield here on -1
+                yield result_list
+                del result_list[:]
+                count = 0
 
     def get_multiple_leads_by_program_id(self, programId, fields=None, batchSize=None):
         self.authenticate()
@@ -646,7 +711,26 @@ class MarketoClient:
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['nextPageToken']
 
-    def get_lead_activities(self, activityTypeIds, nextPageToken=None, sinceDatetime=None, batchSize = None, listId = None, leadIds=None):
+    def process_lead_activity_until_datetime(self, result, untilDatetime):
+        latest_until_date = result[len(result)-1]['activityDate']
+        result_until = datetime.strptime(latest_until_date, '%Y-%m-%dT%H:%M:%SZ')
+        try:
+            specified_until = datetime.strptime(untilDatetime, '%Y-%m-%dT%H:%M:%S')
+        except:
+            try:
+                specified_until = datetime.strptime(untilDatetime, '%Y-%m-%d')
+            except:
+                raise('incorrect format for untilDatetime, use YYYY-MM-DDTHH:MM:SS or YYYY-MM-DD')
+        if result_until > specified_until:
+            partial_result = []
+            for record in result:
+                if datetime.strptime(record['activityDate'], '%Y-%m-%dT%H:%M:%SZ') <= specified_until:
+                    partial_result.append(record)
+            return partial_result
+        return result
+
+    def get_lead_activities(self, activityTypeIds, nextPageToken=None, sinceDatetime=None, untilDatetime=None,
+                            batchSize = None, listId = None, leadIds=None):
         self.authenticate()
         if activityTypeIds is None: raise ValueError("Invalid argument: required argument activityTypeIds is none.")
         if nextPageToken is None and sinceDatetime is None: raise ValueError("Either nextPageToken or sinceDatetime needs to be specified.")
@@ -670,7 +754,11 @@ class MarketoClient:
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
             if 'result' in result:
-                result_list.extend(result['result'])
+                if untilDatetime is not None:
+                    new_result = self.process_lead_activity_until_datetime(result['result'], untilDatetime)
+                    result_list.extend(new_result)
+                else:
+                    result_list.extend(result['result'])
             if result['moreResult'] is False:
                 break
             args['nextPageToken'] = result['nextPageToken']
@@ -1344,9 +1432,11 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
+        if isinstance(value, str):
+            value = value.encode('ascii', 'xmlcharrefreplace')
         data = {
             'type': type,
-            'value': value.encode('ascii', 'xmlcharrefreplace')
+            'value': value
         }
         if textValue is not None:
             data['textValue'] = textValue
@@ -1356,13 +1446,15 @@ class MarketoClient:
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
 
-    def get_email_dynamic_content(self, id, dynamicContentId):
+    def get_email_dynamic_content(self, id, dynamicContentId, status):
         self.authenticate()
         if id is None: raise ValueError("Invalid argument: required argument id is none.")
         if dynamicContentId is None: raise ValueError("Invalid argument: required argument dynamicContentId is none.")
         args = {
             'access_token' : self.token
         }
+        if status is not None:
+            args['status'] = status
         result = HttpLib().get(self.host + "/rest/asset/v1/email/" + str(id) + "/dynamicContent/" +
                                str(dynamicContentId) + ".json", args)
         if result is None: raise Exception("Empty Response")
@@ -1379,7 +1471,7 @@ class MarketoClient:
         args = {
             'access_token' : self.token
         }
-        if type == 'HTML':
+        if isinstance(value, str):
             value = value.encode('ascii', 'xmlcharrefreplace')
         data = {
             'segment': segment,
@@ -1462,6 +1554,705 @@ class MarketoClient:
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
 
+    # -------LANDING PAGES ---------#
+
+    def create_landing_page(self, name, folderId, folderType, template, description=None, title=None, keywords=None,
+                         robots=None, customHeadHTML=None, facebookOgTags=None, prefillForm=None, mobileEnabled=None):
+        self.authenticate()
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        if folderId is None: raise ValueError("Invalid argument: required argument folder is none.")
+        if folderType is None: raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
+        if template is None: raise ValueError("Invalid argument: required argument template is none.")
+        args = {
+            'access_token': self.token,
+            'name': name,
+            'folder': "{'id': " + str(folderId) + ", 'type': " + folderType + "}",
+            'template': template
+        }
+        if description is not None:
+            args['description'] = description
+        if title is not None:
+            args['title'] = title
+        if keywords is not None:
+            args['keywords'] = keywords
+        if robots is not None:
+            args['robots'] = robots
+        if customHeadHTML is not None:
+            args['customHeadHTML'] = customHeadHTML
+        if facebookOgTags is not None:
+            args['facebookOgTags'] = facebookOgTags
+        if prefillForm is not None:
+            args['prefillForm'] = prefillForm
+        if mobileEnabled is not None:
+            args['mobileEnabled'] = mobileEnabled
+        result = HttpLib().post(self.host + "/rest/asset/v1/landingPages.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_landing_page_by_id(self, id, status=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        if status is not None:
+            args['status'] = status
+        result = HttpLib().get(self.host + "/rest/asset/v1/landingPage/" + str(id) + ".json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_landing_page_by_name(self, name, status=None):
+        self.authenticate()
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        args = {
+            'access_token': self.token,
+            'name': name
+        }
+        if status is not None:
+            args['status'] = status
+        result = HttpLib().get(self.host + "/rest/asset/v1/landingPage/byName.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def delete_landing_page(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/delete.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def update_landing_page(self, id, name=None, description=None, title=None, keywords=None,
+                            robots=None, customHeadHTML=None, facebookOgTags=None, prefillForm=None, mobileEnabled=None,
+                            styleOverRide=None, urlPageName=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        if name is not None:
+            args['name'] = name
+        if description is not None:
+            args['description'] = description
+        if title is not None:
+            args['title'] = title
+        if keywords is not None:
+            args['keywords'] = keywords
+        if robots is not None:
+            args['robots'] = robots
+        if customHeadHTML is not None:
+            args['customHeadHTML'] = customHeadHTML
+        if facebookOgTags is not None:
+            args['facebookOgTags'] = facebookOgTags
+        if prefillForm is not None:
+            args['prefillForm'] = prefillForm
+        if mobileEnabled is not None:
+            args['mobileEnabled'] = mobileEnabled
+        if styleOverRide is not None:
+            args['styleOverRide'] = styleOverRide
+        if urlPageName is not None:
+            args['urlPageName'] = urlPageName
+        result = HttpLib().post(self.host + "/rest/asset/v1/landingPage/" + str(id) + ".json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_landing_pages(self, maxReturn=None, status=None, folderId=None, folderType=None):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        if maxReturn is not None:
+            args['maxReturn'] = maxReturn
+        else:
+            maxReturn = 20
+        if status is not None:
+            args['status'] = status
+        if folderId is not None:
+            args['folder'] = "{'id': " + str(folderId) + ", 'type': " + folderType + "}"
+        result_list = []
+        offset = 0
+        while True:
+            result = HttpLib().get(self.host + "/rest/asset/v1/landingPages.json", args)
+            if result is None: raise Exception("Empty Response")
+            #if not result['success']: raise MarketoException(result['errors'][0] + ". Request ID: " + result['requestId'])
+            if not result['success']: raise MarketoException(result['errors'][0])
+            if 'result' in result:
+                if len(result['result']) < maxReturn:
+                    result_list.extend(result['result'])
+                    break
+            else:
+                break
+            result_list.extend(result['result'])
+            offset += maxReturn
+            args['offset'] = offset
+        return result_list
+
+    def get_landing_page_content(self, id, status=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        if status is not None:
+            args['status'] = status
+        result = HttpLib().get(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/content.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def create_landing_page_content_section(self, id, type, value, backgroundColor=None, borderColor=None,
+                                            borderStyle=None, borderWidth=None, height=None, layer=None, left=None,
+                                            opacity=None, top=None, width=None, hideDesktop=None, hideMobile=None,
+                                            contentId=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if type is None: raise ValueError("Invalid argument: required argument type is none.")
+        if value is None: raise ValueError("Invalid argument: required argument value is none.")
+        args = {
+            'access_token': self.token
+        }
+        if isinstance(value, str):
+            value = value.encode('ascii', 'xmlcharrefreplace')
+        data = {
+            'type': type,
+            'value': value
+        }
+        if backgroundColor is not None:
+            data['backgroundColor'] = backgroundColor
+        if borderColor is not None:
+            data['borderColor'] = borderColor
+        if borderStyle is not None:
+            data['borderStyle'] = borderStyle
+        if borderWidth is not None:
+            data['borderWidth'] = borderWidth
+        if height is not None:
+            data['height'] = height
+        if layer is not None:
+            data['layer'] = layer
+        if left is not None:
+            data['left'] = left
+        if opacity is not None:
+            data['opacity'] = opacity
+        if top is not None:
+            data['top'] = top
+        if width is not None:
+            data['width'] = width
+        if hideDesktop is not None:
+            data['hideDesktop'] = hideDesktop
+        if hideMobile is not None:
+            data['hideMobile'] = hideMobile
+        if contentId is not None:
+            data['contentId'] = contentId
+        result = HttpLib().post(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/content.json", args,
+                                data, mode='nojsondumps')
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def update_landing_page_content_section(self, id, contentId, type, value, index=None, backgroundColor=None,
+                                            borderColor=None, borderStyle=None, borderWidth=None, height=None,
+                                            layer=None, left=None, opacity=None, top=None, width=None, hideDesktop=None,
+                                            hideMobile=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if contentId is None: raise ValueError("Invalid argument: required argument contentId is none.")
+        if type is None: raise ValueError("Invalid argument: required argument type is none.")
+        if value is None: raise ValueError("Invalid argument: required argument value is none.")
+        args = {
+            'access_token': self.token
+        }
+        if isinstance(value, str):
+            value = value.encode('ascii', 'xmlcharrefreplace')
+        data = {
+            'type': type,
+            'value': value
+        }
+        if index is not None:
+            data['index'] = index
+        if backgroundColor is not None:
+            data['backgroundColor'] = backgroundColor
+        if borderColor is not None:
+            data['borderColor'] = borderColor
+        if borderStyle is not None:
+            data['borderStyle'] = borderStyle
+        if borderWidth is not None:
+            data['borderWidth'] = borderWidth
+        if height is not None:
+            data['height'] = height
+        if layer is not None:
+            data['layer'] = layer
+        if left is not None:
+            data['left'] = left
+        if opacity is not None:
+            data['opacity'] = opacity
+        if top is not None:
+            data['top'] = top
+        if width is not None:
+            data['width'] = width
+        if hideDesktop is not None:
+            data['hideDesktop'] = hideDesktop
+        if hideMobile is not None:
+            data['hideMobile'] = hideMobile
+        result = HttpLib().post(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/content/" + str(contentId) +
+                                ".json", args, data, mode='nojsondumps')
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def delete_landing_page_content_section(self, id, contentId):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if contentId is None: raise ValueError("Invalid argument: required argument contentId is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/content/" + str(contentId) +
+                                "/delete.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_landing_page_dynamic_content(self, id, dynamicContentId):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if dynamicContentId is None: raise ValueError("Invalid argument: required argument dynamicContentId is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().get(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/dynamicContent/" +
+                               str(dynamicContentId) + ".json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def update_landing_page_dynamic_content(self, id, dynamicContentId, segment, value, type, index=None,
+                                            backgroundColor=None, borderColor=None, borderStyle=None, borderWidth=None,
+                                            height=None, layer=None, left=None, opacity=None, top=None, width=None,
+                                            hideDesktop=None, hideMobile=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if dynamicContentId is None: raise ValueError("Invalid argument: required argument dynamicContentId is none.")
+        if segment is None: raise ValueError("Invalid argument: required argument segment is none.")
+        if value is None: raise ValueError("Invalid argument: required argument value is none.")
+        if type is None: raise ValueError("Invalid argument: required argument type is none.")
+        args = {
+            'access_token': self.token
+        }
+        if type == 'HTML':
+            value = value.encode('ascii', 'xmlcharrefreplace')
+        data = {
+            'segment': segment,
+            'value': value,
+            'type': type
+        }
+        if index is not None:
+            data['index'] = index
+        if backgroundColor is not None:
+            data['backgroundColor'] = backgroundColor
+        if borderColor is not None:
+            data['borderColor'] = borderColor
+        if borderStyle is not None:
+            data['borderStyle'] = borderStyle
+        if borderWidth is not None:
+            data['borderWidth'] = borderWidth
+        if height is not None:
+            data['height'] = height
+        if layer is not None:
+            data['layer'] = layer
+        if left is not None:
+            data['left'] = left
+        if opacity is not None:
+            data['opacity'] = opacity
+        if top is not None:
+            data['top'] = top
+        if width is not None:
+            data['width'] = width
+        if hideDesktop is not None:
+            data['hideDesktop'] = hideDesktop
+        if hideMobile is not None:
+            data['hideMobile'] = hideMobile
+        result = HttpLib().post(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/dynamicContent/" +
+                                str(dynamicContentId) + ".json", args, data, mode='nojsondumps')
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def approve_landing_page(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/approveDraft.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def unapprove_landing_page(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/unapprove.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def discard_landing_page_draft(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/discardDraft.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def clone_landing_page(self, id, name, folderId, folderType, description=None, template=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        if folderId is None: raise ValueError("Invalid argument: required argument folder is none.")
+        if folderType is None: raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
+        args = {
+            'access_token': self.token,
+            'name': name,
+            'folder': "{'id': " + str(folderId) + ", 'type': " + folderType + "}"
+        }
+        if description is not None:
+            args['description'] = description
+        if template is not None:
+            args['template'] = template
+        result = HttpLib().post(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/clone.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    # --------- FORMS ---------
+
+    def create_form(self, name, folderId, folderType, description=None, language=None, locale=None,
+                    progressiveProfiling=None, labelPosition=None, fontFamily=None, fontSize=None, knownVisitor=None):
+        self.authenticate()
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        if folderId is None: raise ValueError("Invalid argument: required argument folder is none.")
+        if folderType is None: raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
+        args = {
+            'access_token': self.token,
+            'name': name,
+            'folder': "{'id': " + str(folderId) + ", 'type': " + folderType + "}"
+        }
+        if description is not None:
+            args['description'] = description
+        if language is not None:
+            args['language'] = language
+        if locale is not None:
+            args['locale'] = locale
+        if progressiveProfiling is not None:
+            args['progressiveProfiling'] = progressiveProfiling
+        if labelPosition is not None:
+            args['labelPosition'] = labelPosition
+        if fontFamily is not None:
+            args['fontFamily'] = fontFamily
+        if fontSize is not None:
+            args['fontSize'] = fontSize
+        if knownVisitor is not None:
+            args['knownVisitor'] = knownVisitor
+        result = HttpLib().post(self.host + "/rest/asset/v1/forms.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_form_by_id(self, id, status=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        if status is not None:
+            args['status'] = status
+        result = HttpLib().get(self.host + "/rest/asset/v1/form/" + str(id) + ".json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_form_by_name(self, name, status=None):
+        self.authenticate()
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        args = {
+            'access_token': self.token,
+            'name': name
+        }
+        if status is not None:
+            args['status'] = status
+        result = HttpLib().get(self.host + "/rest/asset/v1/form/byName.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def delete_form(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/form/" + str(id) + "/delete.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def update_form(self, id, name=None, description=None, language = None, locale = None, progressiveProfiling = None,
+                    labelPosition = None, fontFamily = None, fontSize = None, knownVisitor = None, formTheme=None,
+                    customcss=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        if name is not None:
+            args['name'] = name
+        if description is not None:
+            args['description'] = description
+        if language is not None:
+            args['language'] = language
+        if locale is not None:
+            args['locale'] = locale
+        if progressiveProfiling is not None:
+            args['progressiveProfiling'] = progressiveProfiling
+        if labelPosition is not None:
+            args['labelPosition'] = labelPosition
+        if fontFamily is not None:
+            args['fontFamily'] = fontFamily
+        if fontSize is not None:
+            args['fontSize'] = fontSize
+        if knownVisitor is not None:
+            args['knownVisitor'] = knownVisitor
+        if formTheme is not None:
+            args['formTheme'] = formTheme
+        if customcss is not None:
+            args['customcss'] = customcss
+        result = HttpLib().post(self.host + "/rest/asset/v1/form/" + str(id) + ".json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_forms(self, maxReturn=None, status=None, folderId=None, folderType=None):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        if maxReturn is not None:
+            args['maxReturn'] = maxReturn
+        else:
+            maxReturn = 20
+        if status is not None:
+            args['status'] = status
+        if folderId is not None:
+            args['folder'] = "{'id': " + str(folderId) + ", 'type': " + folderType + "}"
+        result_list = []
+        offset = 0
+        while True:
+            result = HttpLib().get(self.host + "/rest/asset/v1/forms.json", args)
+            if result is None: raise Exception("Empty Response")
+            if not result['success']: raise MarketoException(result['errors'][0])
+            if 'result' in result:
+                if len(result['result']) < maxReturn:
+                    result_list.extend(result['result'])
+                    break
+            else:
+                break
+            result_list.extend(result['result'])
+            offset += maxReturn
+            args['offset'] = offset
+        return result_list
+
+    def get_form_fields(self, id, status=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        if status is not None:
+            args['status'] = status
+        result = HttpLib().get(self.host + "/rest/asset/v1/form/" + str(id) + "/fields.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def create_form_field(self, id, fieldId, label=None, labelWidth=None, fieldWidth=None, instructions=None,
+                          required=None, formPrefill=None, initiallyChecked=None, values=None, labelToRight=None,
+                          hintText=None, defaultValue=None, minValue=None, maxValue=None, multiSelect=None,
+                          maxLength=None, maskInput=None, visibleLines=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if fieldId is None: raise ValueError("Invalid argument: required argument fieldId is none.")
+        args = {
+            'access_token': self.token,
+            'fieldId': fieldId
+        }
+        if label is not None:
+            args['label'] =  label
+        if labelWidth is not None:
+            args['labelWidth'] = labelWidth
+        if fieldWidth is not None:
+            args['fieldWidth'] = fieldWidth
+        if instructions is not None:
+            args['instructions'] = instructions
+        if required is not None:
+            args['required'] = required
+        if formPrefill is not None:
+            args['formPrefill'] = formPrefill
+        if initiallyChecked is not None:
+            args['initiallyChecked'] = initiallyChecked
+        if values is not None:
+            args['values'] = values
+        if labelToRight is not None:
+            args['labelToRight'] = labelToRight
+        if hintText is not None:
+            args['hintText'] = hintText
+        if defaultValue is not None:
+            args['defaultValue'] = defaultValue
+        if minValue is not None:
+            args['minValue'] = minValue
+        if maxValue is not None:
+            args['maxValue'] = maxValue
+        if multiSelect is not None:
+            args['multiSelect'] = multiSelect
+        if maxLength is not None:
+            args['maxLength'] = maxLength
+        if maskInput is not None:
+            args['maskInput'] = maskInput
+        if visibleLines is not None:
+            args['visibleLines'] = visibleLines
+        result = HttpLib().post(self.host + "/rest/asset/v1/form/" + str(id) + "/fields.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def update_form_field(self, id, fieldId, label=None, fieldType=None, labelWidth=None, fieldWidth=None, instructions=None,
+                          required=None, formPrefill=None, initiallyChecked=None, values=None, labelToRight=None,
+                          hintText=None, defaultValue=None, minValue=None, maxValue=None, multiSelect=None,
+                          maxLength=None, maskInput=None, visibleLines=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if fieldId is None: raise ValueError("Invalid argument: required argument fieldId is none.")
+        args = {
+            'access_token': self.token
+        }
+        data = {}
+        if label is not None:
+            data['label'] = label
+        if fieldType is not None:
+            args['fieldType'] = fieldType
+        if labelWidth is not None:
+            data['labelWidth'] = labelWidth
+        if fieldWidth is not None:
+            data['fieldWidth'] = fieldWidth
+        if instructions is not None:
+            data['instructions'] = instructions
+        if required is not None:
+            data['required'] = required
+        if formPrefill is not None:
+            data['formPrefill'] = formPrefill
+        if initiallyChecked is not None:
+            data['initiallyChecked'] = initiallyChecked
+        if values is not None:
+            data['values'] = values
+        if labelToRight is not None:
+            data['labelToRight'] = labelToRight
+        if hintText is not None:
+            data['hintText'] = hintText
+        if defaultValue is not None:
+            data['defaultValue'] = defaultValue
+        if minValue is not None:
+            data['minValue'] = minValue
+        if maxValue is not None:
+            data['maxValue'] = maxValue
+        if multiSelect is not None:
+            data['multiSelect'] = multiSelect
+        if maxLength is not None:
+            data['maxLength'] = maxLength
+        if maskInput is not None:
+            data['maskInput'] = maskInput
+        if visibleLines is not None:
+            data['visibleLines'] = visibleLines
+        result = HttpLib().post(self.host + "/rest/asset/v1/form/" + str(id) + "/field/" + str(fieldId) +
+                                ".json", args, data, mode='nojsondumps')
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def delete_form_field(self, id, fieldId):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if fieldId is None: raise ValueError("Invalid argument: required argument contentId is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/form/" + str(id) + "/field/" + str(fieldId) +
+                                "/delete.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def approve_form(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/form/" + str(id) + "/approveDraft.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def unapprove_form(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/form/" + str(id) + "/unapprove.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def discard_form_draft(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = HttpLib().post(self.host + "/rest/asset/v1/form/" + str(id) + "/discardDraft.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def clone_form(self, id, name, folderId, folderType, description=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        if name is None: raise ValueError("Invalid argument: required argument name is none.")
+        if folderId is None: raise ValueError("Invalid argument: required argument folder is none.")
+        if folderType is None: raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'.")
+        args = {
+            'access_token': self.token,
+            'name': name,
+            'folder': "{'id': " + str(folderId) + ", 'type': " + folderType + "}"
+        }
+        if description is not None:
+            args['description'] = description
+        result = HttpLib().post(self.host + "/rest/asset/v1/form/" + str(id) + "/clone.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['result']
 
     # --------- FILES ---------
 
@@ -1634,12 +2425,14 @@ class MarketoClient:
             args['offset'] = offset
         return result_list
 
-    def get_snippet_content(self, id):
+    def get_snippet_content(self, id, status=None):
         self.authenticate()
         if id is None: raise ValueError("Invalid argument: required argument id is none.")
         args = {
             'access_token' : self.token
         }
+        if status is not None:
+            args['status'] = status
         result = HttpLib().get(self.host + "/rest/asset/v1/snippet/" + str(id) + "/content.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
