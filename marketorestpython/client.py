@@ -1819,13 +1819,15 @@ class MarketoClient:
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
 
-    def get_landing_page_dynamic_content(self, id, dynamicContentId):
+    def get_landing_page_dynamic_content(self, id, dynamicContentId, status=None):
         self.authenticate()
         if id is None: raise ValueError("Invalid argument: required argument id is none.")
         if dynamicContentId is None: raise ValueError("Invalid argument: required argument dynamicContentId is none.")
         args = {
             'access_token': self.token
         }
+        if status is not None:
+            args['status'] = status
         result = HttpLib().get(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/dynamicContent/" +
                                str(dynamicContentId) + ".json", args)
         if result is None: raise Exception("Empty Response")
@@ -1940,7 +1942,8 @@ class MarketoClient:
     # --------- FORMS ---------
 
     def create_form(self, name, folderId, folderType, description=None, language=None, locale=None,
-                    progressiveProfiling=None, labelPosition=None, fontFamily=None, fontSize=None, knownVisitor=None):
+                    progressiveProfiling=None, labelPosition=None, fontFamily=None, fontSize=None, knownVisitor=None,
+                    theme=None):
         self.authenticate()
         if name is None: raise ValueError("Invalid argument: required argument name is none.")
         if folderId is None: raise ValueError("Invalid argument: required argument folder is none.")
@@ -1966,6 +1969,8 @@ class MarketoClient:
             args['fontSize'] = fontSize
         if knownVisitor is not None:
             args['knownVisitor'] = knownVisitor
+        if theme is not None:
+            args['theme'] = theme
         result = HttpLib().post(self.host + "/rest/asset/v1/forms.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
@@ -2536,62 +2541,30 @@ class MarketoClient:
 
     # ----- SEGMENTATIONS -----
 
-    def get_segmentations(self, maxReturn=None, status=None):
+    def get_segmentations(self, status=None):
         self.authenticate()
         args = {
             'access_token': self.token
         }
-        if maxReturn is not None:
-            args['maxReturn'] = maxReturn
-        else:
-            maxReturn = 20
         if status is not None:
             args['status'] = status
-        result_list = []
-        offset = 0
-        while True:
-            result = HttpLib().get(self.host + "/rest/asset/v1/segmentation.json", args)
-            if result is None: raise Exception("Empty Response")
-            if not result['success'] : raise MarketoException(result['errors'][0])
-            if 'result' in result:
-                if len(result['result']) < maxReturn:
-                    result_list.extend(result['result'])
-                    break
-            else:
-                break
-            result_list.extend(result['result'])
-            offset += maxReturn
-            args['offset'] = offset
-        return result_list
+        result = HttpLib().get(self.host + "/rest/asset/v1/segmentation.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
 
-    def get_segments(self, id, maxReturn=None, status=None):
+    def get_segments(self, id, status=None):
         if id is None: raise ValueError("Invalid argument: required argument id is none.")
         self.authenticate()
         args = {
             'access_token': self.token
         }
-        if maxReturn is not None:
-            args['maxReturn'] = maxReturn
-        else:
-            maxReturn = 20
         if status is not None:
             args['status'] = status
-        result_list = []
-        offset = 0
-        while True:
-            result = HttpLib().get(self.host + "/rest/asset/v1/segmentation/" + str(id) + "/segments.json", args)
-            if result is None: raise Exception("Empty Response")
-            if not result['success'] : raise MarketoException(result['errors'][0])
-            if 'result' in result:
-                if len(result['result']) < maxReturn:
-                    result_list.extend(result['result'])
-                    break
-            else:
-                break
-            result_list.extend(result['result'])
-            offset += maxReturn
-            args['offset'] = offset
-        return result_list
+        result = HttpLib().get(self.host + "/rest/asset/v1/segmentation/" + str(id) + "/segments.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
 
 
     # ----- LANDING PAGE TEMPLATES -----
