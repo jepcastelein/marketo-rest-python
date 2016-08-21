@@ -3,8 +3,16 @@ from datetime import datetime
 from marketorestpython.helper.http_lib import HttpLib
 from marketorestpython.helper.exceptions import MarketoException
 
+def has_empty_warning(result):
+    if 'result' not in result \
+        and 'warnings' in result \
+        and len(result['warnings']) \
+        and result['warnings'][0] == 'No assets found for the given search criteria.':
+        return True
 
-class MarketoClient:    
+    return False
+
+class MarketoClient:
     host = None
     client_id = None
     client_secret = None
@@ -16,7 +24,7 @@ class MarketoClient:
     last_request_id = None # intended to save last request id, but not used right now
     API_CALLS_MADE = 0
     API_LIMIT = None
-    
+
     def __init__(self, munchkin_id, client_id, client_secret, api_limit=None):
         assert(munchkin_id is not None)
         assert(client_id is not None)
@@ -220,18 +228,18 @@ class MarketoClient:
                 602 -> auth token expired
                 '''
                 if e.code in ['601', '602']:
-                   continue   
+                   continue
                 else:
-                    raise Exception({'message':e.message, 'code':e.code})    
-            break        
+                    raise Exception({'message':e.message, 'code':e.code})
+            break
         return result
-    
+
 
     def authenticate(self):
         if self.valid_until is not None and\
             self.valid_until > time.time():
             return
-        args = { 
+        args = {
             'grant_type': 'client_credentials',
             'client_id': self.client_id,
             'client_secret': self.client_secret
@@ -244,7 +252,7 @@ class MarketoClient:
         self.token = data['access_token']
         self.token_type = data['token_type']
         self.expires_in = data['expires_in']
-        self.valid_until = time.time() + data['expires_in'] 
+        self.valid_until = time.time() + data['expires_in']
         self.scope = data['scope']
 
     # --------- LEADS ---------
@@ -712,13 +720,13 @@ class MarketoClient:
     def get_activity_types(self):
         self.authenticate()
         args = {
-            'access_token' : self.token 
+            'access_token' : self.token
         }
         result = HttpLib().get(self.host + "/rest/v1/activities/types.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
-        
+
     def get_paging_token(self, sinceDatetime):
         self.authenticate()
         args = {
@@ -2621,6 +2629,7 @@ class MarketoClient:
         result = HttpLib().get(self.host + "/rest/asset/v1/segmentation.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
+        if has_empty_warning(result): return []
         return result['result']
 
     def get_segments(self, id, status=None):
