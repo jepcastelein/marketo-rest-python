@@ -58,25 +58,23 @@ mc.execute(method='get_multiple_leads_by_list_id', listId='676',
 # static lists only (does not work with smart lists)
 ```
 
-Get Multiple Leads by List Id (Generator)
------------------------------------------
+Get Multiple Leads by List Id Yield (Generator)
+-----------------------------------------------
 API Ref: http://developers.marketo.com/documentation/rest/get-multiple-leads-by-list-id/
 ```python
 for leads in mc.execute(method='get_multiple_leads_by_list_id_yield', listId='676', 
-                fields=['email','firstName','lastName'], batchSize=None, chunksize=300):
+                fields=['email','firstName','lastName'], batchSize=None):
     print(len(leads))
 
 # OR: 
 
 leads = mc.execute(method='get_multiple_leads_by_list_id_yield', listId='676', 
-                fields=['email','firstName','lastName'], batchSize=None, chunksize=300)
+                fields=['email','firstName','lastName'], batchSize=None)
 lead_chunk = next(leads) # keep calling next until no more Leads
 
 # this is a generator, so it will return chunks of Leads rather that all Leads on the 
 #   List at once; therefore, it's useful for Lists with large numbers of Leads 
-# fields, batchSize and chunksize are optional; batchSize defaults to 300, which is the max
-# chunksize defaults '-1', which returns all Leads on the List in one chunk; specify
-#  multiples of the batchSize to get it returned in chunks
+# fields and batchSize are optional; batchSize defaults to 300, which is the max
 # static lists only (does not work with smart lists)
 ```
 
@@ -89,6 +87,20 @@ mc.execute(method='get_multiple_leads_by_program_id', programId='1014',
 
 # fields and batchSize are optional
 ```
+
+Get Multiple Leads by Program Id Yield (Generator)
+--------------------------------------------------
+API Ref: http://developers.marketo.com/documentation/rest/get-multiple-leads-by-program-id/
+```python
+for leads in mc.execute(method='get_multiple_leads_by_program_id_yield', programId='1014', 
+                fields=['email','firstName','lastName','company','postalCode'], batchSize=None):
+    print(len(leads))
+
+# this is a generator, so it will return chunks of Leads rather that all Program Members 
+#   at once; therefore, it's useful for Programs with large numbers of Members 
+# fields and batchSize are optional
+```
+
 
 Change Lead Program Status
 --------------------------
@@ -308,6 +320,23 @@ mc.execute(method='get_lead_activities', activityTypeIds=['23','22'], nextPageTo
 # unless you specify untilDatetime, the function loops until it has all activities until right now, 
 #  then returns them (which could potentially be a lot of data)
 ```
+
+Get Lead Activities Yield (Generator)
+----------------------------------
+API Ref: http://developers.marketo.com/documentation/rest/get-lead-activities/
+```python
+for activities in mc.execute(method='get_lead_activities_yield', activityTypeIds=['23','22'], nextPageToken=None, 
+                             sinceDatetime='2015-10-06', untilDatetime='2016-04-30' 
+                             batchSize=None, listId=None, leadIds=[1,2]):
+    print(len(activities))
+
+# sinceDatetime format: 2015-10-06T13:22:17-08:00 or 2015-10-06T13:22-0700 or 2015-10-06
+# either nextPageToken or sinceDatetime need to be specified
+# untilDatetime, batchSize, listId and leadIds are optional
+# this is a generator, so it will return chunks of Leads rather that all Activities 
+#   at once; therefore, it's useful for retrieving large numbers of Activities
+```
+
 
 Get Lead Changes
 ----------------
@@ -774,9 +803,20 @@ email = mc.execute(method='send_sample_email', id=117, emailAddress='jep@example
 Landing pages
 =============
 
+Get Landing Pages
+-----------------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/get-landing-pages/
+```python
+lp = mc.execute(method='get_landing_pages', maxReturn=None, status=None, folderId=None, folderType=None)
+
+# status, folderId, folderType and maxReturn are optional; folderId and folderType need to be specified together
+# default for maxReturn is 20 and max is 200
+# status can be 'draft' or 'approved'
+```
+
 Create Landing Page
 -------------------
-API Ref: 
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/create-landing-page/
 ```python
 lp = mc.execute(method='create_landing_page', name='API LP', folderId=894,
                 folderType='Folder', template=42, description=None, title=None, 
@@ -790,7 +830,7 @@ lp = mc.execute(method='create_landing_page', name='API LP', folderId=894,
 
 Get Landing Page by Id
 -----------------------
-API Ref: 
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/get-landing-page-by-id/
 ```python
 lp = mc.execute(method='get_landing_page_by_id', id=360, status=None)
 
@@ -799,7 +839,7 @@ lp = mc.execute(method='get_landing_page_by_id', id=360, status=None)
 
 Get Landing Page by Name
 ------------------------
-API Ref: 
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/get-landing-page-by-name/
 ```python
 lp = mc.execute(method='get_landing_page_by_name', name='Landing page Demo', status=None)
 
@@ -808,14 +848,14 @@ lp = mc.execute(method='get_landing_page_by_name', name='Landing page Demo', sta
 
 Delete Landing Page
 -------------------
-API Ref: 
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/delete-landing-page/
 ```python
 lp = mc.execute(method='delete_landing_page', id=411)
 ```
 
-Update Landing Page
--------------------
-API Ref: 
+Update Landing Page Metadata
+----------------------------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/update-landing-page-metadata/
 ```python
 lp = mc.execute(method='update_landing_page', id=410, description=None, title=None,
                 keywords=None, robots=None, customHeadHTML=None, facebookOgTags=None, 
@@ -826,20 +866,19 @@ lp = mc.execute(method='update_landing_page', id=410, description=None, title=No
 # urlPageName is used to change the URL of the page
 ```
 
-Get Landing Pages
------------------
-API Ref: 
+Get Landing Page Content
+------------------------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/get-landing-page-content/
 ```python
-lp = mc.execute(method='get_landing_pages', maxReturn=None, status=None, folderId=None, folderType=None)
+lp = mc.execute(method='get_landing_page_content', id=410, status='draft')
 
-# status, folderId, folderType and maxReturn are optional; folderId and folderType need to be specified together
-# default for maxReturn is 20 and max is 200
-# status can be 'draft' or 'approved'
+# status is optional and can be 'draft' or 'approved'
 ```
+
 
 Create Landing Page Content Section
 -----------------------------------
-API Ref: 
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/add-landing-page-content-section/
 ```python
 lp = mc.execute(method='create_landing_page_content_section', id=410, type='RichText', value='<p>Subtitle</p>',
                 backgroundColor=None, borderColor=None, borderStyle=None, borderWidth=None, height=None,
@@ -855,12 +894,12 @@ lp = mc.execute(method='create_landing_page_content_section', id=410, type='Rich
 
 Update Landing Page Content Section
 -----------------------------------
-API Ref: 
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/update-landing-page-content-section/
 ```python
 lp = mc.execute(method='update_landing_page_content_section', id=410, contentId=2200, type='RichText',
                 value='<p>Updated Title</p>', backgroundColor=None, borderColor=None, borderStyle=None,
-                borderWidth=None, height=None, layer=15, left=50, opacity=1.0, top=50, width=300, 
-                hideDesktop=None, hideMobile=None)
+                borderWidth=None, height=None, zIndex=15, left=50, opacity=1.0, top=50, width=300, 
+                hideDesktop=None, hideMobile=None, imageOpenNewWindow=None, linkUrl=None)
 
 # make section dynamic: 
 lp = mc.execute(method='update_landing_page_content_section', id=410, contentId=2218,
@@ -876,43 +915,255 @@ lp = mc.execute(method='update_landing_page_content_section', id=410, contentId=
 
 Delete Landing Page Content Section
 -----------------------------------
-API Ref: 
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/delete-landing-page-content-section/
 ```python
 lp = mc.execute(method='delete_landing_page_content_section', id=410, contentId=2215)
 
 # use 'Get Landing page Content' to find the contentId (which changes when page is approved)
 ```
 
+Get Landing Page Dynamic Content
+--------------------------------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/get-dynamic-content-section/
+```python
+lp = mc.execute(method='get_landing_page_dynamic_content', id=410, ...)
+```
+
+Update Landing Page Dynamic Content
+-----------------------------------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/update-dynamic-content-section/
+```python
+lp = mc.execute(method='update_landing_page_dynamic_content', id=410, ...)
+```
+
+
 Approve Landing Page
 --------------------
-API Ref: 
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/discard-landing-page-draft/
 ```python
 lp = mc.execute(method='approve_landing_page', id=410)
 ```
 
 Unapprove Landing Page
 ----------------------
-API Ref: 
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/unapprove-landing-page/
 ```python
 lp = mc.execute(method='unapprove_landing_page', id=410)
 ```
 
 Discard Landing Page Draft
 --------------------------
-API Ref: 
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/discard-landing-page-draft/
 ```python
 lp = mc.execute(method='discard_landing_page_draft', id=410)
 ```
 
 Clone Landing Page
 ------------------
-API Ref: 
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/clone-landing-page/
 ```python
 lp = mc.execute(method='clone_landing_page', id=410, name='cloned landing page', folderId=894, 
                 folderType='Folder', description=None, template=42)
                 
 # description is optional
 # template should be optional but is currently required
+```
+
+Forms
+=====
+
+Get Forms: 
+----------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/get-forms/
+```python
+forms = mc.execute(method='get_forms', status=None, folderId=None, folderType=None, maxReturn=None)
+
+# status, folderId, folderType and maxReturn are optional
+```
+
+Get Form by Id
+----------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/get-form-by-id/
+```python
+form = mc.execute(method='get_form_by_id', id=50, status=None)
+
+# status is optional and can be 'draft' or 'approved'
+```
+
+Get Form by Name
+----------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/get-form-by-name/
+```python
+form = mc.execute(method='get_form_by_name', name='Form Demo', status=None)
+
+# status is optional and can be 'draft' or 'approved'
+```
+
+Get Form Fields List
+----------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/get-form-fields-list/
+```python
+fields = mc.execute(method='get_form_fields', id=50, status=None)
+
+# status is optional and can be 'draft' or 'approved'
+```
+
+Add Field to Form
+----------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/add-field-to-form/
+```python
+field = mc.execute(method='create_form_field', id=104, fieldId='AnnualRevenue', label='Rev', labelWidth=200, 
+                   fieldWidth=200, instructions='fill out this field',
+                   required=True, formPrefill=True, initiallyChecked=None, values=None, labelToRight=None,
+                   hintText='hint', defaultValue=100, minValue=100, maxValue=1000000, multiSelect=None,
+                   maxLength=None, maskInput=None, visibleLines=None)
+
+# only id and fieldId are required, all others are optional
+```
+
+Create Form
+-----------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/create-form/
+```python
+form = mc.execute(method='create_form', name='API Form 4', folderId=140, folderType='Folder',
+                  description='optional description', language='Dutch', locale='nl_NL', progressiveProfiling=True,
+                  labelPosition='above', fontFamily='Droid Sans Mono', fontSize='12px', knownVisitor=None)
+
+# description, language, locale, progressiveProfiling, labelPosition, fontFamily, fontSize, knownVisitor, theme are optional
+# locale examples: en_US, en_UK, fr_FR, de_DE, zh_CN, ja_JP, hi_IN, nl_NL, nl_BE
+# fontFamily/fontSize and theme are mutually exclusive
+# fontFamily doesn't seem to work
+# labelPosition is left or above (lower case)
+# TODO: knownVisitor needs further explanation
+```
+
+Get Form Thank You Page
+------------------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/get-form-thank-you-page/
+```python
+not implemented yet
+```
+
+Update Form Thank You Page
+--------------------------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/update-form-thank-you-page/
+```python
+not implemented yet
+```
+
+Update Form Metadata
+-----------------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/update-form/
+```python
+form = mc.execute('update_form', id=50, name=None, description=None, language=None, locale=None, progressiveProfiling=None,
+                    labelPosition=None, fontFamily=None, fontSize=None, knownVisitor=None, formTheme=None,
+                    customcss=None)
+
+# id is required, all others are optional
+```
+
+Discard Form Draft
+--------------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/discard-form-draft/
+```python
+form = mc.execute(method='discard_form_draft', id)
+```
+
+Approve Form
+------------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/approve-form/
+```python
+form = mc.execute(method='approve_form', id)
+```
+
+Unapprove Form
+--------------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/unapprove-form/
+```python
+form = mc.execute(method='unapprove_form', id)
+```
+
+Clone Form
+----------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/clone-form/
+```python
+form = mc.execute(method='clone_form', id=50, name='new form name', folderId=12, folderType='Folder', description=None)
+```
+
+Delete Form
+-----------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/delete-form/
+```python
+form = mc.execute(method='delete_form', id=50)
+```
+
+Update Form Field
+-----------------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/update-form-field/
+```python
+field = mc.execute(method='update_form_field', id=104, fieldId='AnnualRevenue', label='Revenue', labelWidth=150, 
+                   fieldWidth=150, instructions='please fill out this field',
+                   required=False, formPrefill=True, initiallyChecked=None, values=None, labelToRight=None,
+                   hintText='hint', defaultValue=100, minValue=100, maxValue=1000000, multiSelect=None,
+                   maxLength=None, maskInput=None, visibleLines=None)
+
+# only id and fieldId are required, all others are optional
+```
+
+Remove Form Field
+-----------------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/remove-form-field/
+```python
+field = mc.execute(method='delete_form_field', id=104, fieldId='AnnualRevenue')
+```
+
+Update Form Field Visibility Rules
+----------------------------------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/update-form-field-visibility-rules/
+```python
+not yet implemented
+```
+
+Add Rich Text Form Field
+------------------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/add-rich-text-form-field/
+```python
+not yet implemented
+```
+
+Add Fieldset
+------------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/add-fieldset/
+```python
+not yet implemented
+```
+
+Remove Field from Fieldset
+--------------------------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/remove-field-from-fieldset/
+```python
+not yet implemented
+```
+
+Get Available Form Fields
+------------------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/get-available-form-fields/
+```python
+not yet implemented
+```
+
+Change Form Field Positions
+--------------------------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/change-form-field-positions/
+```python
+not yet implemented
+```
+
+Update Submit Button
+--------------------
+API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/update-submit-button/
+```python
+not yet implemented
 ```
 
 

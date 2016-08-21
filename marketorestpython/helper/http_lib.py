@@ -29,7 +29,8 @@ class HttpLib:
             if retries > self.max_retries:
                 return None
             try:
-                r = requests.get(endpoint, params=args)
+                headers = {'Accept-Encoding': 'gzip'}
+                r = requests.get(endpoint, params=args, headers=headers)
                 if mode is 'nojson':
                     return r
                 else:

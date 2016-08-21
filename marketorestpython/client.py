@@ -43,6 +43,7 @@ class MarketoClient:
                     'get_multiple_leads_by_list_id': self.get_multiple_leads_by_list_id,
                     'get_multiple_leads_by_list_id_yield': self.get_multiple_leads_by_list_id_yield,
                     'get_multiple_leads_by_program_id': self.get_multiple_leads_by_program_id,
+                    'get_multiple_leads_by_program_id_yield': self.get_multiple_leads_by_program_id_yield,
                     'change_lead_program_status': self.change_lead_program_status,
                     'create_update_leads': self.create_update_leads,
                     'associate_lead': self.associate_lead,
@@ -65,6 +66,7 @@ class MarketoClient:
                     'get_activity_types': self.get_activity_types,
                     'get_paging_token': self.get_paging_token,
                     'get_lead_activities': self.get_lead_activities,
+                    'get_lead_activities_yield': self.get_lead_activities_yield,
                     'get_lead_changes': self.get_lead_changes,
                     'add_custom_activities': self.add_custom_activities,
                     'get_daily_usage': self.get_daily_usage,
@@ -308,7 +310,7 @@ class MarketoClient:
             args['nextPageToken'] = result['nextPageToken']
         return result_list
 
-    def get_multiple_leads_by_list_id_yield(self, listId, fields=None, batchSize=None, chunksize=-1):
+    def get_multiple_leads_by_list_id_yield(self, listId, fields=None, batchSize=None):
         self.authenticate()
         if listId is None: raise ValueError("Invalid argument: required argument listId is none.")
         args = {
@@ -320,23 +322,16 @@ class MarketoClient:
             data.append(('fields',fields))
         if batchSize is not None:
             data.append(('batchSize',batchSize))
-        result_list = []
-        count = 0
         while True:
             result = HttpLib().post(self.host + "/rest/v1/list/" + str(listId)+ "/leads.json", args, data, mode='nojsondumps')
             if result is None: raise Exception("Empty Response")
             if not result['success']: raise MarketoException(result['errors'][0])
-            result_list.extend(result['result'])
-            count += len(result['result'])
-            if len(result['result']) == 0 or 'nextPageToken' not in result:
-                if result_list:
-                    yield result_list  # yield remaining records at the end (or all records with chunk size -1)
-                break
-            args['nextPageToken'] = result['nextPageToken']
-            if count >= chunksize != -1:  # yield when enough records to meet the chunk size; never yield here on -1
-                yield result_list
-                del result_list[:]
-                count = 0
+            if 'result' in result:
+                yield result['result']
+                if len(result['result']) == 0 or 'nextPageToken' not in result:
+                    break
+                else:
+                    args['nextPageToken'] = result['nextPageToken']
 
     def get_multiple_leads_by_program_id(self, programId, fields=None, batchSize=None):
         self.authenticate()
@@ -351,7 +346,8 @@ class MarketoClient:
             data.append(('batchSize',batchSize))
         result_list = []
         while True:
-            result = HttpLib().post(self.host + "/rest/v1/leads/programs/" + str(programId)+ ".json", args, data, mode='nojsondumps')
+            result = HttpLib().post(self.host + "/rest/v1/leads/programs/" + str(programId)+ ".json", args, data,
+                                    mode='nojsondumps')
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
             result_list.extend(result['result'])
@@ -359,6 +355,29 @@ class MarketoClient:
                 break
             args['nextPageToken'] = result['nextPageToken']
         return result_list
+
+    def get_multiple_leads_by_program_id_yield(self, programId, fields=None, batchSize=None):
+        self.authenticate()
+        args = {
+            'access_token': self.token,
+            '_method': 'GET'
+        }
+        data = []
+        if fields is not None:
+            data.append(('fields',fields))
+        if batchSize is not None:
+            data.append(('batchSize',batchSize))
+        while True:
+            result = HttpLib().post(self.host + "/rest/v1/leads/programs/" + str(programId)+ ".json", args, data,
+                                    mode='nojsondumps')
+            if result is None: raise Exception("Empty Response")
+            if not result['success'] : raise MarketoException(result['errors'][0])
+            if 'result' in result:
+                yield result['result']
+                if len(result['result']) == 0 or 'nextPageToken' not in result:
+                    break
+                else:
+                    args['nextPageToken'] = result['nextPageToken']
 
     def change_lead_program_status(self, id, leadIds, status):
         self.authenticate()
@@ -763,6 +782,45 @@ class MarketoClient:
                 break
             args['nextPageToken'] = result['nextPageToken']
         return result_list
+
+    def get_lead_activities_yield(self, activityTypeIds, nextPageToken=None, sinceDatetime=None, untilDatetime=None,
+                            batchSize=None, listId=None, leadIds=None):
+        self.authenticate()
+        if activityTypeIds is None: raise ValueError("Invalid argument: required argument activityTypeIds is none.")
+        if nextPageToken is None and sinceDatetime is None: raise ValueError(
+            "Either nextPageToken or sinceDatetime needs to be specified.")
+        activityTypeIds = activityTypeIds.split() if type(activityTypeIds) is str else activityTypeIds
+        args = {
+            'access_token': self.token,
+            'activityTypeIds': ",".join(activityTypeIds),
+        }
+        if listId is not None:
+            args['listId'] = listId
+        if leadIds is not None:
+            args['leadIds'] = leadIds
+        if batchSize is not None:
+            args['batchSize'] = batchSize
+        if nextPageToken is None:
+            nextPageToken = self.get_paging_token(sinceDatetime=sinceDatetime)
+        args['nextPageToken'] = nextPageToken
+        result_list = []
+        while True:
+            result = HttpLib().get(self.host + "/rest/v1/activities.json", args)
+            if result is None: raise Exception("Empty Response")
+            if not result['success']: raise MarketoException(result['errors'][0])
+            if 'result' in result:
+                if untilDatetime is not None:
+                    new_result = self.process_lead_activity_until_datetime(result['result'], untilDatetime)
+                    if new_result:
+                        yield new_result
+                    if len(new_result) < len(result['result']):
+                        break
+                else:
+                    yield result['result']
+            if result['moreResult'] is False:
+                break
+            args['nextPageToken'] = result['nextPageToken']
+
 
     def get_lead_changes(self, fields, nextPageToken=None, sinceDatetime=None, batchSize=None, listId=None):
         self.authenticate()
@@ -1410,13 +1468,13 @@ class MarketoClient:
             'access_token': self.token
         }
         if subject is not None:
-            args['subject'] = '{"type":"' + type + '","value":"' + subject + '"}'
+            args['subject'] = '{"type":"' + type + '","value":"' + str(subject) + '"}'
         if fromName is not None:
-            args['fromName'] = '{"type":"' + type + '","value":"' + fromName + '"}'
+            args['fromName'] = '{"type":"' + type + '","value":"' + str(fromName) + '"}'
         if fromEmail is not None:
-            args['fromEmail'] = '{"type":"' + type + '","value":"' + fromEmail + '"}'
+            args['fromEmail'] = '{"type":"' + type + '","value":"' + str(fromEmail) + '"}'
         if replyTo is not None:
-            args['replyTO'] = '{"type":"' + type + '","value":"' + replyTo + '"}'
+            args['replyTO'] = '{"type":"' + type + '","value":"' + str(replyTo) + '"}'
         result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + "/content.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
@@ -1708,9 +1766,9 @@ class MarketoClient:
         return result['result']
 
     def create_landing_page_content_section(self, id, type, value, backgroundColor=None, borderColor=None,
-                                            borderStyle=None, borderWidth=None, height=None, layer=None, left=None,
+                                            borderStyle=None, borderWidth=None, height=None, zIndex=None, left=None,
                                             opacity=None, top=None, width=None, hideDesktop=None, hideMobile=None,
-                                            contentId=None):
+                                            contentId=None, imageOpenNewWindow=None, linkUrl=None):
         self.authenticate()
         if id is None: raise ValueError("Invalid argument: required argument id is none.")
         if type is None: raise ValueError("Invalid argument: required argument type is none.")
@@ -1734,8 +1792,8 @@ class MarketoClient:
             data['borderWidth'] = borderWidth
         if height is not None:
             data['height'] = height
-        if layer is not None:
-            data['layer'] = layer
+        if zIndex is not None:
+            data['layer'] = zIndex
         if left is not None:
             data['left'] = left
         if opacity is not None:
@@ -1750,6 +1808,10 @@ class MarketoClient:
             data['hideMobile'] = hideMobile
         if contentId is not None:
             data['contentId'] = contentId
+        if imageOpenNewWindow is not None:
+            data['imageOpenNewWindow'] = imageOpenNewWindow
+        if linkUrl is not None:
+            data['linkUrl'] = linkUrl
         result = HttpLib().post(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/content.json", args,
                                 data, mode='nojsondumps')
         if result is None: raise Exception("Empty Response")
@@ -1758,8 +1820,8 @@ class MarketoClient:
 
     def update_landing_page_content_section(self, id, contentId, type, value, index=None, backgroundColor=None,
                                             borderColor=None, borderStyle=None, borderWidth=None, height=None,
-                                            layer=None, left=None, opacity=None, top=None, width=None, hideDesktop=None,
-                                            hideMobile=None):
+                                            zIndex=None, left=None, opacity=None, top=None, width=None, hideDesktop=None,
+                                            hideMobile=None, imageOpenNewWindow=None, linkUrl=None):
         self.authenticate()
         if id is None: raise ValueError("Invalid argument: required argument id is none.")
         if contentId is None: raise ValueError("Invalid argument: required argument contentId is none.")
@@ -1786,8 +1848,8 @@ class MarketoClient:
             data['borderWidth'] = borderWidth
         if height is not None:
             data['height'] = height
-        if layer is not None:
-            data['layer'] = layer
+        if zIndex is not None:
+            data['layer'] = zIndex
         if left is not None:
             data['left'] = left
         if opacity is not None:
@@ -1800,6 +1862,10 @@ class MarketoClient:
             data['hideDesktop'] = hideDesktop
         if hideMobile is not None:
             data['hideMobile'] = hideMobile
+        if imageOpenNewWindow is not None:
+            data['imageOpenNewWindow'] = imageOpenNewWindow
+        if linkUrl is not None:
+            data['linkUrl'] = linkUrl
         result = HttpLib().post(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/content/" + str(contentId) +
                                 ".json", args, data, mode='nojsondumps')
         if result is None: raise Exception("Empty Response")
@@ -1836,8 +1902,8 @@ class MarketoClient:
 
     def update_landing_page_dynamic_content(self, id, dynamicContentId, segment, value, type, index=None,
                                             backgroundColor=None, borderColor=None, borderStyle=None, borderWidth=None,
-                                            height=None, layer=None, left=None, opacity=None, top=None, width=None,
-                                            hideDesktop=None, hideMobile=None):
+                                            height=None, zIndex=None, left=None, opacity=None, top=None, width=None,
+                                            hideDesktop=None, hideMobile=None, imageOpenNewWindow=None, linkUrl=None):
         self.authenticate()
         if id is None: raise ValueError("Invalid argument: required argument id is none.")
         if dynamicContentId is None: raise ValueError("Invalid argument: required argument dynamicContentId is none.")
@@ -1866,8 +1932,8 @@ class MarketoClient:
             data['borderWidth'] = borderWidth
         if height is not None:
             data['height'] = height
-        if layer is not None:
-            data['layer'] = layer
+        if zIndex is not None:
+            data['layer'] = zIndex
         if left is not None:
             data['left'] = left
         if opacity is not None:
@@ -1880,6 +1946,10 @@ class MarketoClient:
             data['hideDesktop'] = hideDesktop
         if hideMobile is not None:
             data['hideMobile'] = hideMobile
+        if imageOpenNewWindow is not None:
+            data['imageOpenNewWindow'] = imageOpenNewWindow
+        if linkUrl is not None:
+            data['linkUrl'] = linkUrl
         result = HttpLib().post(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/dynamicContent/" +
                                 str(dynamicContentId) + ".json", args, data, mode='nojsondumps')
         if result is None: raise Exception("Empty Response")
