@@ -76,6 +76,7 @@ class MarketoClient:
                     'get_lead_activities': self.get_lead_activities,
                     'get_lead_activities_yield': self.get_lead_activities_yield,
                     'get_lead_changes': self.get_lead_changes,
+                    'get_lead_changes_yield': self.get_lead_changes_yield,
                     'add_custom_activities': self.add_custom_activities,
                     'get_daily_usage': self.get_daily_usage,
                     'get_last_7_days_usage': self.get_last_7_days_usage,
@@ -228,16 +229,16 @@ class MarketoClient:
                 602 -> auth token expired
                 '''
                 if e.code in ['601', '602']:
-                   continue
+                    self.authenticate()
+                    continue
                 else:
                     raise Exception({'message':e.message, 'code':e.code})
             break
         return result
 
-
     def authenticate(self):
-        if self.valid_until is not None and\
-            self.valid_until > time.time():
+        if self.valid_until is not None and \
+                                self.valid_until - time.time() >= 60:
             return
         args = {
             'grant_type': 'client_credentials',
@@ -286,6 +287,8 @@ class MarketoClient:
         }
         result_list = []
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().post(self.host + "/rest/v1/leads.json", args, data, mode='nojsondumps')
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
@@ -309,6 +312,8 @@ class MarketoClient:
             data.append(('batchSize',batchSize))
         result_list = []
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().post(self.host + "/rest/v1/list/" + str(listId)+ "/leads.json", args, data, mode='nojsondumps')
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
@@ -331,6 +336,8 @@ class MarketoClient:
         if batchSize is not None:
             data.append(('batchSize',batchSize))
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().post(self.host + "/rest/v1/list/" + str(listId)+ "/leads.json", args, data, mode='nojsondumps')
             if result is None: raise Exception("Empty Response")
             if not result['success']: raise MarketoException(result['errors'][0])
@@ -354,6 +361,8 @@ class MarketoClient:
             data.append(('batchSize',batchSize))
         result_list = []
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().post(self.host + "/rest/v1/leads/programs/" + str(programId)+ ".json", args, data,
                                     mode='nojsondumps')
             if result is None: raise Exception("Empty Response")
@@ -376,6 +385,8 @@ class MarketoClient:
         if batchSize is not None:
             data.append(('batchSize',batchSize))
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().post(self.host + "/rest/v1/leads/programs/" + str(programId)+ ".json", args, data,
                                     mode='nojsondumps')
             if result is None: raise Exception("Empty Response")
@@ -500,6 +511,8 @@ class MarketoClient:
             args['batchSize'] = batchSize
         result_list = []
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().get(self.host + "/rest/v1/lists.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
@@ -592,6 +605,8 @@ class MarketoClient:
             args['batchSize'] = batchSize
         result_list = []
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().post(self.host + "/rest/v1/campaigns.json", args, data, mode='nojsondumps')
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
@@ -777,6 +792,8 @@ class MarketoClient:
         args['nextPageToken'] = nextPageToken
         result_list = []
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().get(self.host + "/rest/v1/activities.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
@@ -811,8 +828,9 @@ class MarketoClient:
         if nextPageToken is None:
             nextPageToken = self.get_paging_token(sinceDatetime=sinceDatetime)
         args['nextPageToken'] = nextPageToken
-        result_list = []
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().get(self.host + "/rest/v1/activities.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success']: raise MarketoException(result['errors'][0])
@@ -828,7 +846,6 @@ class MarketoClient:
             if result['moreResult'] is False:
                 break
             args['nextPageToken'] = result['nextPageToken']
-
 
     def get_lead_changes(self, fields, nextPageToken=None, sinceDatetime=None, batchSize=None, listId=None):
         self.authenticate()
@@ -848,6 +865,8 @@ class MarketoClient:
         args['nextPageToken'] = nextPageToken
         result_list = []
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().get(self.host + "/rest/v1/activities/leadchanges.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
@@ -857,6 +876,34 @@ class MarketoClient:
                 break
             args['nextPageToken'] = result['nextPageToken']
         return result_list
+
+    def get_lead_changes_yield(self, fields, nextPageToken=None, sinceDatetime=None, batchSize=None, listId=None):
+        self.authenticate()
+        if fields is None: raise ValueError("Invalid argument: required argument fields is none.")
+        if nextPageToken is None and sinceDatetime is None: raise ValueError("Either nextPageToken or sinceDatetime needs to be specified.")
+        fields = fields.split() if type(fields) is str else fields
+        args = {
+            'access_token' : self.token,
+            'fields' : ",".join(fields),
+        }
+        if listId is not None:
+            args['listId'] = listId
+        if batchSize is not None:
+            args['batchSize'] = batchSize
+        if nextPageToken is None:
+            nextPageToken = self.get_paging_token(sinceDatetime=sinceDatetime)
+        args['nextPageToken'] = nextPageToken
+        while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
+            result = HttpLib().get(self.host + "/rest/v1/activities/leadchanges.json", args)
+            if result is None: raise Exception("Empty Response")
+            if not result['success']: raise MarketoException(result['errors'][0])
+            if 'result' in result:
+                yield result['result']
+            if result['moreResult'] is False:
+                break
+            args['nextPageToken'] = result['nextPageToken']
 
     def add_custom_activities(self, input):
         self.authenticate()
@@ -944,6 +991,8 @@ class MarketoClient:
         args['nextPageToken'] = nextPageToken
         result_list = []
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().get(self.host + "/rest/v1/activities/deletedleads.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
@@ -1034,6 +1083,8 @@ class MarketoClient:
         result_list = []
         offset = 0
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().get(self.host + "/rest/asset/v1/folder/" + str(id) + "/content.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success']: raise MarketoException(result['errors'][0])
@@ -1096,6 +1147,8 @@ class MarketoClient:
         result_list = []
         offset = 0
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().get(self.host + "/rest/asset/v1/folders.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
@@ -1248,6 +1301,8 @@ class MarketoClient:
         result_list = []
         offset = 0
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().get(self.host + "/rest/asset/v1/emailTemplates.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
@@ -1440,6 +1495,8 @@ class MarketoClient:
         result_list = []
         offset = 0
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().get(self.host + "/rest/asset/v1/emails.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
@@ -1745,6 +1802,8 @@ class MarketoClient:
         result_list = []
         offset = 0
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().get(self.host + "/rest/asset/v1/landingPages.json", args)
             if result is None: raise Exception("Empty Response")
             #if not result['success']: raise MarketoException(result['errors'][0] + ". Request ID: " + result['requestId'])
@@ -2143,6 +2202,8 @@ class MarketoClient:
         result_list = []
         offset = 0
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().get(self.host + "/rest/asset/v1/forms.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success']: raise MarketoException(result['errors'][0])
@@ -2395,6 +2456,8 @@ class MarketoClient:
         result_list = []
         offset = 0
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().get(self.host + "/rest/asset/v1/files.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success']: raise MarketoException(result['errors'][0])
@@ -2494,6 +2557,8 @@ class MarketoClient:
         result_list = []
         offset = 0
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().get(self.host + "/rest/asset/v1/snippets.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
@@ -2710,6 +2775,8 @@ class MarketoClient:
         result_list = []
         offset = 0
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().get(self.host + "/rest/asset/v1/landingPageTemplates.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
@@ -2941,6 +3008,8 @@ class MarketoClient:
         result_list = []
         offset = 0
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().get(self.host + "/rest/asset/v1/programs.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
@@ -3007,6 +3076,8 @@ class MarketoClient:
         result_list = []
         offset = 0
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().get(self.host + "/rest/asset/v1/channels.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success']: raise MarketoException(result['errors'][0])
@@ -3045,6 +3116,8 @@ class MarketoClient:
         result_list = []
         offset = 0
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().get(self.host + "/rest/asset/v1/tagTypes.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success']: raise MarketoException(result['errors'][0])
@@ -3154,6 +3227,8 @@ class MarketoClient:
             data['batchSize'] = batchSize
         result_list = []
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().post(self.host + "/rest/v1/customobjects/" + name + ".json", args, data)
             if result is None: raise Exception("Empty Response")
             if not result['success']: raise MarketoException(result['errors'][0])
@@ -3227,6 +3302,8 @@ class MarketoClient:
             data.append(('batchSize',batchSize))
         result_list = []
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().post(self.host + "/rest/v1/opportunities.json", args, data, mode='nojsondumps')
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
@@ -3298,6 +3375,8 @@ class MarketoClient:
             data.append(('batchSize',batchSize))
         result_list = []
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().post(self.host + "/rest/v1/opportunities/roles.json", args, data, mode='nojsondumps')
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
@@ -3374,6 +3453,8 @@ class MarketoClient:
             data.append(('batchSize',batchSize))
         result_list = []
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().post(self.host + "/rest/v1/companies.json", args, data, mode='nojsondumps')
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
@@ -3447,6 +3528,8 @@ class MarketoClient:
             data.append(('batchSize',batchSize))
         result_list = []
         while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
             result = HttpLib().post(self.host + "/rest/v1/salespersons.json", args, data, mode='nojsondumps')
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
