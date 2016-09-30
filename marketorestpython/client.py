@@ -2589,16 +2589,17 @@ class MarketoClient:
     def update_snippet_content(self, id, type, content):
         self.authenticate()
         if id is None: raise ValueError("Invalid argument: required argument id is none.")
-        #if type is not "Text" and type is not "DynamicContent": raise ValueError("Invalid argument: type should "
-        #                                                                         "be 'Text' or 'DynamicContent'.")
         if type is None: raise ValueError("Invalid argument: required argument type is none.")
         if content is None: raise ValueError("Invalid argument: required argument content is none.")
         args = {
-            'access_token': self.token,
+            'access_token': self.token
+        }
+        data = {
             'type': type,
             'content': content
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/snippet/" + str(id) + "/content.json", args)
+        result = HttpLib().post(self.host + "/rest/asset/v1/snippet/" + str(id) + "/content.json", args, data,
+                                mode='nojsondumps')
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2697,11 +2698,12 @@ class MarketoClient:
         if has_empty_warning(result): return []
         return result['result']
 
-    def get_segments(self, id, status=None):
+    def get_segments(self, id, maxReturn=200, status=None):
         if id is None: raise ValueError("Invalid argument: required argument id is none.")
         self.authenticate()
         args = {
-            'access_token': self.token
+            'access_token': self.token,
+            'maxReturn': maxReturn
         }
         if status is not None:
             args['status'] = status
