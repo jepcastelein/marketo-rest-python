@@ -419,7 +419,7 @@ class MarketoClient:
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
 
-    def create_update_leads(self, leads, action=None, lookupField=None, asyncProcessing=None, partitionName=None):
+    def create_update_leads(self, leads, action=None, lookupField=None, asyncProcessing=None, partitionName=None, programName=None):
         self.authenticate()
         args = {
             'access_token': self.token
@@ -435,6 +435,8 @@ class MarketoClient:
             data['asyncProcessing '] = asyncProcessing
         if partitionName is not None:
             data['partitionName'] = partitionName
+        if programName is not None:
+            data['programName'] = programName
         result = HttpLib().post(self.host + "/rest/v1/leads.json", args, data)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
