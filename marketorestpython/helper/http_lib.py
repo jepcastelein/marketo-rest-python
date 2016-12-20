@@ -42,6 +42,9 @@ class HttpLib:
                             if r_json['errors'][0]['code'] == '606':
                                 print('error 606, rate limiter. Pausing, then trying again')
                                 time.sleep(5)
+                            elif r_json['errors'][0]['code'] == '615':
+                                print('error 615, concurrent call limit. Pausing, then trying again')
+                                time.sleep(2)
                             else:
                                 return r_json
                         else:
@@ -69,7 +72,23 @@ class HttpLib:
                     mimetype = mimetypes.guess_type(files)[0]
                     file = {filename: (files, open(files, 'rb'), mimetype)}
                     r = requests.post(endpoint, params=args, json=data, files=file)
-                return r.json()
+                r_json = r.json()
+                # if we still hit the rate limiter, do not return anything so the call will be retried
+                if 'success' in r_json:  # this is for all normal API calls (but not the access token call)
+                    if r_json['success'] == False:
+                        print('error from http_lib.py: ' + str(r_json['errors'][0]))
+                        if r_json['errors'][0]['code'] == '606':
+                            print('error 606, rate limiter. Pausing, then trying again')
+                            time.sleep(5)
+                        elif r_json['errors'][0]['code'] == '615':
+                            print('error 615, concurrent call limit. Pausing, then trying again')
+                            time.sleep(2)
+                        else:
+                            return r_json
+                    else:
+                        return r_json
+                else:
+                    return r_json
             except Exception as e:
                 print("HTTP Post Exception! Retrying....."+ str(e))
                 time.sleep(self.sleep_duration)

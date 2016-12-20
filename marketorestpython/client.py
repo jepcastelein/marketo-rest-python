@@ -13,31 +13,33 @@ def has_empty_warning(result):
     return False
 
 class MarketoClient:
-    host = None
-    client_id = None
-    client_secret = None
     token = None
     expires_in = None
-    valid_until = None
     token_type = None
     scope = None
     last_request_id = None # intended to save last request id, but not used right now
-    API_CALLS_MADE = 0
-    API_LIMIT = None
 
     def __init__(self, munchkin_id, client_id, client_secret, api_limit=None):
         assert(munchkin_id is not None)
         assert(client_id is not None)
         assert(client_secret is not None)
+        self.valid_until = None
         self.host = "https://" + munchkin_id + ".mktorest.com"
         self.client_id = client_id
         self.client_secret = client_secret
+        self.API_CALLS_MADE = 0
         self.API_LIMIT = api_limit
+
+    def _api_call(self, method, endpoint, *args, **kwargs):
+        request = HttpLib()
+        result = getattr(request, method)(endpoint, *args, **kwargs)
+        self.API_CALLS_MADE += 1
+        if self.API_LIMIT and self.API_CALLS_MADE >= self.API_LIMIT:
+            raise Exception({'message': 'API Calls exceeded the limit : ' + str(self.API_LIMIT), 'code': '416'})
+        return result
 
     def execute(self, method, *args, **kargs):
         result = None
-        if self.API_LIMIT and self.API_CALLS_MADE >= self.API_LIMIT:
-            raise Exception({'message':'API Calls exceeded the limit : ' + str(self.API_LIMIT), 'code':'416'})
 
         '''
             max 10 rechecks
@@ -222,7 +224,6 @@ class MarketoClient:
                     'get_sales_persons': self.get_sales_persons
                 }
                 result = method_map[method](*args,**kargs)
-                self.API_CALLS_MADE += 1
             except MarketoException as e:
                 '''
                 601 -> auth token not valid
@@ -245,7 +246,7 @@ class MarketoClient:
             'client_id': self.client_id,
             'client_secret': self.client_secret
         }
-        data = HttpLib().get(self.host + "/identity/oauth/token", args)
+        data = self._api_call('get', self.host + "/identity/oauth/token", args)
         if data is None: raise Exception("Empty Response")
         if 'error' in data:
             if data['error'] in ['unauthorized', 'invalid_client']:
@@ -266,7 +267,7 @@ class MarketoClient:
         }
         if fields is not None:
             args['fields'] = fields
-        result = HttpLib().get(self.host + "/rest/v1/lead/" + str(id) + ".json", args)
+        result = self._api_call('get', self.host + "/rest/v1/lead/" + str(id) + ".json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -289,7 +290,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().post(self.host + "/rest/v1/leads.json", args, data, mode='nojsondumps')
+            result = self._api_call('post', self.host + "/rest/v1/leads.json", args, data, mode='nojsondumps')
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
             result_list.extend(result['result'])
@@ -314,7 +315,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().post(self.host + "/rest/v1/list/" + str(listId)+ "/leads.json", args, data, mode='nojsondumps')
+            result = self._api_call('post', self.host + "/rest/v1/list/" + str(listId)+ "/leads.json", args, data, mode='nojsondumps')
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
             result_list.extend(result['result'])
@@ -338,7 +339,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().post(self.host + "/rest/v1/list/" + str(listId)+ "/leads.json", args, data, mode='nojsondumps')
+            result = self._api_call('post', self.host + "/rest/v1/list/" + str(listId)+ "/leads.json", args, data, mode='nojsondumps')
             if result is None: raise Exception("Empty Response")
             if not result['success']: raise MarketoException(result['errors'][0])
             if 'result' in result:
@@ -363,7 +364,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().post(self.host + "/rest/v1/leads/programs/" + str(programId)+ ".json", args, data,
+            result = self._api_call('post', self.host + "/rest/v1/leads/programs/" + str(programId)+ ".json", args, data,
                                     mode='nojsondumps')
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
@@ -387,7 +388,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().post(self.host + "/rest/v1/leads/programs/" + str(programId)+ ".json", args, data,
+            result = self._api_call('post', self.host + "/rest/v1/leads/programs/" + str(programId)+ ".json", args, data,
                                     mode='nojsondumps')
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
@@ -415,7 +416,7 @@ class MarketoClient:
         #result={}
         #result['success'] = True
         #result['result'] = data
-        result = HttpLib().post(self.host + "/rest/v1/leads/programs/" + str(id) + "/status.json", args, data)
+        result = self._api_call('post', self.host + "/rest/v1/leads/programs/" + str(id) + "/status.json", args, data)
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
 
@@ -435,7 +436,7 @@ class MarketoClient:
             data['asyncProcessing '] = asyncProcessing
         if partitionName is not None:
             data['partitionName'] = partitionName
-        result = HttpLib().post(self.host + "/rest/v1/leads.json", args, data)
+        result = self._api_call('post', self.host + "/rest/v1/leads.json", args, data)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -449,7 +450,7 @@ class MarketoClient:
             'id': id,
             'cookie': cookie
         }
-        result = HttpLib().post(self.host + "/rest/v1/leads/" + str(id) + "/associate.json", args)
+        result = self._api_call('post', self.host + "/rest/v1/leads/" + str(id) + "/associate.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['success'] # there is no 'result' node returned in this call
@@ -464,7 +465,7 @@ class MarketoClient:
             'leadIds': leadstr,
             'mergeInCRM': mergeInCRM
         }
-        result = HttpLib().post(self.host + "/rest/v1/leads/" + str(id) + "/merge.json", args, mode='merge_lead')
+        result = self._api_call('post', self.host + "/rest/v1/leads/" + str(id) + "/merge.json", args, mode='merge_lead')
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['success'] # there is no 'result' node returned in this call
@@ -476,7 +477,7 @@ class MarketoClient:
         args = {
             'access_token' : self.token
         }
-        result = HttpLib().get(self.host + "/rest/v1/leads/partitions.json", args)
+        result = self._api_call('get', self.host + "/rest/v1/leads/partitions.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -489,7 +490,7 @@ class MarketoClient:
         args = {
             'access_token' : self.token
         }
-        result = HttpLib().get(self.host + "/rest/v1/lists/" + str(id) + ".json", args)
+        result = self._api_call('get', self.host + "/rest/v1/lists/" + str(id) + ".json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -513,7 +514,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().get(self.host + "/rest/v1/lists.json", args)
+            result = self._api_call('get', self.host + "/rest/v1/lists.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
             result_list.extend(result['result'])
@@ -533,7 +534,7 @@ class MarketoClient:
         args = {
             'access_token' : self.token
             }
-        result = HttpLib().post(self.host + "/rest/v1/lists/" + str(listId)+ "/leads.json", args, data)
+        result = self._api_call('post', self.host + "/rest/v1/lists/" + str(listId)+ "/leads.json", args, data)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -549,7 +550,7 @@ class MarketoClient:
         args = {
             'access_token' : self.token
             }
-        result = HttpLib().delete(self.host + "/rest/v1/lists/" + str(listId)+ "/leads.json", args, data)
+        result = self._api_call('delete', self.host + "/rest/v1/lists/" + str(listId)+ "/leads.json", args, data)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -566,7 +567,7 @@ class MarketoClient:
             'access_token' : self.token,
             '_method' : 'GET'
         }
-        result = HttpLib().post(self.host + "/rest/v1/lists/" + str(listId) + "/leads/ismember.json", args, data)
+        result = self._api_call('post', self.host + "/rest/v1/lists/" + str(listId) + "/leads/ismember.json", args, data)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -580,7 +581,7 @@ class MarketoClient:
             'access_token' : self.token,
             'id' : id
         }
-        result = HttpLib().get(self.host + "/rest/v1/campaigns/" + str(id) + ".json", args)
+        result = self._api_call('get', self.host + "/rest/v1/campaigns/" + str(id) + ".json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -607,7 +608,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().post(self.host + "/rest/v1/campaigns.json", args, data, mode='nojsondumps')
+            result = self._api_call('post', self.host + "/rest/v1/campaigns.json", args, data, mode='nojsondumps')
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
             result_list.extend(result['result'])
@@ -635,7 +636,7 @@ class MarketoClient:
         if tokens is not None:
             token_list = [{'name':'{{' + k + '}}', 'value':v} for k, v in tokens.items()]
             data['input']['tokens'] = token_list
-        result = HttpLib().post(self.host + "/rest/v1/campaigns/" + str(id)+ "/schedule.json", args, data)
+        result = self._api_call('post', self.host + "/rest/v1/campaigns/" + str(id)+ "/schedule.json", args, data)
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['success']
 
@@ -662,7 +663,7 @@ class MarketoClient:
                         leads_list
                        }
                  }
-        result = HttpLib().post(self.host + "/rest/v1/campaigns/" + str(id)+ "/trigger.json", args, data)
+        result = self._api_call('post', self.host + "/rest/v1/campaigns/" + str(id)+ "/trigger.json", args, data)
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['success']
 
@@ -682,7 +683,7 @@ class MarketoClient:
             args['listId'] = listId
         if partitionName is not None:
             args['partitionName'] = partitionName
-        result = HttpLib().post(self.host + "/bulk/v1/leads.json", args, files=file, filename="file")
+        result = self._api_call('post', self.host + "/bulk/v1/leads.json", args, files=file, filename="file")
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -693,7 +694,7 @@ class MarketoClient:
         args = {
             'access_token' : self.token
         }
-        result = HttpLib().get(self.host + "/bulk/v1/leads/batch/" + str(id) + ".json", args)
+        result = self._api_call('get', self.host + "/bulk/v1/leads/batch/" + str(id) + ".json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -704,7 +705,7 @@ class MarketoClient:
         args = {
             'access_token' : self.token
         }
-        result = HttpLib().get(self.host + "/bulk/v1/leads/batch/" + str(id) + "/failures.json", args, mode='nojson')
+        result = self._api_call('get', self.host + "/bulk/v1/leads/batch/" + str(id) + "/failures.json", args, mode='nojson')
         if result is None: raise Exception("Empty Response")
         return result.text
 
@@ -714,7 +715,7 @@ class MarketoClient:
         args = {
             'access_token' : self.token
         }
-        result = HttpLib().get(self.host + "/bulk/v1/leads/batch/" + str(id) + "/warnings.json", args, mode='nojson')
+        result = self._api_call('get', self.host + "/bulk/v1/leads/batch/" + str(id) + "/warnings.json", args, mode='nojson')
         if result is None: raise Exception("Empty Response")
         return result.text
 
@@ -725,7 +726,7 @@ class MarketoClient:
         args = {
             'access_token' : self.token
         }
-        result = HttpLib().get(self.host + "/rest/v1/leads/describe.json", args)
+        result = self._api_call('get', self.host + "/rest/v1/leads/describe.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -737,7 +738,7 @@ class MarketoClient:
         args = {
             'access_token' : self.token
         }
-        result = HttpLib().get(self.host + "/rest/v1/activities/types.json", args)
+        result = self._api_call('get', self.host + "/rest/v1/activities/types.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -748,7 +749,7 @@ class MarketoClient:
             'access_token' : self.token,
             'sinceDatetime' : sinceDatetime
         }
-        result = HttpLib().get(self.host + "/rest/v1/activities/pagingtoken.json", args)
+        result = self._api_call('get', self.host + "/rest/v1/activities/pagingtoken.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['nextPageToken']
@@ -794,7 +795,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().get(self.host + "/rest/v1/activities.json", args)
+            result = self._api_call('get', self.host + "/rest/v1/activities.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
             if 'result' in result:
@@ -831,7 +832,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().get(self.host + "/rest/v1/activities.json", args)
+            result = self._api_call('get', self.host + "/rest/v1/activities.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success']: raise MarketoException(result['errors'][0])
             if 'result' in result:
@@ -867,7 +868,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().get(self.host + "/rest/v1/activities/leadchanges.json", args)
+            result = self._api_call('get', self.host + "/rest/v1/activities/leadchanges.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
             if 'result' in result:
@@ -896,7 +897,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().get(self.host + "/rest/v1/activities/leadchanges.json", args)
+            result = self._api_call('get', self.host + "/rest/v1/activities/leadchanges.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success']: raise MarketoException(result['errors'][0])
             if 'result' in result:
@@ -914,7 +915,7 @@ class MarketoClient:
         data = {
             "input": input
         }
-        result = HttpLib().post(self.host + "/rest/v1/activities/external.json", args, data)
+        result = self._api_call('post', self.host + "/rest/v1/activities/external.json", args, data)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -926,7 +927,7 @@ class MarketoClient:
         args = {
             'access_token' : self.token
         }
-        result = HttpLib().get(self.host + "/rest/v1/stats/usage.json", args)
+        result = self._api_call('get', self.host + "/rest/v1/stats/usage.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -936,7 +937,7 @@ class MarketoClient:
         args = {
             'access_token' : self.token
         }
-        result = HttpLib().get(self.host + "/rest/v1/stats/usage/last7days.json", args)
+        result = self._api_call('get', self.host + "/rest/v1/stats/usage/last7days.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -946,7 +947,7 @@ class MarketoClient:
         args = {
             'access_token' : self.token
         }
-        result = HttpLib().get(self.host + "/rest/v1/stats/errors.json", args)
+        result = self._api_call('get', self.host + "/rest/v1/stats/errors.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -956,7 +957,7 @@ class MarketoClient:
         args = {
             'access_token' : self.token
         }
-        result = HttpLib().get(self.host + "/rest/v1/stats/errors/last7days.json", args)
+        result = self._api_call('get', self.host + "/rest/v1/stats/errors/last7days.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -973,7 +974,7 @@ class MarketoClient:
         args = {
             'access_token' : self.token
             }
-        result = HttpLib().delete(self.host + "/rest/v1/leads.json", args, data)
+        result = self._api_call('delete', self.host + "/rest/v1/leads.json", args, data)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -993,7 +994,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().get(self.host + "/rest/v1/activities/deletedleads.json", args)
+            result = self._api_call('get', self.host + "/rest/v1/activities/deletedleads.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
             if 'result' in result:
@@ -1014,7 +1015,7 @@ class MarketoClient:
              }
         for lead in input:
             data['input'].append(lead)
-        result = HttpLib().post(self.host + "/rest/v1/leads/partitions.json", args, data)
+        result = self._api_call('post', self.host + "/rest/v1/leads/partitions.json", args, data)
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
 
@@ -1032,7 +1033,7 @@ class MarketoClient:
         }
         if description is not None:
             args['description'] = description
-        result = HttpLib().post(self.host + "/rest/asset/v1/folders.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/folders.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -1045,7 +1046,7 @@ class MarketoClient:
             'access_token': self.token,
             'type': type
         }
-        result = HttpLib().get(self.host + "/rest/asset/v1/folder/" + str(id) + ".json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/folder/" + str(id) + ".json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -1063,7 +1064,7 @@ class MarketoClient:
             args['root'] = root
         if workSpace is not None:
             args['workSpace'] = workSpace
-        result = HttpLib().get(self.host + "/rest/asset/v1/folder/byName.json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/folder/byName.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -1085,7 +1086,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().get(self.host + "/rest/asset/v1/folder/" + str(id) + "/content.json", args)
+            result = self._api_call('get', self.host + "/rest/asset/v1/folder/" + str(id) + "/content.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success']: raise MarketoException(result['errors'][0])
             if 'result' in result:
@@ -1112,7 +1113,7 @@ class MarketoClient:
             args['name'] = name
         if isArchive is not None:
             args['isArchive'] = isArchive
-        result = HttpLib().post(self.host + "/rest/asset/v1/folder/" + str(id) + ".json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/folder/" + str(id) + ".json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -1124,7 +1125,7 @@ class MarketoClient:
             'access_token': self.token,
             'type': 'Folder'
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/folder/" + str(id) + "/delete.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/folder/" + str(id) + "/delete.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -1149,7 +1150,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().get(self.host + "/rest/asset/v1/folders.json", args)
+            result = self._api_call('get', self.host + "/rest/asset/v1/folders.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
             if 'result' in result:
@@ -1179,7 +1180,7 @@ class MarketoClient:
             'name': name,
             'value': value
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/folder/" + str(id) + "/tokens.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/folder/" + str(id) + "/tokens.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -1192,7 +1193,7 @@ class MarketoClient:
             'access_token': self.token,
             'folderType': folderType
         }
-        result = HttpLib().get(self.host + "/rest/asset/v1/folder/" + str(id) + "/tokens.json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/folder/" + str(id) + "/tokens.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -1209,7 +1210,7 @@ class MarketoClient:
             'name': name,
             'type': type
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/folder/" + str(id) + "/tokens/delete.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/folder/" + str(id) + "/tokens/delete.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -1229,7 +1230,7 @@ class MarketoClient:
         }
         if description is not None:
             args['description'] = description
-        result = HttpLib().post(self.host + "/rest/asset/v1/emailTemplates.json", args, files=content, filename="content")
+        result = self._api_call('post', self.host + "/rest/asset/v1/emailTemplates.json", args, files=content, filename="content")
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1242,7 +1243,7 @@ class MarketoClient:
         }
         if status is not None:
             args['status'] = status
-        result = HttpLib().get(self.host + "/rest/asset/v1/emailTemplate/" + str(id) + ".json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/emailTemplate/" + str(id) + ".json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1256,7 +1257,7 @@ class MarketoClient:
         }
         if status is not None:
             args['status'] = status
-        result = HttpLib().get(self.host + "/rest/asset/v1/emailTemplate/byName.json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/emailTemplate/byName.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1271,7 +1272,7 @@ class MarketoClient:
             args['name'] = name
         if description is not None:
             args['description'] = description
-        result = HttpLib().post(self.host + "/rest/asset/v1/emailTemplate/" + str(id) + ".json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/emailTemplate/" + str(id) + ".json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1282,7 +1283,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/delete.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/delete.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1303,7 +1304,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().get(self.host + "/rest/asset/v1/emailTemplates.json", args)
+            result = self._api_call('get', self.host + "/rest/asset/v1/emailTemplates.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
             if 'result' in result:
@@ -1325,7 +1326,7 @@ class MarketoClient:
         }
         if status is not None:
             args['status'] = status
-        result = HttpLib().get(self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/content", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/content", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1337,7 +1338,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/content.json", args,
+        result = self._api_call('post', self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/content.json", args,
                                 files=content, filename="content")
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
@@ -1349,7 +1350,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/approveDraft.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/approveDraft.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1360,7 +1361,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/unapprove.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/unapprove.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1371,7 +1372,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/discardDraft.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/discardDraft.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1387,7 +1388,7 @@ class MarketoClient:
             'name': name,
             'folder': "{'id': " + str(folderId) + ", 'type': " + folderType + "}"
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/clone.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/clone.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1419,7 +1420,7 @@ class MarketoClient:
             args['replyEmail'] = replyEmail
         if operational is not None:
             args['operational'] = operational
-        result = HttpLib().post(self.host + "/rest/asset/v1/emails.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/emails.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1432,7 +1433,7 @@ class MarketoClient:
         }
         if status is not None:
             args['status'] = status
-        result = HttpLib().get(self.host + "/rest/asset/v1/email/" + str(id) + ".json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/email/" + str(id) + ".json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1448,7 +1449,7 @@ class MarketoClient:
             args['status'] = status
         if folderId is not None:
             args['folder'] = "{'id': " + str(folderId) + ", 'type': " + folderType + "}"
-        result = HttpLib().get(self.host + "/rest/asset/v1/email/byName.json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/email/byName.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1459,7 +1460,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + "/delete.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/email/" + str(id) + "/delete.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1474,7 +1475,7 @@ class MarketoClient:
             args['name'] = name
         if description is not None:
             args['description'] = description
-        result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + ".json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/email/" + str(id) + ".json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1497,7 +1498,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().get(self.host + "/rest/asset/v1/emails.json", args)
+            result = self._api_call('get', self.host + "/rest/asset/v1/emails.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
             if 'result' in result:
@@ -1519,7 +1520,7 @@ class MarketoClient:
         }
         if status is not None:
             args['status'] = status
-        result = HttpLib().get(self.host + "/rest/asset/v1/email/" + str(id) + "/content.json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/email/" + str(id) + "/content.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1540,7 +1541,7 @@ class MarketoClient:
             args['fromEmail'] = '{"type":"' + type + '","value":"' + str(fromEmail) + '"}'
         if replyTo is not None:
             args['replyTO'] = '{"type":"' + type + '","value":"' + str(replyTo) + '"}'
-        result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + "/content.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/email/" + str(id) + "/content.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1563,7 +1564,7 @@ class MarketoClient:
         }
         if textValue is not None:
             data['textValue'] = textValue
-        result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + "/content/" + str(htmlId) +
+        result = self._api_call('post', self.host + "/rest/asset/v1/email/" + str(id) + "/content/" + str(htmlId) +
                                 ".json", args, data, mode='nojsondumps')
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
@@ -1578,15 +1579,13 @@ class MarketoClient:
         }
         if status is not None:
             args['status'] = status
-        result = HttpLib().get(self.host + "/rest/asset/v1/email/" + str(id) + "/dynamicContent/" +
+        result = self._api_call('get', self.host + "/rest/asset/v1/email/" + str(id) + "/dynamicContent/" +
                                str(dynamicContentId) + ".json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
 
-    def update_email_dynamic_content(self, id, dynamicContentId, segment, value, type, data_method='data'):
-        # including the parameters as form fields has encoding issues for plain text and for the subject/from name, etc.
-        # including them as URL arguments doesn't have those encoding issues; need to fix this issue in a better way
+    def update_email_dynamic_content(self, id, dynamicContentId, segment, value, type):
         self.authenticate()
         if id is None: raise ValueError("Invalid argument: required argument id is none.")
         if dynamicContentId is None: raise ValueError("Invalid argument: required argument dynamicContentId is none.")
@@ -1596,21 +1595,15 @@ class MarketoClient:
         args = {
             'access_token' : self.token
         }
-        if data_method == 'args':
-            args['segment'] = segment
-            args['value'] = value
-            args['type'] = type
-            data = None
-        else:
-            if isinstance(value, str):
-                value = value.encode('ascii', 'xmlcharrefreplace')
-            data = {
-                'segment': segment,
-                'value': value,
-                'type': type
-            }
-        result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + "/dynamicContent/" +
-                                str(dynamicContentId) + ".json", args, data, mode='nojsondumps')
+        if isinstance(value, str):
+            value = value.encode('ascii', 'xmlcharrefreplace')
+        data = {
+            'segment': segment,
+            'value': value,
+            'type': type
+        }
+        result = self._api_call('post', self.host + "/rest/asset/v1/email/" + str(id) + "/dynamicContent/" +
+                               str(dynamicContentId) + ".json", args, data, mode='nojsondumps')
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1621,7 +1614,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + "/approveDraft.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/email/" + str(id) + "/approveDraft.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1632,7 +1625,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + "/unapprove.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/email/" + str(id) + "/unapprove.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1643,7 +1636,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + "/discardDraft.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/email/" + str(id) + "/discardDraft.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1663,7 +1656,7 @@ class MarketoClient:
             args['description'] = description
         if operational is not None:
             args['operational'] = operational
-        result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + "/clone.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/email/" + str(id) + "/clone.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1680,7 +1673,7 @@ class MarketoClient:
             args['textOnly'] = textOnly
         if leadId is not None:
             args['leadId'] = leadId
-        result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + "/sendSample.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/email/" + str(id) + "/sendSample.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -1716,7 +1709,7 @@ class MarketoClient:
             args['prefillForm'] = prefillForm
         if mobileEnabled is not None:
             args['mobileEnabled'] = mobileEnabled
-        result = HttpLib().post(self.host + "/rest/asset/v1/landingPages.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/landingPages.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -1729,7 +1722,7 @@ class MarketoClient:
         }
         if status is not None:
             args['status'] = status
-        result = HttpLib().get(self.host + "/rest/asset/v1/landingPage/" + str(id) + ".json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/landingPage/" + str(id) + ".json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -1743,7 +1736,7 @@ class MarketoClient:
         }
         if status is not None:
             args['status'] = status
-        result = HttpLib().get(self.host + "/rest/asset/v1/landingPage/byName.json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/landingPage/byName.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -1754,7 +1747,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/delete.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/landingPage/" + str(id) + "/delete.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -1789,7 +1782,7 @@ class MarketoClient:
             args['styleOverRide'] = styleOverRide
         if urlPageName is not None:
             args['urlPageName'] = urlPageName
-        result = HttpLib().post(self.host + "/rest/asset/v1/landingPage/" + str(id) + ".json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/landingPage/" + str(id) + ".json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -1812,7 +1805,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().get(self.host + "/rest/asset/v1/landingPages.json", args)
+            result = self._api_call('get', self.host + "/rest/asset/v1/landingPages.json", args)
             if result is None: raise Exception("Empty Response")
             #if not result['success']: raise MarketoException(result['errors'][0] + ". Request ID: " + result['requestId'])
             if not result['success']: raise MarketoException(result['errors'][0])
@@ -1835,7 +1828,7 @@ class MarketoClient:
         }
         if status is not None:
             args['status'] = status
-        result = HttpLib().get(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/content.json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/landingPage/" + str(id) + "/content.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -1887,7 +1880,7 @@ class MarketoClient:
             data['imageOpenNewWindow'] = imageOpenNewWindow
         if linkUrl is not None:
             data['linkUrl'] = linkUrl
-        result = HttpLib().post(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/content.json", args,
+        result = self._api_call('post', self.host + "/rest/asset/v1/landingPage/" + str(id) + "/content.json", args,
                                 data, mode='nojsondumps')
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
@@ -1941,7 +1934,7 @@ class MarketoClient:
             data['imageOpenNewWindow'] = imageOpenNewWindow
         if linkUrl is not None:
             data['linkUrl'] = linkUrl
-        result = HttpLib().post(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/content/" + str(contentId) +
+        result = self._api_call('post', self.host + "/rest/asset/v1/landingPage/" + str(id) + "/content/" + str(contentId) +
                                 ".json", args, data, mode='nojsondumps')
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
@@ -1954,7 +1947,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/content/" + str(contentId) +
+        result = self._api_call('post', self.host + "/rest/asset/v1/landingPage/" + str(id) + "/content/" + str(contentId) +
                                 "/delete.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
@@ -1969,7 +1962,7 @@ class MarketoClient:
         }
         if status is not None:
             args['status'] = status
-        result = HttpLib().get(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/dynamicContent/" +
+        result = self._api_call('get', self.host + "/rest/asset/v1/landingPage/" + str(id) + "/dynamicContent/" +
                                str(dynamicContentId) + ".json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
@@ -2025,7 +2018,7 @@ class MarketoClient:
             data['imageOpenNewWindow'] = imageOpenNewWindow
         if linkUrl is not None:
             data['linkUrl'] = linkUrl
-        result = HttpLib().post(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/dynamicContent/" +
+        result = self._api_call('post', self.host + "/rest/asset/v1/landingPage/" + str(id) + "/dynamicContent/" +
                                 str(dynamicContentId) + ".json", args, data, mode='nojsondumps')
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
@@ -2037,7 +2030,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/approveDraft.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/landingPage/" + str(id) + "/approveDraft.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -2048,7 +2041,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/unapprove.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/landingPage/" + str(id) + "/unapprove.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -2059,7 +2052,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/discardDraft.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/landingPage/" + str(id) + "/discardDraft.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -2079,7 +2072,7 @@ class MarketoClient:
             args['description'] = description
         if template is not None:
             args['template'] = template
-        result = HttpLib().post(self.host + "/rest/asset/v1/landingPage/" + str(id) + "/clone.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/landingPage/" + str(id) + "/clone.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -2116,7 +2109,7 @@ class MarketoClient:
             args['knownVisitor'] = knownVisitor
         if theme is not None:
             args['theme'] = theme
-        result = HttpLib().post(self.host + "/rest/asset/v1/forms.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/forms.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -2129,7 +2122,7 @@ class MarketoClient:
         }
         if status is not None:
             args['status'] = status
-        result = HttpLib().get(self.host + "/rest/asset/v1/form/" + str(id) + ".json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/form/" + str(id) + ".json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -2143,7 +2136,7 @@ class MarketoClient:
         }
         if status is not None:
             args['status'] = status
-        result = HttpLib().get(self.host + "/rest/asset/v1/form/byName.json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/form/byName.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -2154,7 +2147,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/form/" + str(id) + "/delete.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/form/" + str(id) + "/delete.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -2189,7 +2182,7 @@ class MarketoClient:
             args['formTheme'] = formTheme
         if customcss is not None:
             args['customcss'] = customcss
-        result = HttpLib().post(self.host + "/rest/asset/v1/form/" + str(id) + ".json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/form/" + str(id) + ".json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -2212,7 +2205,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().get(self.host + "/rest/asset/v1/forms.json", args)
+            result = self._api_call('get', self.host + "/rest/asset/v1/forms.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success']: raise MarketoException(result['errors'][0])
             if 'result' in result:
@@ -2234,7 +2227,7 @@ class MarketoClient:
         }
         if status is not None:
             args['status'] = status
-        result = HttpLib().get(self.host + "/rest/asset/v1/form/" + str(id) + "/fields.json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/form/" + str(id) + "/fields.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -2284,7 +2277,7 @@ class MarketoClient:
             args['maskInput'] = maskInput
         if visibleLines is not None:
             args['visibleLines'] = visibleLines
-        result = HttpLib().post(self.host + "/rest/asset/v1/form/" + str(id) + "/fields.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/form/" + str(id) + "/fields.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -2336,7 +2329,7 @@ class MarketoClient:
             data['maskInput'] = maskInput
         if visibleLines is not None:
             data['visibleLines'] = visibleLines
-        result = HttpLib().post(self.host + "/rest/asset/v1/form/" + str(id) + "/field/" + str(fieldId) +
+        result = self._api_call('post', self.host + "/rest/asset/v1/form/" + str(id) + "/field/" + str(fieldId) +
                                 ".json", args, data, mode='nojsondumps')
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
@@ -2349,7 +2342,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/form/" + str(id) + "/field/" + str(fieldId) +
+        result = self._api_call('post', self.host + "/rest/asset/v1/form/" + str(id) + "/field/" + str(fieldId) +
                                 "/delete.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
@@ -2361,7 +2354,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/form/" + str(id) + "/approveDraft.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/form/" + str(id) + "/approveDraft.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -2372,7 +2365,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/form/" + str(id) + "/unapprove.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/form/" + str(id) + "/unapprove.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -2383,7 +2376,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/form/" + str(id) + "/discardDraft.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/form/" + str(id) + "/discardDraft.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -2401,7 +2394,7 @@ class MarketoClient:
         }
         if description is not None:
             args['description'] = description
-        result = HttpLib().post(self.host + "/rest/asset/v1/form/" + str(id) + "/clone.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/form/" + str(id) + "/clone.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -2422,7 +2415,7 @@ class MarketoClient:
             args['description'] = description
         if insertOnly is not None:
             args['insertOnly'] = insertOnly
-        result = HttpLib().post(self.host + "/rest/asset/v1/files.json", args, files=file, filename="file")
+        result = self._api_call('post', self.host + "/rest/asset/v1/files.json", args, files=file, filename="file")
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2433,7 +2426,7 @@ class MarketoClient:
         args = {
             'access_token' : self.token
         }
-        result = HttpLib().get(self.host + "/rest/asset/v1/file/" + str(id) + ".json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/file/" + str(id) + ".json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2445,7 +2438,7 @@ class MarketoClient:
             'access_token' : self.token,
             'name' : name
         }
-        result = HttpLib().get(self.host + "/rest/asset/v1/file/byName.json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/file/byName.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2466,7 +2459,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().get(self.host + "/rest/asset/v1/files.json", args)
+            result = self._api_call('get', self.host + "/rest/asset/v1/files.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success']: raise MarketoException(result['errors'][0])
             if 'result' in result:
@@ -2487,7 +2480,7 @@ class MarketoClient:
         args = {
             'access_token' : self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/file/" + str(id) + "/content.json", args, files=file,
+        result = self._api_call('post', self.host + "/rest/asset/v1/file/" + str(id) + "/content.json", args, files=file,
                                 filename="file")
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
@@ -2507,7 +2500,7 @@ class MarketoClient:
         }
         if description is not None:
             args['description'] = description
-        result = HttpLib().post(self.host + "/rest/asset/v1/snippets.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/snippets.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2520,7 +2513,7 @@ class MarketoClient:
         }
         if status is not None:
             args['status'] = status
-        result = HttpLib().get(self.host + "/rest/asset/v1/snippet/" + str(id) + ".json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/snippet/" + str(id) + ".json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2531,7 +2524,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/snippet/" + str(id) + "/delete.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/snippet/" + str(id) + "/delete.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2546,7 +2539,7 @@ class MarketoClient:
             args['name'] = name
         if description is not None:
             args['description'] = description
-        result = HttpLib().post(self.host + "/rest/asset/v1/snippet/" + str(id) + ".json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/snippet/" + str(id) + ".json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2567,7 +2560,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().get(self.host + "/rest/asset/v1/snippets.json", args)
+            result = self._api_call('get', self.host + "/rest/asset/v1/snippets.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
             if 'result' in result:
@@ -2589,7 +2582,7 @@ class MarketoClient:
         }
         if status is not None:
             args['status'] = status
-        result = HttpLib().get(self.host + "/rest/asset/v1/snippet/" + str(id) + "/content.json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/snippet/" + str(id) + "/content.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2606,7 +2599,7 @@ class MarketoClient:
             'type': type,
             'content': content
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/snippet/" + str(id) + "/content.json", args, data,
+        result = self._api_call('post', self.host + "/rest/asset/v1/snippet/" + str(id) + "/content.json", args, data,
                                 mode='nojsondumps')
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
@@ -2618,7 +2611,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/snippet/" + str(id) + "/approveDraft.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/snippet/" + str(id) + "/approveDraft.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2629,7 +2622,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/snippet/" + str(id) + "/unapprove.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/snippet/" + str(id) + "/unapprove.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2640,7 +2633,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/snippet/" + str(id) + "/discardDraft.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/snippet/" + str(id) + "/discardDraft.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2658,7 +2651,7 @@ class MarketoClient:
         }
         if description is not None:
             args['description'] = description
-        result = HttpLib().post(self.host + "/rest/asset/v1/snippet/" + str(id) + "/clone.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/snippet/" + str(id) + "/clone.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2674,7 +2667,7 @@ class MarketoClient:
             args['value'] = value
         if type is not None:
             args['type'] = type
-        result = HttpLib().post(self.host + "/rest/asset/v1/snippet/" + str(id) + "/dynamicContent/" +
+        result = self._api_call('post', self.host + "/rest/asset/v1/snippet/" + str(id) + "/dynamicContent/" +
                                str(segmentId) + ".json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
@@ -2686,7 +2679,7 @@ class MarketoClient:
         args = {
             'access_token' : self.token
         }
-        result = HttpLib().get(self.host + "/rest/asset/v1/snippet/" + str(id) + "/dynamicContent.json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/snippet/" + str(id) + "/dynamicContent.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2700,7 +2693,7 @@ class MarketoClient:
         }
         if status is not None:
             args['status'] = status
-        result = HttpLib().get(self.host + "/rest/asset/v1/segmentation.json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/segmentation.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         if has_empty_warning(result): return []
@@ -2715,7 +2708,7 @@ class MarketoClient:
         }
         if status is not None:
             args['status'] = status
-        result = HttpLib().get(self.host + "/rest/asset/v1/segmentation/" + str(id) + "/segments.json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/segmentation/" + str(id) + "/segments.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2737,7 +2730,7 @@ class MarketoClient:
             args['description'] = description
         if templateType is not None:
             args['templateType'] = templateType
-        result = HttpLib().post(self.host + "/rest/asset/v1/landingPageTemplates.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/landingPageTemplates.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2750,7 +2743,7 @@ class MarketoClient:
         }
         if status is not None:
             args['status'] = status
-        result = HttpLib().get(self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + ".json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + ".json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2764,7 +2757,7 @@ class MarketoClient:
         }
         if status is not None:
             args['status'] = status
-        result = HttpLib().get(self.host + "/rest/asset/v1/landingPageTemplate/byName.json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/landingPageTemplate/byName.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2787,7 +2780,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().get(self.host + "/rest/asset/v1/landingPageTemplates.json", args)
+            result = self._api_call('get', self.host + "/rest/asset/v1/landingPageTemplates.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
             if 'result' in result:
@@ -2809,7 +2802,7 @@ class MarketoClient:
         }
         if status is not None:
             args['status'] = status
-        result = HttpLib().get(self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/content.json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/content.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2821,7 +2814,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/content.json", args,
+        result = self._api_call('post', self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/content.json", args,
                                 files=content, filename="content")
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
@@ -2837,7 +2830,7 @@ class MarketoClient:
             args['name'] = name
         if description is not None:
             args['description'] = description
-        result = HttpLib().post(self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + ".json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + ".json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2848,7 +2841,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/delete.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/delete.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2859,7 +2852,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/approveDraft.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/approveDraft.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2870,7 +2863,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/unapprove.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/unapprove.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2881,7 +2874,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/discardDraft.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/discardDraft.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2897,7 +2890,7 @@ class MarketoClient:
             'name': name,
             'folder': "{'id': " + str(folderId) + ", 'type': " + folderType + "}"
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/clone.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/clone.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -2929,7 +2922,7 @@ class MarketoClient:
             args['tags'] = str(tags_formatted)
         if costs is not None:
             args['costs'] = str(costs)
-        result = HttpLib().post(self.host + "/rest/asset/v1/programs.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/programs.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -2940,7 +2933,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().get(self.host + "/rest/asset/v1/program/" + str(id) + ".json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/program/" + str(id) + ".json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -2952,7 +2945,7 @@ class MarketoClient:
             'access_token': self.token,
             'name': name
         }
-        result = HttpLib().get(self.host + "/rest/asset/v1/program/byName.json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/program/byName.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -2966,7 +2959,7 @@ class MarketoClient:
             'tagType': tagType,
             'tagValue': tagValue
         }
-        result = HttpLib().get(self.host + "/rest/asset/v1/program/byTag.json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/program/byTag.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -2988,7 +2981,7 @@ class MarketoClient:
                 tag_pair = {'tagType': key, 'tagValue': elem}
                 tags_formatted.append(tag_pair)
             data.append(('tags',str(tags_formatted)))
-        result = HttpLib().post(self.host + "/rest/asset/v1/program/" + str(id) + ".json", args, data, mode='nojsondumps')
+        result = self._api_call('post', self.host + "/rest/asset/v1/program/" + str(id) + ".json", args, data, mode='nojsondumps')
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -2999,7 +2992,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/program/" + str(id) + "/delete.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/program/" + str(id) + "/delete.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -3020,7 +3013,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().get(self.host + "/rest/asset/v1/programs.json", args)
+            result = self._api_call('get', self.host + "/rest/asset/v1/programs.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
             if 'result' in result:
@@ -3047,7 +3040,7 @@ class MarketoClient:
         }
         if description is not None:
             args['description'] = description
-        result = HttpLib().post(self.host + "/rest/asset/v1/program/" + str(id) + "/clone.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/program/" + str(id) + "/clone.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -3058,7 +3051,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/program/" + str(id) + "/approve.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/program/" + str(id) + "/approve.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -3069,7 +3062,7 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = HttpLib().post(self.host + "/rest/asset/v1/program/" + str(id) + "/unapprove.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/program/" + str(id) + "/unapprove.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -3088,7 +3081,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().get(self.host + "/rest/asset/v1/channels.json", args)
+            result = self._api_call('get', self.host + "/rest/asset/v1/channels.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success']: raise MarketoException(result['errors'][0])
             if 'result' in result:
@@ -3109,7 +3102,7 @@ class MarketoClient:
             'access_token': self.token,
             'name': name
         }
-        result = HttpLib().get(self.host + "/rest/asset/v1/channel/byName.json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/channel/byName.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -3128,7 +3121,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().get(self.host + "/rest/asset/v1/tagTypes.json", args)
+            result = self._api_call('get', self.host + "/rest/asset/v1/tagTypes.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success']: raise MarketoException(result['errors'][0])
             if 'result' in result:
@@ -3149,7 +3142,7 @@ class MarketoClient:
             'access_token': self.token,
             'name': name
         }
-        result = HttpLib().get(self.host + "/rest/asset/v1/tagType/byName.json", args)
+        result = self._api_call('get', self.host + "/rest/asset/v1/tagType/byName.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
@@ -3164,7 +3157,7 @@ class MarketoClient:
         }
         if names is not None:
             args['names'] = names
-        result = HttpLib().get(self.host + "/rest/v1/customobjects.json", args)
+        result = self._api_call('get', self.host + "/rest/v1/customobjects.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -3175,7 +3168,7 @@ class MarketoClient:
         args = {
             'access_token' : self.token
         }
-        result = HttpLib().get(self.host + "/rest/v1/customobjects/" + name + "/describe.json", args)
+        result = self._api_call('get', self.host + "/rest/v1/customobjects/" + name + "/describe.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -3196,7 +3189,7 @@ class MarketoClient:
             data['action'] = action
         if dedupeBy is not None:
             data['dedupeBy'] = dedupeBy
-        result = HttpLib().post(self.host + "/rest/v1/customobjects/" + name + ".json", args, data)
+        result = self._api_call('post', self.host + "/rest/v1/customobjects/" + name + ".json", args, data)
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
 
@@ -3214,7 +3207,7 @@ class MarketoClient:
             data['input'].append(record)
         if deleteBy is not None:
             data['deleteBy'] = deleteBy
-        result = HttpLib().post(self.host + "/rest/v1/customobjects/" + name + "/delete.json", args, data)
+        result = self._api_call('post', self.host + "/rest/v1/customobjects/" + name + "/delete.json", args, data)
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
 
@@ -3239,7 +3232,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().post(self.host + "/rest/v1/customobjects/" + name + ".json", args, data)
+            result = self._api_call('post', self.host + "/rest/v1/customobjects/" + name + ".json", args, data)
             if result is None: raise Exception("Empty Response")
             if not result['success']: raise MarketoException(result['errors'][0])
             result_list.extend(result['result'])
@@ -3255,7 +3248,7 @@ class MarketoClient:
         args = {
             'access_token' : self.token
         }
-        result = HttpLib().get(self.host + "/rest/v1/opportunities/describe.json", args)
+        result = self._api_call('get', self.host + "/rest/v1/opportunities/describe.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -3275,7 +3268,7 @@ class MarketoClient:
             data['action'] = action
         if dedupeBy is not None:
             data['dedupeBy'] = dedupeBy
-        result = HttpLib().post(self.host + "/rest/v1/opportunities.json", args, data)
+        result = self._api_call('post', self.host + "/rest/v1/opportunities.json", args, data)
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
 
@@ -3292,7 +3285,7 @@ class MarketoClient:
             data['input'].append(opportunity)
         if deleteBy is not None:
             data['deleteBy'] = deleteBy
-        result = HttpLib().post(self.host + "/rest/v1/opportunities/delete.json", args, data)
+        result = self._api_call('post', self.host + "/rest/v1/opportunities/delete.json", args, data)
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
 
@@ -3314,7 +3307,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().post(self.host + "/rest/v1/opportunities.json", args, data, mode='nojsondumps')
+            result = self._api_call('post', self.host + "/rest/v1/opportunities.json", args, data, mode='nojsondumps')
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
             result_list.extend(result['result'])
@@ -3328,7 +3321,7 @@ class MarketoClient:
         args = {
             'access_token' : self.token
         }
-        result = HttpLib().get(self.host + "/rest/v1/opportunities/roles/describe.json", args)
+        result = self._api_call('get', self.host + "/rest/v1/opportunities/roles/describe.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -3348,7 +3341,7 @@ class MarketoClient:
             data['action'] = action
         if dedupeBy is not None:
             data['dedupeBy'] = dedupeBy
-        result = HttpLib().post(self.host + "/rest/v1/opportunities/roles.json", args, data)
+        result = self._api_call('post', self.host + "/rest/v1/opportunities/roles.json", args, data)
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
 
@@ -3365,7 +3358,7 @@ class MarketoClient:
             data['input'].append(opportunity)
         if deleteBy is not None:
             data['deleteBy'] = deleteBy
-        result = HttpLib().post(self.host + "/rest/v1/opportunities/roles/delete.json", args, data)
+        result = self._api_call('post', self.host + "/rest/v1/opportunities/roles/delete.json", args, data)
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
 
@@ -3387,7 +3380,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().post(self.host + "/rest/v1/opportunities/roles.json", args, data, mode='nojsondumps')
+            result = self._api_call('post', self.host + "/rest/v1/opportunities/roles.json", args, data, mode='nojsondumps')
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
             result_list.extend(result['result'])
@@ -3406,7 +3399,7 @@ class MarketoClient:
         args = {
             'access_token' : self.token
         }
-        result = HttpLib().get(self.host + "/rest/v1/companies/describe.json", args)
+        result = self._api_call('get', self.host + "/rest/v1/companies/describe.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -3426,7 +3419,7 @@ class MarketoClient:
             data['action'] = action
         if dedupeBy is not None:
             data['dedupeBy'] = dedupeBy
-        result = HttpLib().post(self.host + "/rest/v1/companies.json", args, data)
+        result = self._api_call('post', self.host + "/rest/v1/companies.json", args, data)
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
 
@@ -3443,7 +3436,7 @@ class MarketoClient:
             data['input'].append(company)
         if deleteBy is not None:
             data['deleteBy'] = deleteBy
-        result = HttpLib().post(self.host + "/rest/v1/companies/delete.json", args, data)
+        result = self._api_call('post', self.host + "/rest/v1/companies/delete.json", args, data)
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
 
@@ -3465,7 +3458,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().post(self.host + "/rest/v1/companies.json", args, data, mode='nojsondumps')
+            result = self._api_call('post', self.host + "/rest/v1/companies.json", args, data, mode='nojsondumps')
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
             result_list.extend(result['result'])
@@ -3481,7 +3474,7 @@ class MarketoClient:
         args = {
             'access_token' : self.token
         }
-        result = HttpLib().get(self.host + "/rest/v1/salespersons/describe.json", args)
+        result = self._api_call('get', self.host + "/rest/v1/salespersons/describe.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
@@ -3501,7 +3494,7 @@ class MarketoClient:
             data['action'] = action
         if dedupeBy is not None:
             data['dedupeBy'] = dedupeBy
-        result = HttpLib().post(self.host + "/rest/v1/salespersons.json", args, data)
+        result = self._api_call('post', self.host + "/rest/v1/salespersons.json", args, data)
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
 
@@ -3518,7 +3511,7 @@ class MarketoClient:
             data['input'].append(record)
         if deleteBy is not None:
             data['deleteBy'] = deleteBy
-        result = HttpLib().post(self.host + "/rest/v1/salespersons/delete.json", args, data)
+        result = self._api_call('post', self.host + "/rest/v1/salespersons/delete.json", args, data)
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
 
@@ -3540,7 +3533,7 @@ class MarketoClient:
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
-            result = HttpLib().post(self.host + "/rest/v1/salespersons.json", args, data, mode='nojsondumps')
+            result = self._api_call('post', self.host + "/rest/v1/salespersons.json", args, data, mode='nojsondumps')
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
             result_list.extend(result['result'])
