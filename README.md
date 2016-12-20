@@ -12,6 +12,15 @@ Installation
 
 pip install marketorestpython
 
+Unit tests
+==========
+
+```
+python setup.py develop
+pip install -r requirements-tests.txt
+py.test tests/
+```
+
 Usage
 =====
 ```python
