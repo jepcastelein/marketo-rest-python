@@ -1584,7 +1584,9 @@ class MarketoClient:
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
 
-    def update_email_dynamic_content(self, id, dynamicContentId, segment, value, type):
+    def update_email_dynamic_content(self, id, dynamicContentId, segment, value, type, data_method='data'):
+        # including the parameters as form fields has encoding issues for plain text and for the subject/from name, etc.
+        # including them as URL arguments doesn't have those encoding issues; need to fix this issue in a better way
         self.authenticate()
         if id is None: raise ValueError("Invalid argument: required argument id is none.")
         if dynamicContentId is None: raise ValueError("Invalid argument: required argument dynamicContentId is none.")
@@ -1594,15 +1596,21 @@ class MarketoClient:
         args = {
             'access_token' : self.token
         }
-        if isinstance(value, str):
-            value = value.encode('ascii', 'xmlcharrefreplace')
-        data = {
-            'segment': segment,
-            'value': value,
-            'type': type
-        }
+        if data_method == 'args':
+            args['segment'] = segment
+            args['value'] = value
+            args['type'] = type
+            data = None
+        else:
+            if isinstance(value, str):
+                value = value.encode('ascii', 'xmlcharrefreplace')
+            data = {
+                'segment': segment,
+                'value': value,
+                'type': type
+            }
         result = HttpLib().post(self.host + "/rest/asset/v1/email/" + str(id) + "/dynamicContent/" +
-                               str(dynamicContentId) + ".json", args, data, mode='nojsondumps')
+                                str(dynamicContentId) + ".json", args, data, mode='nojsondumps')
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
