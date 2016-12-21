@@ -805,10 +805,10 @@ class MarketoClient:
                     result_list.extend(new_result)
                 else:
                     result_list.extend(result['result'])
+            args['nextPageToken'] = result['nextPageToken']
             if result['moreResult'] is False:
                 break
-            args['nextPageToken'] = result['nextPageToken']
-        return result_list
+        return result_list, args['nextPageToken']
 
     def get_lead_activities_yield(self, activityTypeIds, nextPageToken=None, sinceDatetime=None, untilDatetime=None,
                             batchSize=None, listId=None, leadIds=None):
