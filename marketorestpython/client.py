@@ -836,18 +836,18 @@ class MarketoClient:
             result = self._api_call('get', self.host + "/rest/v1/activities.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success']: raise MarketoException(result['errors'][0])
-            args['nextPageToken'] = result['nextPageToken']
             if 'result' in result:
                 if untilDatetime is not None:
                     new_result = self.process_lead_activity_until_datetime(result['result'], untilDatetime)
                     if new_result:
-                        yield new_result, args['nextPageToken']
+                        yield new_result
                     if len(new_result) < len(result['result']):
                         break
                 else:
-                    yield result['result'], args['nextPageToken']
+                    yield result['result']
             if result['moreResult'] is False:
                 break
+            args['nextPageToken'] = result['nextPageToken']
 
     def get_lead_changes(self, fields, nextPageToken=None, sinceDatetime=None, batchSize=None, listId=None):
         self.authenticate()
