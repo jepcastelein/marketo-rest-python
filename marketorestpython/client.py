@@ -51,6 +51,7 @@ class MarketoClient:
                 method_map={
                     'get_lead_by_id': self.get_lead_by_id,
                     'get_multiple_leads_by_filter_type': self.get_multiple_leads_by_filter_type,
+                    'get_multiple_leads_by_filter_type_yield': self.get_multiple_leads_by_filter_type_yield,
                     'get_multiple_leads_by_list_id': self.get_multiple_leads_by_list_id,
                     'get_multiple_leads_by_list_id_yield': self.get_multiple_leads_by_list_id_yield,
                     'get_multiple_leads_by_program_id': self.get_multiple_leads_by_program_id,
@@ -299,6 +300,32 @@ class MarketoClient:
                 break
             args['nextPageToken'] = result['nextPageToken']
         return result_list
+
+    def get_multiple_leads_by_filter_type_yield(self, filterType, filterValues, fields=None, batchSize=None):
+        self.authenticate()
+        if filterType is None: raise ValueError("Invalid argument: required argument filterType is none.")
+        if filterValues is None: raise ValueError("Invalid argument: required argument filter_values is none.")
+        filterValues = filterValues.split() if type(filterValues) is str else filterValues
+        data=[('filterValues',(',').join(filterValues)), ('filterType', filterType)]
+        if fields is not None:
+            data.append(('fields',fields))
+        if batchSize is not None:
+            data.append(('batchSize',batchSize))
+        args = {
+            'access_token': self.token,
+            '_method': 'GET'
+        }
+        while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
+            result = self._api_call('post', self.host + "/rest/v1/leads.json", args, data, mode='nojsondumps')
+            if result is None: raise Exception("Empty Response")
+            if not result['success'] : raise MarketoException(result['errors'][0])
+            args['nextPageToken'] = result.get('nextPageToken')
+            if 'result' in result:
+                yield result['result'], args['nextPageToken']
+                if len(result['result']) == 0 or 'nextPageToken' not in result:
+                    break
 
     def get_multiple_leads_by_list_id(self, listId, fields=None, batchSize=None):
         self.authenticate()
