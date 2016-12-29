@@ -301,7 +301,7 @@ class MarketoClient:
             args['nextPageToken'] = result['nextPageToken']
         return result_list
 
-    def get_multiple_leads_by_filter_type_yield(self, filterType, filterValues, fields=None, batchSize=None):
+    def get_multiple_leads_by_filter_type_yield(self, filterType, filterValues, fields=None, nextPageToken=None, batchSize=None):
         self.authenticate()
         if filterType is None: raise ValueError("Invalid argument: required argument filterType is none.")
         if filterValues is None: raise ValueError("Invalid argument: required argument filter_values is none.")
@@ -315,6 +315,8 @@ class MarketoClient:
             'access_token': self.token,
             '_method': 'GET'
         }
+	if nextPageToken is not None:
+	    args['nextPageToken'] = nextPageToken
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
