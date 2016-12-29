@@ -370,9 +370,8 @@ class MarketoClient:
             result = self._api_call('post', self.host + "/rest/v1/list/" + str(listId)+ "/leads.json", args, data, mode='nojsondumps')
             if result is None: raise Exception("Empty Response")
             if not result['success']: raise MarketoException(result['errors'][0])
-            args['nextPageToken'] = result.get('nextPageToken')
             if 'result' in result:
-                yield result['result'], args['nextPageToken']
+                yield result['result']
                 if len(result['result']) == 0 or 'nextPageToken' not in result:
                     break
                 else:
