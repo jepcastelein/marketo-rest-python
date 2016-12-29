@@ -315,8 +315,8 @@ class MarketoClient:
             'access_token': self.token,
             '_method': 'GET'
         }
-	if nextPageToken is not None:
-	    args['nextPageToken'] = nextPageToken
+        if nextPageToken is not None:
+            args['nextPageToken'] = nextPageToken
         while True:
             self.authenticate()
             args['access_token'] = self.token  # for long-running processes, this updates the access token
