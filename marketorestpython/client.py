@@ -849,7 +849,8 @@ class MarketoClient:
                 break
             args['nextPageToken'] = result['nextPageToken']
 
-    def get_lead_changes(self, fields, nextPageToken=None, sinceDatetime=None, batchSize=None, listId=None):
+    def get_lead_changes(self, fields, nextPageToken=None, sinceDatetime=None, untilDatetime=None, batchSize=None,
+                         listId=None):
         self.authenticate()
         if fields is None: raise ValueError("Invalid argument: required argument fields is none.")
         if nextPageToken is None and sinceDatetime is None: raise ValueError("Either nextPageToken or sinceDatetime needs to be specified.")
@@ -873,13 +874,18 @@ class MarketoClient:
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
             if 'result' in result:
-                result_list.extend(result['result'])
+                if untilDatetime is not None:
+                    new_result = self.process_lead_activity_until_datetime(result['result'], untilDatetime)
+                    result_list.extend(new_result)
+                else:
+                    result_list.extend(result['result'])
             if result['moreResult'] is False:
                 break
             args['nextPageToken'] = result['nextPageToken']
         return result_list
 
-    def get_lead_changes_yield(self, fields, nextPageToken=None, sinceDatetime=None, batchSize=None, listId=None):
+    def get_lead_changes_yield(self, fields, nextPageToken=None, sinceDatetime=None, untilDatetime=None, batchSize=None,
+                               listId=None):
         self.authenticate()
         if fields is None: raise ValueError("Invalid argument: required argument fields is none.")
         if nextPageToken is None and sinceDatetime is None: raise ValueError("Either nextPageToken or sinceDatetime needs to be specified.")
@@ -902,7 +908,12 @@ class MarketoClient:
             if result is None: raise Exception("Empty Response")
             if not result['success']: raise MarketoException(result['errors'][0])
             if 'result' in result:
-                yield result['result']
+                if untilDatetime is not None:
+                    new_result = self.process_lead_activity_until_datetime(result['result'], untilDatetime)
+                    if new_result:
+                        yield new_result
+                    if len(new_result) < len(result['result']):
+                        break
             if result['moreResult'] is False:
                 break
             args['nextPageToken'] = result['nextPageToken']
