@@ -865,8 +865,8 @@ class MarketoClient:
             result = self._api_call('get', self.host + "/rest/v1/activities.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success']: raise MarketoException(result['errors'][0])
+            args['nextPageToken'] = result['nextPageToken']
             if 'result' in result:
-                args['nextPageToken'] = result['nextPageToken']    
                 if untilDatetime is not None:
                     new_result = self.process_lead_activity_until_datetime(result['result'], untilDatetime)
                     if new_result:
