@@ -139,6 +139,23 @@ API Ref: http://developers.marketo.com/documentation/rest/associate-lead/
 lead = mc.execute(method='associate_lead', id=2234, cookie='id:287-GTJ-838%26token:_mch-marketo.com-1396310362214-46169')
 ```
 
+Push Lead
+---------
+API Ref: http://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Leads/pushToMarketoUsingPOST
+```python
+leads = [
+    {"email":"lead1@example.com","firstName":"Joe", "cookies":"id:662-XAB-092&token:_mch-castelein.net-1487035251303-23757"},
+    {"email":"lead2@example.com","firstName":"Jillian"}
+]
+lead = mc.execute(method='push_lead', leads=leads, lookupField='email', programName='Big Launch Webinar',
+                  programStatus='Registered', source='example source', reason='example reason')
+
+# leads, lookupField and programName are required
+# all others are optional
+# to associate Cookie ID, put it in a field called 'cookies' (see example above)
+# to associate mkt_tok, put it in a field called 'mktToken' (see http://developers.marketo.com/rest-api/lead-database/leads/#push_lead_to_marketo)
+```
+
 Merge Lead
 ----------
 API Ref: http://developers.marketo.com/documentation/rest/merge-lead/

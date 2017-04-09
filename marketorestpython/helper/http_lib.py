@@ -5,7 +5,7 @@ import mimetypes
 class HttpLib:
     max_retries = 3
     sleep_duration = 3
-    num_calls_per_second = 5 # can run five times per second at most (at 100/20 rate limit)
+    num_calls_per_second = 5  # can run five times per second at most (at 100/20 rate limit)
 
     def _rate_limited(maxPerSecond):
         minInterval = 1.0 / float(maxPerSecond)
@@ -24,7 +24,7 @@ class HttpLib:
 
     @_rate_limited(num_calls_per_second)
     def get(self, endpoint, args=None, mode=None):
-        retries = 0
+        retries = 1
         while True:
             if retries > self.max_retries:
                 return None
@@ -39,13 +39,21 @@ class HttpLib:
                     if 'success' in r_json:  # this is for all normal API calls (but not the access token call)
                         if r_json['success'] == False:
                             print('error from http_lib.py: ' + str(r_json['errors'][0]))
-                            if r_json['errors'][0]['code'] == '606':
-                                print('error 606, rate limiter. Pausing, then trying again')
-                                time.sleep(5)
-                            elif r_json['errors'][0]['code'] == '615':
-                                print('error 615, concurrent call limit. Pausing, then trying again')
-                                time.sleep(2)
+                            if r_json['errors'][0]['code'] in ('606', '615', '604'):
+                                # this handles Marketo exceptions; HTTP response is still 200, but error is in the JSON
+                                error_code = r_json['errors'][0]['code']
+                                error_description = {
+                                    '606': 'rate limiter',
+                                    '615': 'concurrent call limit',
+                                    '604': 'timeout'}
+                                if retries < self.max_retries:
+                                    print('Attempt %s. Error %s, %s. Pausing, then trying again.' % (retries, error_code, error_description[error_code]))
+                                else:
+                                    print('Attempt %s. Error %s, %s. This was the final attempt.' % (retries, error_code, error_description[error_code]))
+                                time.sleep(self.sleep_duration)
+                                retries += 1
                             else:
+                                # fatal exceptions will still error out; exceptions caught above may be recoverable
                                 return r_json
                         else:
                             return r_json
@@ -58,7 +66,7 @@ class HttpLib:
 
     @_rate_limited(num_calls_per_second)
     def post(self, endpoint, args, data=None, files=None, filename=None, mode=None):
-        retries = 0
+        retries = 1
         while True:
             if retries > self.max_retries:
                 return None
@@ -77,13 +85,23 @@ class HttpLib:
                 if 'success' in r_json:  # this is for all normal API calls (but not the access token call)
                     if r_json['success'] == False:
                         print('error from http_lib.py: ' + str(r_json['errors'][0]))
-                        if r_json['errors'][0]['code'] == '606':
-                            print('error 606, rate limiter. Pausing, then trying again')
-                            time.sleep(5)
-                        elif r_json['errors'][0]['code'] == '615':
-                            print('error 615, concurrent call limit. Pausing, then trying again')
-                            time.sleep(2)
+                        if r_json['errors'][0]['code'] in ('606', '615', '604'):
+                            # this handles Marketo exceptions; HTTP response is still 200, but error is in the JSON
+                            error_code = r_json['errors'][0]['code']
+                            error_description = {
+                                '606': 'rate limiter',
+                                '615': 'concurrent call limit',
+                                '604': 'timeout'}
+                            if retries < self.max_retries:
+                                print('Attempt %s. Error %s, %s. Pausing, then trying again.' % (
+                                retries, error_code, error_description[error_code]))
+                            else:
+                                print('Attempt %s. Error %s, %s. This was the final attempt.' % (
+                                retries, error_code, error_description[error_code]))
+                            time.sleep(self.sleep_duration)
+                            retries += 1
                         else:
+                            # fatal exceptions will still error out; exceptions caught above may be recoverable
                             return r_json
                     else:
                         return r_json
