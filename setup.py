@@ -26,7 +26,7 @@ setup(
     packages=['marketorestpython', 'marketorestpython.helper'],
     license='MIT License',
     install_requires=[
-        'requests',
+        'requests==2.10.0',
     ],
     keywords = ['Marketo', 'REST API', 'Wrapper', 'Client'],
     description='Python Client for the Marketo REST API',
