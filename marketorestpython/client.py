@@ -3347,10 +3347,10 @@ class MarketoClient:
         if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
 
-    def get_opportunities(self, filterType, filterValues, fields=None, batchSize=None):
+    def get_opportunities(self, filterType, filterValues=None, fields=None, batchSize=None):
         self.authenticate()
         if filterType is None: raise ValueError("Invalid argument: required argument filterType is none.")
-        if filterValues is None: raise ValueError("Invalid argument: required argument filter_values is none.")
+
         args = {
             'access_token': self.token,
             '_method': 'GET'
