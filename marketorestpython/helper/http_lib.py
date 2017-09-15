@@ -31,7 +31,7 @@ class HttpLib:
             try:
                 headers = {'Accept-Encoding': 'gzip'}
                 r = requests.get(endpoint, params=args, headers=headers)
-                if mode is 'nojson':
+                if mode == 'nojson':
                     return r
                 else:
                     r_json = r.json()
