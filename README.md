@@ -139,6 +139,23 @@ API Ref: http://developers.marketo.com/documentation/rest/associate-lead/
 lead = mc.execute(method='associate_lead', id=2234, cookie='id:287-GTJ-838%26token:_mch-marketo.com-1396310362214-46169')
 ```
 
+Push Lead
+---------
+API Ref: http://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Leads/pushToMarketoUsingPOST
+```python
+leads = [
+    {"email":"lead1@example.com","firstName":"Joe", "cookies":"id:662-XAB-092&token:_mch-castelein.net-1487035251303-23757"},
+    {"email":"lead2@example.com","firstName":"Jillian"}
+]
+lead = mc.execute(method='push_lead', leads=leads, lookupField='email', programName='Big Launch Webinar',
+                  programStatus='Registered', source='example source', reason='example reason')
+
+# leads, lookupField and programName are required
+# all others are optional
+# to associate Cookie ID, put it in a field called 'cookies' (see example above)
+# to associate mkt_tok, put it in a field called 'mktToken' (see http://developers.marketo.com/rest-api/lead-database/leads/#push_lead_to_marketo)
+```
+
 Merge Lead
 ----------
 API Ref: http://developers.marketo.com/documentation/rest/merge-lead/
@@ -325,7 +342,7 @@ mc.execute(method='get_lead_activities', activityTypeIds=['23','22'], nextPageTo
 
 # sinceDatetime format: 2015-10-06T13:22:17-08:00 or 2015-10-06T13:22-0700 or 2015-10-06
 # either nextPageToken or sinceDatetime need to be specified
-# untilDatetime, batchSize, listId and leadIds are optional
+# untilDatetime, batchSize, listId and leadIds are optional; batchsize defaults to 300 (max)
 # unless you specify untilDatetime, the function loops until it has all activities until right now, 
 #  then returns them (which could potentially be a lot of data)
 ```
@@ -341,7 +358,7 @@ for activities in mc.execute(method='get_lead_activities_yield', activityTypeIds
 
 # sinceDatetime format: 2015-10-06T13:22:17-08:00 or 2015-10-06T13:22-0700 or 2015-10-06
 # either nextPageToken or sinceDatetime need to be specified
-# untilDatetime, batchSize, listId and leadIds are optional
+# untilDatetime, batchSize, listId and leadIds are optional; batchsize defaults to 300 (max)
 # this is a generator, so it will return chunks of Leads rather that all Activities 
 #   at once; therefore, it's useful for retrieving large numbers of Activities
 ```
@@ -351,11 +368,26 @@ Get Lead Changes
 ----------------
 API Ref: http://developers.marketo.com/documentation/rest/get-lead-changes/
 ```python
-lead = mc.execute(method='get_lead_changes', fields=['firstName','lastName'], nextPageToken=None, sinceDatetime='2015-09-01', batchSize=None, listId=None)
+lead = mc.execute(method='get_lead_changes', fields=['firstName','lastName'], nextPageToken=None,
+                  sinceDatetime='2015-09-01', untilDatetime='2017-01-01', batchSize=None, listId=None)
 
 # sinceDatetime format: 2015-10-06T13:22:17-08:00 or 2015-10-06T13:22-0700 or 2015-10-06
 # either nextPageToken or sinceDatetime need to be specified
-# batchSize and listId are optional
+# untilDatetime, batchSize and listId are optional; batchsize defaults to 300 (max)
+# this will potentially return a lot of records: the function loops until it has all activities, then returns them
+```
+
+Get Lead Changes Yield (Generator)
+----------------------------------
+API Ref: http://developers.marketo.com/documentation/rest/get-lead-changes/
+```python
+for leads in mc.execute(method='get_lead_changes_yield', fields=['firstName','lastName'], nextPageToken=None,
+                  sinceDatetime='2015-09-01', untilDatetime='2017-01-01', batchSize=None, listId=None):
+    print(len(leads))
+
+# sinceDatetime format: 2015-10-06T13:22:17-08:00 or 2015-10-06T13:22-0700 or 2015-10-06
+# either nextPageToken or sinceDatetime need to be specified
+# untilDatetime, batchSize and listId are optional; batchsize defaults to 300 (max)
 # this will potentially return a lot of records: the function loops until it has all activities, then returns them
 ```
 

@@ -59,6 +59,7 @@ class MarketoClient:
                     'change_lead_program_status': self.change_lead_program_status,
                     'create_update_leads': self.create_update_leads,
                     'associate_lead': self.associate_lead,
+                    'push_lead': self.push_lead,
                     'merge_lead': self.merge_lead,
                     'get_lead_partitions': self.get_lead_partitions,
                     'get_list_by_id': self.get_list_by_id,
@@ -223,7 +224,17 @@ class MarketoClient:
                     'describe_sales_person': self.describe_sales_person,
                     'create_update_sales_persons': self.create_update_sales_persons,
                     'delete_sales_persons': self.delete_sales_persons,
-                    'get_sales_persons': self.get_sales_persons
+                    'get_sales_persons': self.get_sales_persons,
+                    'get_custom_activity_types': self.get_custom_activity_types,
+                    'describe_custom_activity_type': self.describe_custom_activity_type,
+                    'create_custom_activity_type': self.create_custom_activity_type,
+                    'update_custom_activity_type': self.update_custom_activity_type,
+                    'approve_custom_activity_type': self.approve_custom_activity_type,
+                    'create_custom_activity_type_attribute': self.create_custom_activity_type_attribute,
+                    'discard_custom_activity_type_draft': self.discard_custom_activity_type_draft,
+                    'delete_custom_activity_type': self.delete_custom_activity_type,
+                    'update_custom_activity_type_attribute': self.update_custom_activity_type_attribute,
+                    'delete_custom_activity_type_attribute': self.delete_custom_activity_type_attribute
                 }
                 result = method_map[method](*args,**kargs)
             except MarketoException as e:
@@ -482,8 +493,35 @@ class MarketoClient:
         }
         result = self._api_call('post', self.host + "/rest/v1/leads/" + str(id) + "/associate.json", args)
         if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
+        return result['success']  # there is no 'result' node returned in this call
+
+    def push_lead(self, leads, lookupField, programName, programStatus=None, partitionName=None, source=None,
+                  reason=None):
+        self.authenticate()
+        if leads is None: raise ValueError("Invalid argument: required argument 'leads' is None.")
+        if lookupField is None: raise ValueError("Invalid argument: required argument 'lookupField' is None.")
+        if programName is None: raise ValueError("Invalid argument: required argument 'programName' is None.")
+        args = {
+            'access_token': self.token
+        }
+        data = {
+            'input': leads,
+            'lookupField': lookupField,
+            'programName': programName
+        }
+        if programStatus is not None:
+            data['programStatus'] = programStatus
+        if partitionName is not None:
+            data['partitionName'] = partitionName
+        if source is not None:
+            data['source'] = source
+        if reason is not None:
+            data['reason'] = reason
+        result = self._api_call('post', self.host + "/rest/v1/leads/push.json", args, data)
+        if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
-        return result['success'] # there is no 'result' node returned in this call
+        return result['result']
 
     def merge_lead(self, id, leadIds, mergeInCRM=False):
         self.authenticate()
@@ -878,7 +916,8 @@ class MarketoClient:
             if result['moreResult'] is False:
                 break
 
-    def get_lead_changes(self, fields, nextPageToken=None, sinceDatetime=None, batchSize=None, listId=None):
+    def get_lead_changes(self, fields, nextPageToken=None, sinceDatetime=None, untilDatetime=None, batchSize=None,
+                         listId=None):
         self.authenticate()
         if fields is None: raise ValueError("Invalid argument: required argument fields is none.")
         if nextPageToken is None and sinceDatetime is None: raise ValueError("Either nextPageToken or sinceDatetime needs to be specified.")
@@ -902,13 +941,18 @@ class MarketoClient:
             if result is None: raise Exception("Empty Response")
             if not result['success'] : raise MarketoException(result['errors'][0])
             if 'result' in result:
-                result_list.extend(result['result'])
+                if untilDatetime is not None:
+                    new_result = self.process_lead_activity_until_datetime(result['result'], untilDatetime)
+                    result_list.extend(new_result)
+                else:
+                    result_list.extend(result['result'])
             if result['moreResult'] is False:
                 break
             args['nextPageToken'] = result['nextPageToken']
         return result_list
 
-    def get_lead_changes_yield(self, fields, nextPageToken=None, sinceDatetime=None, batchSize=None, listId=None):
+    def get_lead_changes_yield(self, fields, nextPageToken=None, sinceDatetime=None, untilDatetime=None, batchSize=None,
+                               listId=None):
         self.authenticate()
         if fields is None: raise ValueError("Invalid argument: required argument fields is none.")
         if nextPageToken is None and sinceDatetime is None: raise ValueError("Either nextPageToken or sinceDatetime needs to be specified.")
@@ -931,7 +975,12 @@ class MarketoClient:
             if result is None: raise Exception("Empty Response")
             if not result['success']: raise MarketoException(result['errors'][0])
             if 'result' in result:
-                yield result['result']
+                if untilDatetime is not None:
+                    new_result = self.process_lead_activity_until_datetime(result['result'], untilDatetime)
+                    if new_result:
+                        yield new_result
+                    if len(new_result) < len(result['result']):
+                        break
             if result['moreResult'] is False:
                 break
             args['nextPageToken'] = result['nextPageToken']
@@ -3579,3 +3628,176 @@ class MarketoClient:
                 break
             args['nextPageToken'] = result['nextPageToken']
         return result_list
+
+    def get_custom_activity_types(self):
+        self.authenticate()
+        args = {
+            'access_token' : self.token
+        }
+        result = self._api_call('get', self.host + "/rest/v1/activities/external/types.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def describe_custom_activity_type(self, apiName, draft=None):
+        if apiName is None: raise ValueError("Required argument apiName is none.")
+        self.authenticate()
+        args = {
+            'access_token' : self.token
+        }
+        if draft:
+            args['draft'] = draft
+        result = self._api_call('get', self.host + "/rest/v1/activities/external/type/" + apiName + "/describe.json",
+                                args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def create_custom_activity_type(self, apiName, name, triggerName, filterName, primaryAttributeApiName,
+                                    primaryAttributeName, primaryAttributeDescription=None, description=None):
+        self.authenticate()
+        if apiName is None: raise ValueError("Required argument 'apiName' is none.")
+        if name is None: raise ValueError("Required argument 'name' is none.")
+        if triggerName is None: raise ValueError("Required argument 'triggerName' is none")
+        if filterName is None: raise ValueError("Required argument 'filterName' is none.")
+        if primaryAttributeApiName is None: raise ValueError("Required argument 'primaryAttributeApiName' is none.")
+        if primaryAttributeName is None: raise ValueError("Required argument 'primaryAttributeName' is none.")
+        #if primaryAttributeDescription is None: raise ValueError("Required argument 'primaryAttributeDescription' is none.")
+        args = {
+            'access_token': self.token
+        }
+        data = {
+            'apiName': apiName,
+            'name': name,
+            'triggerName': triggerName,
+            'filterName': filterName,
+            'primaryAttribute': {
+                'apiName': primaryAttributeApiName,
+                'name': primaryAttributeName
+            }
+        }
+        if description is not None:
+            data['description'] = description
+        if primaryAttributeDescription is not None:
+            data['primaryAttribute']['description'] = primaryAttributeDescription
+        result = self._api_call('post', self.host + "/rest/v1/activities/external/type.json", args, data)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def update_custom_activity_type(self, apiName, name=None, triggerName=None, filterName=None,
+                                    primaryAttributeApiName=None, primaryAttributeName=None,
+                                    primaryAttributeDescription=None, description=None):
+        self.authenticate()
+        if apiName is None: raise ValueError("Required argument 'apiName' is none.")
+        args = {
+            'access_token': self.token
+        }
+        data = {}
+        if name is not None:
+            data['name'] = name
+        if triggerName is not None:
+            data['triggerName'] = triggerName
+        if filterName is not None:
+            data['filterName'] = filterName
+        if description is not None:
+            data['description'] = description
+        if primaryAttributeApiName or primaryAttributeName or primaryAttributeDescription:
+            data['primaryAttribute'] = {}
+        if primaryAttributeApiName:
+            data['primaryAttribute']['apiName'] = primaryAttributeApiName
+        if primaryAttributeName:
+            data['primaryAttribute']['name'] = primaryAttributeName
+        if primaryAttributeDescription:
+            data['primaryAttribute']['description'] = primaryAttributeDescription
+        result = self._api_call('post', self.host + "/rest/v1/activities/external/type/" + apiName + ".json", args, data)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def approve_custom_activity_type(self, apiName):
+        self.authenticate()
+        if apiName is None: raise ValueError("Required argument 'apiName' is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = self._api_call('post',
+                                self.host + "/rest/v1/activities/external/type/" + apiName + "/approve.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def discard_custom_activity_type_draft(self, apiName):
+        self.authenticate()
+        if apiName is None: raise ValueError("Required argument 'apiName' is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = self._api_call('post',
+                                self.host + "/rest/v1/activities/external/type/" + apiName + "/discardDraft.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def delete_custom_activity_type(self, apiName):
+        self.authenticate()
+        if apiName is None: raise ValueError("Required argument 'apiName' is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = self._api_call('post',
+                                self.host + "/rest/v1/activities/external/type/" + apiName + "/delete.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def create_custom_activity_type_attribute(self, apiName, attributes):
+        self.authenticate()
+        if apiName is None: raise ValueError("Required argument 'apiName' is none.")
+        if attributes is None: raise ValueError("Required argument 'attributes' is none.")
+        args = {
+            'access_token': self.token
+        }
+        data = {
+            "attributes": attributes
+        }
+        result = self._api_call('post',
+                                self.host + "/rest/v1/activities/external/type/" + apiName + "/attributes/create.json",
+                                args, data)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def update_custom_activity_type_attribute(self, apiName, attributes):
+        self.authenticate()
+        if apiName is None: raise ValueError("Required argument 'apiName' is none.")
+        if attributes is None: raise ValueError("Required argument 'attributes' is none.")
+        args = {
+            'access_token': self.token
+        }
+        data = {
+            "attributes": attributes
+        }
+        result = self._api_call('post',
+                                self.host + "/rest/v1/activities/external/type/" + apiName + "/attributes/update.json",
+                                args, data)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def delete_custom_activity_type_attribute(self, apiName, attributes):
+        self.authenticate()
+        if apiName is None: raise ValueError("Required argument 'apiName' is none.")
+        if attributes is None: raise ValueError("Required argument 'attributes' is none.")
+        args = {
+            'access_token': self.token
+        }
+        data = {
+            "attributes": attributes
+        }
+        result = self._api_call('post',
+                                self.host + "/rest/v1/activities/external/type/" + apiName +
+                                "/attributes/delete.json", args, data)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
