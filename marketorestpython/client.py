@@ -234,7 +234,9 @@ class MarketoClient:
                     'discard_custom_activity_type_draft': self.discard_custom_activity_type_draft,
                     'delete_custom_activity_type': self.delete_custom_activity_type,
                     'update_custom_activity_type_attribute': self.update_custom_activity_type_attribute,
-                    'delete_custom_activity_type_attribute': self.delete_custom_activity_type_attribute
+                    'delete_custom_activity_type_attribute': self.delete_custom_activity_type_attribute,
+                    'get_smart_lists': self.get_smart_lists,
+                    'get_leads_from_smart_list': self.get_leads_from_smart_list,
                 }
                 result = method_map[method](*args,**kargs)
             except MarketoException as e:
@@ -3798,6 +3800,29 @@ class MarketoClient:
         result = self._api_call('post',
                                 self.host + "/rest/v1/activities/external/type/" + apiName +
                                 "/attributes/delete.json", args, data)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_smart_lists(self):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        result = self._api_call('get',
+                                self.host + "/rest/asset/v1/smartLists.json")
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_leads_from_smart_list(self, id):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = self._api_call('get',
+                                self.host + "/rest/asset/v1/smartList/" + str(id) + ".json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
