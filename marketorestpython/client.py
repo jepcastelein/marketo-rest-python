@@ -3810,7 +3810,7 @@ class MarketoClient:
             'access_token': self.token
         }
         result = self._api_call('get',
-                                self.host + "/rest/asset/v1/smartLists.json")
+                                self.host + "/rest/asset/v1/smartLists.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
