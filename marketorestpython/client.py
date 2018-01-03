@@ -3804,25 +3804,15 @@ class MarketoClient:
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
 
-    def get_smart_lists(self):
+    def get_smart_lists(self, maxReturn=20):
         self.authenticate()
         args = {
-            'access_token': self.token
+            'access_token': self.token,
+            'maxReturn': maxReturn
         }
+
         result = self._api_call('get',
                                 self.host + "/rest/asset/v1/smartLists.json", args)
-        if result is None: raise Exception("Empty Response")
-        if not result['success'] : raise MarketoException(result['errors'][0])
-        return result['result']
-
-    def get_leads_from_smart_list(self, id):
-        self.authenticate()
-        if id is None: raise ValueError("Invalid argument: required argument id is none.")
-        args = {
-            'access_token': self.token
-        }
-        result = self._api_call('get',
-                                self.host + "/rest/asset/v1/smartList/" + str(id) + ".json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
