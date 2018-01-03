@@ -236,7 +236,6 @@ class MarketoClient:
                     'update_custom_activity_type_attribute': self.update_custom_activity_type_attribute,
                     'delete_custom_activity_type_attribute': self.delete_custom_activity_type_attribute,
                     'get_smart_lists': self.get_smart_lists,
-                    'get_leads_from_smart_list': self.get_leads_from_smart_list,
                 }
                 result = method_map[method](*args,**kargs)
             except MarketoException as e:
