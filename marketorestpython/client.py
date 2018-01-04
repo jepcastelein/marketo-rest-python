@@ -236,6 +236,7 @@ class MarketoClient:
                     'update_custom_activity_type_attribute': self.update_custom_activity_type_attribute,
                     'delete_custom_activity_type_attribute': self.delete_custom_activity_type_attribute,
                     'get_smart_lists': self.get_smart_lists,
+                    'describe_named_accounts': self.describe_named_accounts,
                 }
                 result = method_map[method](*args,**kargs)
             except MarketoException as e:
@@ -3812,6 +3813,18 @@ class MarketoClient:
 
         result = self._api_call('get',
                                 self.host + "/rest/asset/v1/smartLists.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def describe_named_accounts(self):
+        self.authenticate()
+        args = {
+            'access_token': self.token,
+        }
+
+        result = self._api_call('get',
+                                self.host + "/rest/v1/namedaccounts/describe.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
