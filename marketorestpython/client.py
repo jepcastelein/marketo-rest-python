@@ -127,6 +127,7 @@ class MarketoClient:
                     'discard_email_draft': self.discard_email_draft,
                     'clone_email': self.clone_email,
                     'send_sample_email': self.send_sample_email,
+                    'get_email_full_content': self.get_email_full_content,
                     'create_landing_page': self.create_landing_page,
                     'get_landing_page_by_id': self.get_landing_page_by_id,
                     'get_landing_page_by_name': self.get_landing_page_by_name,
@@ -1734,6 +1735,23 @@ class MarketoClient:
         result = self._api_call('post', self.host + "/rest/asset/v1/email/" + str(id) + "/sendSample.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_email_full_content(self, id, status=None, leadId=None, type=None):
+        self.authenticate()
+        if id is None: raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        if status is not None:
+            args['status'] = status
+        if leadId is not None:
+            args['leadId'] = leadId
+        if type is not None:
+            args['type'] = type
+        result = self._api_call('get', self.host + "/rest/asset/v1/email/" + str(id) + "/fullContent.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success']: raise MarketoException(result['errors'][0])
         return result['result']
 
     # -------LANDING PAGES ---------#
