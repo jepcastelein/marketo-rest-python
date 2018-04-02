@@ -51,6 +51,7 @@ class MarketoClient:
                 method_map={
                     'get_lead_by_id': self.get_lead_by_id,
                     'get_multiple_leads_by_filter_type': self.get_multiple_leads_by_filter_type,
+                    'get_multiple_leads_by_filter_type_yield': self.get_multiple_leads_by_filter_type_yield,
                     'get_multiple_leads_by_list_id': self.get_multiple_leads_by_list_id,
                     'get_multiple_leads_by_list_id_yield': self.get_multiple_leads_by_list_id_yield,
                     'get_multiple_leads_by_program_id': self.get_multiple_leads_by_program_id,
@@ -234,7 +235,9 @@ class MarketoClient:
                     'discard_custom_activity_type_draft': self.discard_custom_activity_type_draft,
                     'delete_custom_activity_type': self.delete_custom_activity_type,
                     'update_custom_activity_type_attribute': self.update_custom_activity_type_attribute,
-                    'delete_custom_activity_type_attribute': self.delete_custom_activity_type_attribute
+                    'delete_custom_activity_type_attribute': self.delete_custom_activity_type_attribute,
+                    'get_smart_lists': self.get_smart_lists,
+                    'describe_named_accounts': self.describe_named_accounts,
                 }
                 result = method_map[method](*args,**kargs)
             except MarketoException as e:
@@ -311,6 +314,34 @@ class MarketoClient:
                 break
             args['nextPageToken'] = result['nextPageToken']
         return result_list
+
+    def get_multiple_leads_by_filter_type_yield(self, filterType, filterValues, fields=None, nextPageToken=None, batchSize=None):
+        self.authenticate()
+        if filterType is None: raise ValueError("Invalid argument: required argument filterType is none.")
+        if filterValues is None: raise ValueError("Invalid argument: required argument filter_values is none.")
+        filterValues = filterValues.split() if type(filterValues) is str else filterValues
+        data=[('filterValues',(',').join(filterValues)), ('filterType', filterType)]
+        if fields is not None:
+            data.append(('fields',fields))
+        if batchSize is not None:
+            data.append(('batchSize',batchSize))
+        args = {
+            'access_token': self.token,
+            '_method': 'GET'
+        }
+        if nextPageToken is not None:
+            args['nextPageToken'] = nextPageToken
+        while True:
+            self.authenticate()
+            args['access_token'] = self.token  # for long-running processes, this updates the access token
+            result = self._api_call('post', self.host + "/rest/v1/leads.json", args, data, mode='nojsondumps')
+            if result is None: raise Exception("Empty Response")
+            if not result['success'] : raise MarketoException(result['errors'][0])
+            args['nextPageToken'] = result.get('nextPageToken')
+            if 'result' in result:
+                yield result['result'], args['nextPageToken']
+                if len(result['result']) == 0 or 'nextPageToken' not in result:
+                    break
 
     def get_multiple_leads_by_list_id(self, listId, fields=None, batchSize=None):
         self.authenticate()
@@ -844,10 +875,10 @@ class MarketoClient:
                     result_list.extend(new_result)
                 else:
                     result_list.extend(result['result'])
+            args['nextPageToken'] = result['nextPageToken']
             if result['moreResult'] is False:
                 break
-            args['nextPageToken'] = result['nextPageToken']
-        return result_list
+        return result_list, args['nextPageToken']
 
     def get_lead_activities_yield(self, activityTypeIds, nextPageToken=None, sinceDatetime=None, untilDatetime=None,
                             batchSize=None, listId=None, leadIds=None):
@@ -875,18 +906,18 @@ class MarketoClient:
             result = self._api_call('get', self.host + "/rest/v1/activities.json", args)
             if result is None: raise Exception("Empty Response")
             if not result['success']: raise MarketoException(result['errors'][0])
+            args['nextPageToken'] = result.get('nextPageToken')
             if 'result' in result:
                 if untilDatetime is not None:
                     new_result = self.process_lead_activity_until_datetime(result['result'], untilDatetime)
                     if new_result:
-                        yield new_result
+                        yield new_result, args['nextPageToken']
                     if len(new_result) < len(result['result']):
                         break
                 else:
-                    yield result['result']
+                    yield result['result'], args['nextPageToken']
             if result['moreResult'] is False:
                 break
-            args['nextPageToken'] = result['nextPageToken']
 
     def get_lead_changes(self, fields, nextPageToken=None, sinceDatetime=None, untilDatetime=None, batchSize=None,
                          listId=None):
@@ -3787,6 +3818,31 @@ class MarketoClient:
         result = self._api_call('post',
                                 self.host + "/rest/v1/activities/external/type/" + apiName +
                                 "/attributes/delete.json", args, data)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def get_smart_lists(self, maxReturn=20):
+        self.authenticate()
+        args = {
+            'access_token': self.token,
+            'maxReturn': maxReturn
+        }
+
+        result = self._api_call('get',
+                                self.host + "/rest/asset/v1/smartLists.json", args)
+        if result is None: raise Exception("Empty Response")
+        if not result['success'] : raise MarketoException(result['errors'][0])
+        return result['result']
+
+    def describe_named_accounts(self):
+        self.authenticate()
+        args = {
+            'access_token': self.token,
+        }
+
+        result = self._api_call('get',
+                                self.host + "/rest/v1/namedaccounts/describe.json", args)
         if result is None: raise Exception("Empty Response")
         if not result['success'] : raise MarketoException(result['errors'][0])
         return result['result']
