@@ -10,7 +10,7 @@ Full Marketo REST API documentation - http://developers.marketo.com/documentatio
 Installation
 ============
 
-pip install marketorestpython
+`pip install marketorestpython`
 
 Unit tests
 ==========
@@ -1873,6 +1873,53 @@ result = mc.execute(method='get_sales_persons', filterType='externalSalesPersonI
 
 # fields and batchSize are optional
 # filterType can be: externalSalesPersonId, id, email
+```
+
+Bulk Export Leads/Activities
+==============
+
+> Replace 'activities' with 'leads' in below to get the equivalent for leads
+
+List Bulk Export Activities Jobs
+----------------
+API Ref: http://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Bulk_Export_Activities/getExportActivitiesUsingGET
+```python
+export_jobs = mc.execute(method='get_activities_export_jobs_list')
+```
+
+Create Bulk Export Activities Job
+----------------
+API Ref: http://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Bulk_Export_Activities/createExportActivitiesUsingPOST
+```python
+new_export_job_details = mc.execute(method='create_activities_export_job', fields=['string', 'string'], filters={'createdAt': {'endAt': '2017-11-02', 'startAt': '2017-11-01'}})
+```
+
+Cancel Bulk Export Activities Job
+----------------
+API Ref: http://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Bulk_Export_Activities/cancelExportActivitiesUsingPOST
+```python
+new_export_job_details = mc.execute(method='cancel_activities_export_job', job_id='284742ec-1e5a-46f2-b164-498a41fcaaf6')
+```
+
+Enqueue Bulk Export Activities Job
+----------------
+API Ref: http://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Bulk_Export_Activities/enqueueExportActivitiesUsingPOST
+```python
+enqueued_job_details = mc.execute(method='enqueue_activities_export_job', job_id='284742ec-1e5a-46f2-b164-498a41fcaaf6')
+```
+
+Get Bulk Export Activities Job Status
+----------------
+API Ref: http://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Bulk_Export_Activities/getExportActivitiesStatusUsingGET
+```python
+export_job_status = mc.execute(method='get_activities_export_job_status', job_id='284742ec-1e5a-46f2-b164-498a41fcaaf6')
+```
+
+Get Bulk Export Activities File
+----------------
+API Ref: http://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Bulk_Export_Activities/getExportActivitiesFileUsingGET
+```python
+export_file_contents = mc.execute(method='get_activities_export_job_file', job_id='284742ec-1e5a-46f2-b164-498a41fcaaf6')
 ```
 
 
