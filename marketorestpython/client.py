@@ -247,7 +247,9 @@ class MarketoClient:
                     'cancel_leads_export_job': self.cancel_leads_export_job,
                     'cancel_activities_export_job': self.cancel_activities_export_job,
                     'get_leads_export_job_status': self.get_leads_export_job_status,
-                    'get_activities_export_job_status': self.get_activities_export_job_status
+                    'get_activities_export_job_status': self.get_activities_export_job_status,
+                    'get_leads_export_job_file': self.get_leads_export_job_file,
+                    'get_activities_export_job_file': self.get_activities_export_job_file
                 }
                 result = method_map[method](*args, **kargs)
             except MarketoException as e:
@@ -4846,16 +4848,24 @@ class MarketoClient:
         assert entity is not None, 'Invalid argument: required fields is none.'
         assert job_id is not None, 'Invalid argument: required fields is none.'
         state_info = {'enqueue': {'suffix': '/enqueue.json', 'method': 'post'}, 'cancel': {
-            'suffix': '/cancel.json', 'method': 'post'}, 'status': {'suffix': '/status.json', 'method': 'get'}}
+            'suffix': '/cancel.json', 'method': 'post'}, 'status': {'suffix': '/status.json', 'method': 'get'}, 'file': {'suffix': '/file.json', 'method': 'get'}}
         self.authenticate()
         args = {
             'access_token': self.token
         }
         result = self._api_call(
-            state_info[state]['method'], self.host + f'/bulk/v1/{entity}/export/{job_id}'+state_info[state]['suffix'], args)
+            state_info[state]['method'], self.host + f'/bulk/v1/{entity}/export/{job_id}'+state_info[state]['suffix'], args, mode='nojson')
+        if state is 'file' and result.status_code is 200:
+            return result.content
         if not result['success']:
             raise MarketoException(result['errors'][0])
         return result['result']
+
+    def get_leads_export_job_file(self, *args, **kargs):
+        return self._export_job_state_machine('leads', 'file', *args, **kargs)
+
+    def get_activities_export_job_file(self, *args, **kargs):
+        return self._export_job_state_machine('activities', 'file', *args, **kargs)
 
     def get_leads_export_job_status(self, *args, **kargs):
         return self._export_job_state_machine('leads', 'status', *args, **kargs)
