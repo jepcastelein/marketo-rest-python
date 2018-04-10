@@ -9,8 +9,13 @@ except ImportError:
 # Don't import analytics-python module here, since deps may not be installed
 # sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'pymarketo'))
 
+# OLD DO NOT USE:
 # python setup.py register -r pypi
 # python setup.py sdist upload -r pypi
+
+# NEW PYPI UPLOAD METHOD:
+# python setup.py sdist
+# twine upload dist/*
 
 long_description = '''
 Marketo Python REST is a Python client that wraps the Marketo Rest API.
