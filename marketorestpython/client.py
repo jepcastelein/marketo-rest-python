@@ -4821,7 +4821,7 @@ class MarketoClient:
             'access_token': self.token
         }
         result = self._api_call(
-            'get', self.host + f'/bulk/v1/{entity}/export.json', args)
+            'get', self.host + '/bulk/v1/{}/export.json'.format(entity), args)
         if not result['success']:
             raise MarketoException(result['errors'][0])
         return result['result']
