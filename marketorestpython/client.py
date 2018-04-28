@@ -4838,7 +4838,7 @@ class MarketoClient:
             'access_token': self.token
         }
         result = self._api_call(
-            'post', self.host + f'/bulk/v1/{entity}/export/create.json', args, data)
+            'post', self.host + '/bulk/v1/{}/export/create.json'.format(entity), args, data)
         if not result['success']:
             raise MarketoException(result['errors'][0])
         return result['result']
@@ -4854,7 +4854,7 @@ class MarketoClient:
             'access_token': self.token
         }
         result = self._api_call(
-            state_info[state]['method'], self.host + f'/bulk/v1/{entity}/export/{job_id}'+state_info[state]['suffix'], args, mode='nojson')
+            state_info[state]['method'], self.host + '/bulk/v1/{}/export/{}{}'.format(entity, job_id, state_info[state]['suffix']), args, mode='nojson')
         if state is 'file' and result.status_code is 200:
             return result.content
         if not result['success']:
