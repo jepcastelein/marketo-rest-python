@@ -1661,7 +1661,7 @@ class MarketoClient:
             raise MarketoException(result['errors'][0])
         return result['result']
 
-    def get_email_templates(self, maxReturn=None, status=None):
+    def get_email_templates(self, maxReturn=None, offset=None, status=None):
         self.authenticate()
         args = {
             'access_token': self.token
@@ -1670,10 +1670,13 @@ class MarketoClient:
             args['maxReturn'] = maxReturn
         else:
             maxReturn = 20
+        if offset is not None:
+            args['offset'] = offset
+        else:
+            offset = 0
         if status is not None:
             args['status'] = status
         result_list = []
-        offset = 0
         while True:
             self.authenticate()
             # for long-running processes, this updates the access token
@@ -1917,7 +1920,7 @@ class MarketoClient:
             raise MarketoException(result['errors'][0])
         return result['result']
 
-    def get_emails(self, maxReturn=None, status=None, folderId=None, folderType=None):
+    def get_emails(self, maxReturn=None, offset=None, status=None, folderId=None, folderType=None):
         self.authenticate()
         args = {
             'access_token': self.token
@@ -1926,13 +1929,16 @@ class MarketoClient:
             args['maxReturn'] = maxReturn
         else:
             maxReturn = 20
+        if offset is not None:
+            args['offset'] = offset
+        else:
+            offset = 0
         if status is not None:
             args['status'] = status
         if folderId is not None:
             args['folder'] = "{'id': " + \
                 str(folderId) + ", 'type': " + folderType + "}"
         result_list = []
-        offset = 0
         while True:
             self.authenticate()
             # for long-running processes, this updates the access token
