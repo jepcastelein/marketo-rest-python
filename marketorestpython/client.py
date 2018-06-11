@@ -4845,16 +4845,16 @@ class MarketoClient:
 
     def _export_job_state_machine(self, entity, state, job_id):
         assert entity is not None, 'Invalid argument: required fields is none.'
-        assert entity is not None, 'Invalid argument: required fields is none.'
+        assert state is not None, 'Invalid argument: required fields is none.'
         assert job_id is not None, 'Invalid argument: required fields is none.'
-        state_info = {'enqueue': {'suffix': '/enqueue.json', 'method': 'post'}, 'cancel': {
-            'suffix': '/cancel.json', 'method': 'post'}, 'status': {'suffix': '/status.json', 'method': 'get'}, 'file': {'suffix': '/file.json', 'method': 'get'}}
+        state_info = {'enqueue': {'suffix': '/enqueue.json', 'method': 'post', 'mode': 'nojson'}, 'cancel': {
+            'suffix': '/cancel.json', 'method': 'post', 'mode': 'nojson'}, 'status': {'suffix': '/status.json', 'method': 'get', 'mode':''}, 'file': {'suffix': '/file.json', 'method': 'get', 'mode': 'nojson'}}
         self.authenticate()
         args = {
             'access_token': self.token
         }
         result = self._api_call(
-            state_info[state]['method'], self.host + '/bulk/v1/{}/export/{}{}'.format(entity, job_id, state_info[state]['suffix']), args, mode='nojson')
+            state_info[state]['method'], self.host + '/bulk/v1/{}/export/{}{}'.format(entity, job_id, state_info[state]['suffix']), args, mode=state_info[state]['mode'])
         if state is 'file' and result.status_code is 200:
             return result.content
         if not result['success']:
