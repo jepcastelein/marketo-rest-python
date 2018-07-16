@@ -315,23 +315,23 @@ class MarketoClient:
                 "Invalid argument: required argument filter_values is none.")
         filterValues = filterValues.split() if type(
             filterValues) is str else filterValues
-        data = [('filterValues', (',').join(filterValues)),
-                ('filterType', filterType)]
-        if fields is not None:
-            data.append(('fields', fields))
-        if batchSize is not None:
-            data.append(('batchSize', batchSize))
-        args = {
+        data = {
             'access_token': self.token,
-            '_method': 'GET'
+            '_method': 'GET',
+            'filterValues': ','.join(filterValues),
+            'filterType': filterType
         }
+        if fields is not None:
+            data['fields'] = fields
+        if batchSize is not None:
+            data['batchSize'] = batchSize
         result_list = []
         while True:
             self.authenticate()
             # for long-running processes, this updates the access token
-            args['access_token'] = self.token
+            data['access_token'] = self.token
             result = self._api_call(
-                'post', self.host + "/rest/v1/leads.json", args, data, mode='nojsondumps')
+                'post', self.host + "/rest/v1/leads.json", args=None, data=data, mode='nojsondumps')
             if result is None:
                 raise Exception("Empty Response")
             if not result['success']:
@@ -339,7 +339,7 @@ class MarketoClient:
             result_list.extend(result['result'])
             if len(result['result']) == 0 or 'nextPageToken' not in result:
                 break
-            args['nextPageToken'] = result['nextPageToken']
+            data['nextPageToken'] = result['nextPageToken']
         return result_list
 
     def get_multiple_leads_by_list_id(self, listId, fields=None, batchSize=None):
