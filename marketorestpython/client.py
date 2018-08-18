@@ -1017,7 +1017,7 @@ class MarketoClient:
         return result_list
 
     def get_lead_activities_yield(self, activityTypeIds, nextPageToken=None, sinceDatetime=None, untilDatetime=None,
-                                  batchSize=None, listId=None, leadIds=None):
+                                  batchSize=None, listId=None, leadIds=None, return_full_result=False):
         self.authenticate()
         if activityTypeIds is None:
             raise ValueError(
@@ -1055,11 +1055,18 @@ class MarketoClient:
                     new_result = self.process_lead_activity_until_datetime(
                         result['result'], untilDatetime)
                     if new_result:
-                        yield new_result
+                        if return_full_result:
+                            result['result'] = new_result
+                            yield result
+                        else:
+                            yield new_result
                     if len(new_result) < len(result['result']):
                         break
                 else:
-                    yield result['result']
+                    if return_full_result:
+                        yield result
+                    else:
+                        yield result['result']
             if result['moreResult'] is False:
                 break
             args['nextPageToken'] = result['nextPageToken']
