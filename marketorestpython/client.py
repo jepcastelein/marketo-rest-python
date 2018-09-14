@@ -185,6 +185,7 @@ class MarketoClient:
                     'get_landing_page_template_by_id': self.get_landing_page_template_by_id,
                     'get_landing_page_template_by_name': self.get_landing_page_template_by_name,
                     'get_landing_page_templates': self.get_landing_page_templates,
+                    'get_landing_page_templates_yield': self.get_landing_page_templates_yield,
                     'get_landing_page_template_content': self.get_landing_page_template_content,
                     'update_landing_page_template_content': self.update_landing_page_template_content,
                     'update_landing_page_template': self.update_landing_page_template,
@@ -200,6 +201,7 @@ class MarketoClient:
                     'update_program': self.update_program,
                     'delete_program': self.delete_program,
                     'browse_programs': self.browse_programs,
+                    'browse_programs_yield': self.browse_programs_yield,
                     'clone_program': self.clone_program,
                     'approve_program': self.approve_program,
                     'unapprove_program': self.unapprove_program,
@@ -3630,6 +3632,46 @@ class MarketoClient:
             args['offset'] = offset
         return result_list
 
+    def get_landing_page_templates_yield(self, offset=0, maxReturn=None, status=None, folderId=None, folderType=None,
+                                         return_full_result=False):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        if maxReturn is not None:
+            args['maxReturn'] = maxReturn
+        else:
+            maxReturn = 20
+        if status is not None:
+            args['status'] = status
+        if folderId is not None and folderType is not None:
+            args['folder'] = "{'id': " + \
+                str(folderId) + ", 'type': " + folderType + "}"
+        while True:
+            self.authenticate()
+            # for long-running processes, this updates the access token
+            args['access_token'] = self.token
+            result = self._api_call('get', self.host + "/rest/asset/v1/landingPageTemplates.json", args)
+            if result is None:
+                raise Exception("Empty Response")
+            if not result['success']:
+                raise MarketoException(result['errors'][0])
+            if 'result' in result:
+                if len(result['result']) < maxReturn:
+                    if return_full_result:
+                        yield result
+                    else:
+                        yield result['result']
+                    break
+            else:
+                break
+            if return_full_result:
+                yield result
+            else:
+                yield result['result']
+            offset += maxReturn
+            args['offset'] = offset
+
     def get_landing_page_template_content(self, id, status=None):
         self.authenticate()
         if id is None:
@@ -3908,17 +3950,18 @@ class MarketoClient:
             raise MarketoException(result['errors'][0])
         return result['result']
 
-    def browse_programs(self, status=None, maxReturn=None):
+    def browse_programs(self, maxReturn=20, status=None, earliestUpdatedAt=None, latestUpdatedAt=None):
         self.authenticate()
         args = {
-            'access_token': self.token
+            'access_token': self.token,
+            'maxReturn': maxReturn
         }
-        if status is not None:
+        if status:
             args['status'] = status
-        if maxReturn is not None:
-            args['maxReturn'] = maxReturn
-        else:
-            maxReturn = 20
+        if earliestUpdatedAt:
+            args['earliestUpdatedAt'] = earliestUpdatedAt
+        if latestUpdatedAt:
+            args['latestUpdatedAt'] = latestUpdatedAt
         result_list = []
         offset = 0
         while True:
@@ -3941,6 +3984,45 @@ class MarketoClient:
             offset += maxReturn
             args['offset'] = offset
         return result_list
+
+    def browse_programs_yield(self, offset=0, maxReturn=20, status=None, earliestUpdatedAt=None, latestUpdatedAt=None,
+                              return_full_result=False):
+        self.authenticate()
+        args = {
+            'access_token': self.token,
+            'maxReturn': maxReturn
+        }
+        if status is not None:
+            args['status'] = status
+        if earliestUpdatedAt:
+            args['earliestUpdatedAt'] = earliestUpdatedAt
+        if latestUpdatedAt:
+            args['latestUpdatedAt'] = latestUpdatedAt
+        while True:
+            self.authenticate()
+            # for long-running processes, this updates the access token
+            args['access_token'] = self.token
+            result = self._api_call(
+                'get', self.host + "/rest/asset/v1/programs.json", args)
+            if result is None:
+                raise Exception("Empty Response")
+            if not result['success']:
+                raise MarketoException(result['errors'][0])
+            if 'result' in result:
+                if len(result['result']) < maxReturn:
+                    if return_full_result:
+                        yield result
+                    else:
+                        yield result['result']
+                    break
+            else:
+                break
+            if return_full_result:
+                yield result
+            else:
+                yield result['result']
+            offset += maxReturn
+            args['offset'] = offset
 
     def clone_program(self, id, name, folderId, folderType, description=None):
         self.authenticate()
