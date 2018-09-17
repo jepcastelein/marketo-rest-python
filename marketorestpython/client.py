@@ -108,6 +108,7 @@ class MarketoClient:
                     'update_email_template': self.update_email_template,
                     'delete_email_template': self.delete_email_template,
                     'get_email_templates': self.get_email_templates,
+                    'get_email_templates_yield': self.get_email_templates_yield,
                     'get_email_template_content': self.get_email_template_content,
                     'update_email_template_content': self.update_email_template_content,
                     'approve_email_template': self.approve_email_template,
@@ -120,6 +121,7 @@ class MarketoClient:
                     'delete_email': self.delete_email,
                     'update_email': self.update_email,
                     'get_emails': self.get_emails,
+                    'get_emails_yield': self.get_emails_yield,
                     'get_email_content': self.get_email_content,
                     'update_email_content': self.update_email_content,
                     'update_email_content_in_editable_section': self.update_email_content_in_editable_section,
@@ -137,6 +139,7 @@ class MarketoClient:
                     'delete_landing_page': self.delete_landing_page,
                     'update_landing_page': self.update_landing_page,
                     'get_landing_pages': self.get_landing_pages,
+                    'get_landing_pages_yield': self.get_landing_pages_yield,
                     'get_landing_page_content': self.get_landing_page_content,
                     'create_landing_page_content_section': self.create_landing_page_content_section,
                     'update_landing_page_content_section': self.update_landing_page_content_section,
@@ -153,6 +156,7 @@ class MarketoClient:
                     'delete_form': self.delete_form,
                     'update_form': self.update_form,
                     'get_forms': self.get_forms,
+                    'get_forms_yield': self.get_forms_yield,
                     'get_form_fields': self.get_form_fields,
                     'create_form_field': self.create_form_field,
                     'update_form_field': self.update_form_field,
@@ -165,12 +169,14 @@ class MarketoClient:
                     'get_file_by_id': self.get_file_by_id,
                     'get_file_by_name': self.get_file_by_name,
                     'list_files': self.list_files,
+                    'get_files_yield': self.get_files_yield,
                     'update_file_content': self.update_file_content,
                     'create_snippet': self.create_snippet,
                     'get_snippet_by_id': self.get_snippet_by_id,
                     'delete_snippet': self.delete_snippet,
                     'update_snippet': self.update_snippet,
                     'get_snippets': self.get_snippets,
+                    'get_snippets_yield': self.get_snippets_yield,
                     'get_snippet_content': self.get_snippet_content,
                     'update_snippet_content': self.update_snippet_content,
                     'approve_snippet': self.approve_snippet,
@@ -201,7 +207,7 @@ class MarketoClient:
                     'update_program': self.update_program,
                     'delete_program': self.delete_program,
                     'browse_programs': self.browse_programs,
-                    'browse_programs_yield': self.browse_programs_yield,
+                    'get_programs_yield': self.get_programs_yield,
                     'clone_program': self.clone_program,
                     'approve_program': self.approve_program,
                     'unapprove_program': self.unapprove_program,
@@ -1704,6 +1710,36 @@ class MarketoClient:
             args['offset'] = offset
         return result_list
 
+    def get_email_templates_yield(self, offset=0, maxReturn=20, status=None, return_full_result=False):
+        self.authenticate()
+        args = {
+            'access_token': self.token,
+            'maxReturn': maxReturn,
+            'offset': offset
+        }
+        if status is not None:
+            args['status'] = status
+        while True:
+            self.authenticate()
+            # for long-running processes, this updates the access token
+            args['access_token'] = self.token
+            result = self._api_call('get', self.host + "/rest/asset/v1/emailTemplates.json", args)
+            if result is None:
+                raise Exception("Empty Response")
+            if not result['success']:
+                raise MarketoException(result['errors'][0])
+            if 'result' in result:
+                if return_full_result:
+                    yield result
+                else:
+                    yield result['result']
+                if len(result['result']) < maxReturn:
+                    break
+            else:
+                break
+            offset += maxReturn
+            args['offset'] = offset
+
     def get_email_template_content(self, id, status=None):
         self.authenticate()
         if id is None:
@@ -1962,6 +1998,39 @@ class MarketoClient:
             offset += maxReturn
             args['offset'] = offset
         return result_list
+
+    def get_emails_yield(self, offset=0, maxReturn=20, status=None, folderId=None, folderType=None,
+                         return_full_result=False):
+        self.authenticate()
+        args = {
+            'access_token': self.token,
+            'maxReturn': maxReturn,
+            'offset': offset
+        }
+        if status:
+            args['status'] = status
+        if folderId and folderType:
+            args['folder'] = json.dumps({'id': folderId, 'type': folderType})
+        while True:
+            self.authenticate()
+            # for long-running processes, this updates the access token
+            args['access_token'] = self.token
+            result = self._api_call('get', self.host + "/rest/asset/v1/emails.json", args)
+            if result is None:
+                raise Exception("Empty Response")
+            if not result['success']:
+                raise MarketoException(result['errors'][0])
+            if 'result' in result:
+                if return_full_result:
+                    yield result
+                else:
+                    yield result['result']
+                if len(result['result']) < maxReturn:
+                    break
+            else:
+                break
+            offset += maxReturn
+            args['offset'] = offset
 
     def get_email_content(self, id, status=None):
         self.authenticate()
@@ -2397,6 +2466,40 @@ class MarketoClient:
             offset += maxReturn
             args['offset'] = offset
         return result_list
+
+    def get_landing_pages_yield(self, offset=0, maxReturn=20, status=None, folderId=None, folderType=None,
+                                return_full_result=False):
+        self.authenticate()
+        args = {
+            'access_token': self.token,
+            'maxReturn': maxReturn,
+            'offset': offset
+        }
+        if status is not None:
+            args['status'] = status
+        if folderId is not None:
+            args['folder'] = json.dumps({'id': folderId, 'type': folderType})
+        while True:
+            self.authenticate()
+            # for long-running processes, this updates the access token
+            args['access_token'] = self.token
+            result = self._api_call('get', self.host + "/rest/asset/v1/landingPages.json", args)
+            if result is None:
+                raise Exception("Empty Response")
+            #if not result['success']: raise MarketoException(result['errors'][0] + ". Request ID: " + result['requestId'])
+            if not result['success']:
+                raise MarketoException(result['errors'][0])
+            if 'result' in result:
+                if return_full_result:
+                    yield result
+                else:
+                    yield result['result']
+                if len(result['result']) < maxReturn:
+                    break
+            else:
+                break
+            offset += maxReturn
+            args['offset'] = offset
 
     def get_landing_page_content(self, id, status=None):
         self.authenticate()
@@ -2891,6 +2994,39 @@ class MarketoClient:
             args['offset'] = offset
         return result_list
 
+    def get_forms_yield(self, offset=0, maxReturn=20, status=None, folderId=None, folderType=None,
+                        return_full_result=False):
+        self.authenticate()
+        args = {
+            'access_token': self.token,
+            'maxReturn': maxReturn,
+            'offset': offset
+        }
+        if status is not None:
+            args['status'] = status
+        if folderId is not None:
+            args['folder'] = json.dumps({'id': folderId, 'type': folderType})
+        while True:
+            self.authenticate()
+            # for long-running processes, this updates the access token
+            args['access_token'] = self.token
+            result = self._api_call('get', self.host + "/rest/asset/v1/forms.json", args)
+            if result is None:
+                raise Exception("Empty Response")
+            if not result['success']:
+                raise MarketoException(result['errors'][0])
+            if 'result' in result:
+                if return_full_result:
+                    yield result
+                else:
+                    yield result['result']
+                if len(result['result']) < maxReturn:
+                    break
+            else:
+                break
+            offset += maxReturn
+            args['offset'] = offset
+
     def get_form_fields(self, id, status=None):
         self.authenticate()
         if id is None:
@@ -3209,6 +3345,36 @@ class MarketoClient:
             args['offset'] = offset
         return result_list
 
+    def get_files_yield(self, offset=0, maxReturn=20, folderId=None, folderType=None, return_full_result=False):
+        self.authenticate()
+        args = {
+            'access_token': self.token,
+            'maxReturn': maxReturn,
+            'offset': offset
+        }
+        if folderId is not None:
+            args['folder'] = json.dumps({'id': folderId, 'type': folderType})
+        while True:
+            self.authenticate()
+            # for long-running processes, this updates the access token
+            args['access_token'] = self.token
+            result = self._api_call('get', self.host + "/rest/asset/v1/files.json", args)
+            if result is None:
+                raise Exception("Empty Response")
+            if not result['success']:
+                raise MarketoException(result['errors'][0])
+            if 'result' in result:
+                if return_full_result:
+                    yield result
+                else:
+                    yield result['result']
+                if len(result['result']) < maxReturn:
+                    break
+            else:
+                break
+            offset += maxReturn
+            args['offset'] = offset
+
     def update_file_content(self, id, file):
         self.authenticate()
         if id is None:
@@ -3339,6 +3505,36 @@ class MarketoClient:
             offset += maxReturn
             args['offset'] = offset
         return result_list
+
+    def get_snippets_yield(self, offset=0, maxReturn=20, status=None, return_full_result=False):
+        self.authenticate()
+        args = {
+            'access_token': self.token,
+            'maxReturn': maxReturn,
+            'offset': offset
+        }
+        if status is not None:
+            args['status'] = status
+        while True:
+            self.authenticate()
+            # for long-running processes, this updates the access token
+            args['access_token'] = self.token
+            result = self._api_call('get', self.host + "/rest/asset/v1/snippets.json", args)
+            if result is None:
+                raise Exception("Empty Response")
+            if not result['success']:
+                raise MarketoException(result['errors'][0])
+            if 'result' in result:
+                if return_full_result:
+                    yield result
+                else:
+                    yield result['result']
+                if len(result['result']) < maxReturn:
+                    break
+            else:
+                break
+            offset += maxReturn
+            args['offset'] = offset
 
     def get_snippet_content(self, id, status=None):
         self.authenticate()
@@ -3632,21 +3828,18 @@ class MarketoClient:
             args['offset'] = offset
         return result_list
 
-    def get_landing_page_templates_yield(self, offset=0, maxReturn=None, status=None, folderId=None, folderType=None,
+    def get_landing_page_templates_yield(self, offset=0, maxReturn=20, status=None, folderId=None, folderType=None,
                                          return_full_result=False):
         self.authenticate()
         args = {
-            'access_token': self.token
+            'access_token': self.token,
+            'maxReturn': maxReturn,
+            'offset': offset
         }
-        if maxReturn is not None:
-            args['maxReturn'] = maxReturn
-        else:
-            maxReturn = 20
         if status is not None:
             args['status'] = status
         if folderId is not None and folderType is not None:
-            args['folder'] = "{'id': " + \
-                str(folderId) + ", 'type': " + folderType + "}"
+            args['folder'] = json.dumps({'id': folderId, 'type': folderType})
         while True:
             self.authenticate()
             # for long-running processes, this updates the access token
@@ -3657,18 +3850,14 @@ class MarketoClient:
             if not result['success']:
                 raise MarketoException(result['errors'][0])
             if 'result' in result:
+                if return_full_result:
+                    yield result
+                else:
+                    yield result['result']
                 if len(result['result']) < maxReturn:
-                    if return_full_result:
-                        yield result
-                    else:
-                        yield result['result']
                     break
             else:
                 break
-            if return_full_result:
-                yield result
-            else:
-                yield result['result']
             offset += maxReturn
             args['offset'] = offset
 
@@ -3985,12 +4174,13 @@ class MarketoClient:
             args['offset'] = offset
         return result_list
 
-    def browse_programs_yield(self, offset=0, maxReturn=20, status=None, earliestUpdatedAt=None, latestUpdatedAt=None,
-                              return_full_result=False):
+    def get_programs_yield(self, offset=0, maxReturn=20, status=None, earliestUpdatedAt=None, latestUpdatedAt=None,
+                           filterType=None, filterValues=None, return_full_result=False):
         self.authenticate()
         args = {
             'access_token': self.token,
-            'maxReturn': maxReturn
+            'maxReturn': maxReturn,
+            'offset': offset
         }
         if status is not None:
             args['status'] = status
@@ -3998,12 +4188,14 @@ class MarketoClient:
             args['earliestUpdatedAt'] = earliestUpdatedAt
         if latestUpdatedAt:
             args['latestUpdatedAt'] = latestUpdatedAt
+        if filterType and filterValues:
+            args['filterType'] = filterType
+            args['filterValues'] = filterValues
         while True:
             self.authenticate()
             # for long-running processes, this updates the access token
             args['access_token'] = self.token
-            result = self._api_call(
-                'get', self.host + "/rest/asset/v1/programs.json", args)
+            result = self._api_call('get', self.host + "/rest/asset/v1/programs.json", args)
             if result is None:
                 raise Exception("Empty Response")
             if not result['success']:
@@ -4014,13 +4206,10 @@ class MarketoClient:
                         yield result
                     else:
                         yield result['result']
-                    break
+                    if len(result['result']) < maxReturn:
+                        break
             else:
                 break
-            if return_full_result:
-                yield result
-            else:
-                yield result['result']
             offset += maxReturn
             args['offset'] = offset
 
