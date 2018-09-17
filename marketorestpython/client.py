@@ -4201,13 +4201,12 @@ class MarketoClient:
             if not result['success']:
                 raise MarketoException(result['errors'][0])
             if 'result' in result:
+                if return_full_result:
+                    yield result
+                else:
+                    yield result['result']
                 if len(result['result']) < maxReturn:
-                    if return_full_result:
-                        yield result
-                    else:
-                        yield result['result']
-                    if len(result['result']) < maxReturn:
-                        break
+                    break
             else:
                 break
             offset += maxReturn

@@ -24,7 +24,7 @@ Originally developed by asamat with contributions from sandipsinha and osamakhn
 
 setup(
     name='marketorestpython',
-    version= '0.3.13',
+    version= '0.3.14',
     url='https://github.com/jepcastelein/marketo-rest-python',
     author='Jep Castelein',
     author_email='jep@castelein.net',
