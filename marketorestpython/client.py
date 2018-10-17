@@ -5120,6 +5120,17 @@ class MarketoClient:
             raise MarketoException(result['errors'][0])
         return result['result']
 
+    def _get_export_jobs_status(self, entity, job_id):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        result = self._api_call(
+            'get', self.host + '/bulk/v1/{}/export/{}/status.json'.format(entity, job_id), args)
+        if not result['success']:
+            raise MarketoException(result['errors'][0])
+        return result['result']
+
     def _export_job_state_machine(self, entity, state, job_id):
         assert entity is not None, 'Invalid argument: required fields is none.'
         assert entity is not None, 'Invalid argument: required fields is none.'
@@ -5145,10 +5156,10 @@ class MarketoClient:
         return self._export_job_state_machine('activities', 'file', *args, **kargs)
 
     def get_leads_export_job_status(self, *args, **kargs):
-        return self._export_job_state_machine('leads', 'status', *args, **kargs)
+        return self._get_export_jobs_status('leads', *args, **kargs)
 
     def get_activities_export_job_status(self, *args, **kargs):
-        return self._export_job_state_machine('activities', 'status', *args, **kargs)
+        return self._get_export_jobs_status('activities', *args, **kargs)
 
     def cancel_leads_export_job(self, *args, **kargs):
         return self._export_job_state_machine('leads', 'cancel', *args, **kargs)
