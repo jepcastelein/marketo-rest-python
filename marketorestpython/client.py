@@ -1025,7 +1025,8 @@ class MarketoClient:
         return result_list
 
     def get_lead_activities_yield(self, activityTypeIds, nextPageToken=None, sinceDatetime=None, untilDatetime=None,
-                                  batchSize=None, listId=None, leadIds=None, return_full_result=False):
+                                  batchSize=None, listId=None, leadIds=None, return_full_result=False,
+                                  max_empty_more_results=None):
         self.authenticate()
         if activityTypeIds is None:
             raise ValueError(
@@ -1048,6 +1049,7 @@ class MarketoClient:
         if nextPageToken is None:
             nextPageToken = self.get_paging_token(sinceDatetime=sinceDatetime)
         args['nextPageToken'] = nextPageToken
+        empty_more_results_count = 0  # counts how many times moreResults=True without results
         while True:
             self.authenticate()
             # for long-running processes, this updates the access token
@@ -1075,7 +1077,13 @@ class MarketoClient:
                         yield result
                     else:
                         yield result['result']
+                empty_more_results_count = 0
+            elif result['moreResult']:
+                empty_more_results_count += 1
             if result['moreResult'] is False:
+                break
+            if max_empty_more_results and empty_more_results_count >= max_empty_more_results:
+                # if maxResults=True but there are no results yet, this is a way to interrupt the loop after x loops
                 break
             args['nextPageToken'] = result['nextPageToken']
 
