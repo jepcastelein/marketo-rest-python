@@ -5111,9 +5111,10 @@ class MarketoClient:
             raise MarketoException(result['errors'][0])
         return result['result']
 
-    def _create_bulk_export_job(self, entity, fields, filters, format='CSV', columnHeaderNames=None):
+    def _create_bulk_export_job(self, entity, fields=None, filters=None, format='CSV', columnHeaderNames=None):
         assert entity is not None, 'Invalid argument: required fields is none.'
-        assert fields is not None, 'Invalid argument: required fields is none.'
+        if entity == 'leads':
+            assert fields is not None, 'Invalid argument: required fields is none.'
         assert filters is not None, 'Invalid argument: required filters is none.'
         data = {'fields': fields, 'format': format, 'filter': filters}
         if columnHeaderNames is not None:
@@ -5129,17 +5130,23 @@ class MarketoClient:
         return result['result']
 
     def _export_job_state_machine(self, entity, state, job_id):
-        assert entity is not None, 'Invalid argument: required fields is none.'
-        assert entity is not None, 'Invalid argument: required fields is none.'
-        assert job_id is not None, 'Invalid argument: required fields is none.'
-        state_info = {'enqueue': {'suffix': '/enqueue.json', 'method': 'post'}, 'cancel': {
-            'suffix': '/cancel.json', 'method': 'post'}, 'status': {'suffix': '/status.json', 'method': 'get'}, 'file': {'suffix': '/file.json', 'method': 'get'}}
+        assert entity is not None, 'Invalid argument: required field "entity" is none.'
+        assert state is not None, 'Invalid argument: required field "state" is none.'
+        assert job_id is not None, 'Invalid argument: required field "job_id" is none.'
+        state_info = {
+            'enqueue': {'suffix': '/enqueue.json', 'method': 'post', 'mode': None},
+            'cancel': {'suffix': '/cancel.json', 'method': 'post', 'mode': None},
+            'status': {'suffix': '/status.json', 'method': 'get', 'mode': None},
+            'file': {'suffix': '/file.json', 'method': 'get', 'mode': 'nojson'}
+        }
         self.authenticate()
         args = {
             'access_token': self.token
         }
-        result = self._api_call(
-            state_info[state]['method'], self.host + '/bulk/v1/{}/export/{}{}'.format(entity, job_id, state_info[state]['suffix']), args, mode='nojson')
+        result = self._api_call(state_info[state]['method'],
+                                self.host + '/bulk/v1/{}/export/{}{}'.format(entity, job_id,
+                                                                                      state_info[state]['suffix']),
+                                args, mode=state_info[state]['mode'])
         if state is 'file' and result.status_code is 200:
             return result.content
         if not result['success']:
