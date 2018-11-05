@@ -1,6 +1,7 @@
+import mimetypes
 import requests
 import time
-import mimetypes
+
 
 class HttpLib:
     max_retries = 3
@@ -9,14 +10,16 @@ class HttpLib:
 
     def _rate_limited(maxPerSecond):
         minInterval = 1.0 / float(maxPerSecond)
+
         def decorate(func):
             lastTimeCalled = [0.0]
-            def rateLimitedFunction(*args,**kargs):
+
+            def rateLimitedFunction(*args, **kargs):
                 elapsed = time.clock() - lastTimeCalled[0]
                 leftToWait = minInterval - elapsed
-                if leftToWait>0:
+                if leftToWait > 0:
                     time.sleep(leftToWait)
-                ret = func(*args,**kargs)
+                ret = func(*args, **kargs)
                 lastTimeCalled[0] = time.clock()
                 return ret
             return rateLimitedFunction
@@ -37,7 +40,7 @@ class HttpLib:
                     r_json = r.json()
                     # if we still hit the rate limiter, do not return anything so the call will be retried
                     if 'success' in r_json:  # this is for all normal API calls (but not the access token call)
-                        if r_json['success'] == False:
+                        if r_json['success'] is False:
                             print('error from http_lib.py: ' + str(r_json['errors'][0]))
                             if r_json['errors'][0]['code'] in ('606', '615', '604'):
                                 # this handles Marketo exceptions; HTTP response is still 200, but error is in the JSON
@@ -83,7 +86,7 @@ class HttpLib:
                 r_json = r.json()
                 # if we still hit the rate limiter, do not return anything so the call will be retried
                 if 'success' in r_json:  # this is for all normal API calls (but not the access token call)
-                    if r_json['success'] == False:
+                    if r_json['success'] is False:
                         print('error from http_lib.py: ' + str(r_json['errors'][0]))
                         if r_json['errors'][0]['code'] in ('606', '615', '604'):
                             # this handles Marketo exceptions; HTTP response is still 200, but error is in the JSON
@@ -108,7 +111,7 @@ class HttpLib:
                 else:
                     return r_json
             except Exception as e:
-                print("HTTP Post Exception! Retrying....."+ str(e))
+                print("HTTP Post Exception! Retrying....." + str(e))
                 time.sleep(self.sleep_duration)
                 retries += 1
 
@@ -123,6 +126,6 @@ class HttpLib:
                 r = requests.delete(endpoint, params=args, json=data, headers=headers)
                 return r.json()
             except Exception as e:
-                print("HTTP Delete Exception! Retrying....."+ str(e))
+                print("HTTP Delete Exception! Retrying....." + str(e))
                 time.sleep(self.sleep_duration)
                 retries += 1

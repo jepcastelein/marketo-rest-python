@@ -1,18 +1,15 @@
-import time
-from datetime import datetime
 import json
+import time
+
+from datetime import datetime
+
 from marketorestpython.helper.http_lib import HttpLib
 from marketorestpython.helper.exceptions import MarketoException
 
 
 def has_empty_warning(result):
-    if 'result' not in result \
-            and 'warnings' in result \
-            and len(result['warnings']) \
-            and result['warnings'][0] == 'No assets found for the given search criteria.':
-        return True
-
-    return False
+    return 'result' not in result and 'warnings' in result and len(result['warnings']) \
+           and result['warnings'][0] == 'No assets found for the given search criteria.'
 
 
 class MarketoClient:
@@ -428,8 +425,8 @@ class MarketoClient:
             self.authenticate()
             # for long-running processes, this updates the access token
             args['access_token'] = self.token
-            result = self._api_call('post', self.host + "/rest/v1/leads/programs/" + str(programId) + ".json", args, data,
-                                    mode='nojsondumps')
+            result = self._api_call('post', self.host + "/rest/v1/leads/programs/" + str(programId) + ".json", args,
+                                    data, mode='nojsondumps')
             if result is None:
                 raise Exception("Empty Response")
             if not result['success']:
@@ -2303,7 +2300,8 @@ class MarketoClient:
     # -------LANDING PAGES ---------#
 
     def create_landing_page(self, name, folderId, folderType, template, description=None, title=None, keywords=None,
-                            robots=None, customHeadHTML=None, facebookOgTags=None, prefillForm=None, mobileEnabled=None):
+                            robots=None, customHeadHTML=None, facebookOgTags=None, prefillForm=None,
+                            mobileEnabled=None):
         self.authenticate()
         if name is None:
             raise ValueError(
@@ -2494,7 +2492,8 @@ class MarketoClient:
             result = self._api_call('get', self.host + "/rest/asset/v1/landingPages.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            #if not result['success']: raise MarketoException(result['errors'][0] + ". Request ID: " + result['requestId'])
+            # if not result['success']: raise MarketoException(result['errors'][0] +
+            #                                                  ". Request ID: " + result['requestId'])
             if not result['success']:
                 raise MarketoException(result['errors'][0])
             if 'result' in result:
@@ -2588,8 +2587,8 @@ class MarketoClient:
 
     def update_landing_page_content_section(self, id, contentId, type, value, index=None, backgroundColor=None,
                                             borderColor=None, borderStyle=None, borderWidth=None, height=None,
-                                            zIndex=None, left=None, opacity=None, top=None, width=None, hideDesktop=None,
-                                            hideMobile=None, imageOpenNewWindow=None, linkUrl=None):
+                                            zIndex=None, left=None, opacity=None, top=None, width=None,
+                                            hideDesktop=None, hideMobile=None, imageOpenNewWindow=None, linkUrl=None):
         self.authenticate()
         if id is None:
             raise ValueError("Invalid argument: required argument id is none.")
@@ -2659,8 +2658,8 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = self._api_call('post', self.host + "/rest/asset/v1/landingPage/" + str(id) + "/content/" + str(contentId) +
-                                "/delete.json", args)
+        result = self._api_call('post', self.host + "/rest/asset/v1/landingPage/" + str(id) + "/content/" +
+                                str(contentId) + "/delete.json", args)
         if result is None:
             raise Exception("Empty Response")
         if not result['success']:
