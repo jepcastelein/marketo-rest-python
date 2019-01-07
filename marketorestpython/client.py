@@ -1170,6 +1170,8 @@ class MarketoClient:
                         yield new_result
                     if len(new_result) < len(result['result']):
                         break
+                else:
+                    yield result['result']
             if result['moreResult'] is False:
                 break
             args['nextPageToken'] = result['nextPageToken']
