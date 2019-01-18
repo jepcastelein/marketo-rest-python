@@ -1132,7 +1132,7 @@ class MarketoClient:
         return result_list
 
     def get_lead_changes_yield(self, fields, nextPageToken=None, sinceDatetime=None, untilDatetime=None, batchSize=None,
-                               listId=None):
+                               listId=None, leadIds=None, return_full_result=False, max_empty_more_results=None):
         self.authenticate()
         if fields is None:
             raise ValueError(
@@ -1147,11 +1147,14 @@ class MarketoClient:
         }
         if listId is not None:
             args['listId'] = listId
+        if leadIds is not None:
+            args['leadIds'] = leadIds
         if batchSize is not None:
             args['batchSize'] = batchSize
         if nextPageToken is None:
             nextPageToken = self.get_paging_token(sinceDatetime=sinceDatetime)
         args['nextPageToken'] = nextPageToken
+        empty_more_results_count = 0  # counts how many times moreResults=True without results
         while True:
             self.authenticate()
             # for long-running processes, this updates the access token
@@ -1167,10 +1170,25 @@ class MarketoClient:
                     new_result = self.process_lead_activity_until_datetime(
                         result['result'], untilDatetime)
                     if new_result:
-                        yield new_result
+                        if return_full_result:
+                            result['result'] = new_result
+                            yield result
+                        else:
+                            yield new_result
                     if len(new_result) < len(result['result']):
                         break
+                else:
+                    if return_full_result:
+                        yield result
+                    else:
+                        yield result['result']
+                empty_more_results_count = 0
+            elif result['moreResult']:
+                empty_more_results_count += 1
             if result['moreResult'] is False:
+                break
+            if max_empty_more_results and empty_more_results_count >= max_empty_more_results:
+                # if maxResults=True but there are no results yet, this is a way to interrupt the loop after x loops
                 break
             args['nextPageToken'] = result['nextPageToken']
 

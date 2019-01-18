@@ -337,7 +337,7 @@ Get Lead Activities
 API Ref: http://developers.marketo.com/documentation/rest/get-lead-activities/
 ```python
 mc.execute(method='get_lead_activities', activityTypeIds=['23','22'], nextPageToken=None, 
-    sinceDatetime='2015-10-06', untilDatetime='2016-04-30' 
+    sinceDatetime='2015-10-06', untilDatetime='2016-04-30', 
     batchSize=None, listId=None, leadIds=[1,2])
 
 # sinceDatetime format: 2015-10-06T13:22:17-08:00 or 2015-10-06T13:22-0700 or 2015-10-06
@@ -352,17 +352,22 @@ Get Lead Activities Yield (Generator)
 API Ref: http://developers.marketo.com/documentation/rest/get-lead-activities/
 ```python
 for activities in mc.execute(method='get_lead_activities_yield', activityTypeIds=['23','22'], nextPageToken=None, 
-                             sinceDatetime='2015-10-06', untilDatetime='2016-04-30' 
-                             batchSize=None, listId=None, leadIds=[1,2]):
+                             sinceDatetime='2015-10-06', untilDatetime='2016-04-30', 
+                             batchSize=None, listId=None, leadIds=[1,2], return_full_result=False,
+                             max_empty_more_results=None):
     print(len(activities))
 
 # sinceDatetime format: 2015-10-06T13:22:17-08:00 or 2015-10-06T13:22-0700 or 2015-10-06
 # either nextPageToken or sinceDatetime need to be specified
 # untilDatetime, batchSize, listId and leadIds are optional; batchsize defaults to 300 (max)
+# set return_full_result to get the nextPageToken and requestId returned; actual 
+#  result will be in the 'result' key
+# sometimes Marketo responds with 0 results but indicates there may be more
+#  results in the next call; max_empty_more_results defines how many times "0 results"
+#  is acceptable until it gives up
 # this is a generator, so it will return chunks of Leads rather that all Activities 
 #   at once; therefore, it's useful for retrieving large numbers of Activities
 ```
-
 
 Get Lead Changes
 ----------------
@@ -382,13 +387,18 @@ Get Lead Changes Yield (Generator)
 API Ref: http://developers.marketo.com/documentation/rest/get-lead-changes/
 ```python
 for leads in mc.execute(method='get_lead_changes_yield', fields=['firstName','lastName'], nextPageToken=None,
-                  sinceDatetime='2015-09-01', untilDatetime='2017-01-01', batchSize=None, listId=None):
+                  sinceDatetime='2015-09-01', untilDatetime='2017-01-01', batchSize=None, listId=None, 
+                  leadIds=[1,2], return_full_result=False, max_empty_more_results=None):
     print(len(leads))
 
 # sinceDatetime format: 2015-10-06T13:22:17-08:00 or 2015-10-06T13:22-0700 or 2015-10-06
 # either nextPageToken or sinceDatetime need to be specified
-# untilDatetime, batchSize and listId are optional; batchsize defaults to 300 (max)
-# this will potentially return a lot of records: the function loops until it has all activities, then returns them
+# untilDatetime, batchSize, listId and leadIds are optional; batchsize defaults to 300 (max)
+# set return_full_result to get the nextPageToken and requestId returned; actual 
+#  result will be in the 'result' key
+# sometimes Marketo responds with 0 results but indicates there may be more
+#  results in the next call; max_empty_more_results defines how many times "0 results"
+#  is acceptable until it gives up
 ```
 
 Add Custom Activities
