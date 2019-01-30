@@ -23,14 +23,14 @@ class HttpLib:
         return decorate
 
     @_rate_limited(num_calls_per_second)
-    def get(self, endpoint, args=None, mode=None):
+    def get(self, endpoint, args=None, mode=None, stream=False):
         retries = 1
         while True:
             if retries > self.max_retries:
                 return None
             try:
                 headers = {'Accept-Encoding': 'gzip'}
-                r = requests.get(endpoint, params=args, headers=headers)
+                r = requests.get(endpoint, params=args, headers=headers, stream=stream)
                 if mode is 'nojson':
                     return r
                 else:

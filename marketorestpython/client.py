@@ -5147,7 +5147,7 @@ class MarketoClient:
             raise MarketoException(result['errors'][0])
         return result['result']
 
-    def _export_job_state_machine(self, entity, state, job_id):
+    def _export_job_state_machine(self, entity, state, job_id, stream=False):
         assert entity is not None, 'Invalid argument: required field "entity" is none.'
         assert state is not None, 'Invalid argument: required field "state" is none.'
         assert job_id is not None, 'Invalid argument: required field "job_id" is none.'
@@ -5161,12 +5161,15 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = self._api_call(state_info[state]['method'],
-                                self.host + '/bulk/v1/{}/export/{}{}'.format(entity, job_id,
-                                                                                      state_info[state]['suffix']),
-                                args, mode=state_info[state]['mode'])
+        url = '{}/bulk/v1/{}/export/{}{}'.format(self.host, entity, job_id,
+                                                 state_info[state]['suffix'])
+        result = self._api_call(
+              state_info[state]['method'], url, args,
+              mode=state_info[state]['mode'], stream=stream)
         if state is 'file' and result.status_code is 200:
-            return result.content
+            if not stream:
+                return result.content
+            return result.iter_content(chunk_size=1024)
         if not result['success']:
             raise MarketoException(result['errors'][0])
         return result['result']
