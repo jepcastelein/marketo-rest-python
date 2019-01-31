@@ -65,7 +65,7 @@ class HttpLib:
                 retries += 1
 
     @_rate_limited(num_calls_per_second)
-    def post(self, endpoint, args, data=None, files=None, filename=None, mode=None):
+    def post(self, endpoint, args, data=None, files=None, filename=None, mode=None, stream=False):
         retries = 1
         while True:
             if retries > self.max_retries:
