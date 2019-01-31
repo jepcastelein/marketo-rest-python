@@ -31,6 +31,7 @@ setup(
     packages=['marketorestpython', 'marketorestpython.helper'],
     license='MIT License',
     install_requires=[
+        'backoff',
         'requests',
     ],
     keywords = ['Marketo', 'REST API', 'Wrapper', 'Client'],

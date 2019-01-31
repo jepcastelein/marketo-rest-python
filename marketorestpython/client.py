@@ -282,7 +282,8 @@ class MarketoClient:
             'client_id': self.client_id,
             'client_secret': self.client_secret
         }
-        data = self._api_call('get', self.host + "/identity/oauth/token", args)
+        data = self._api_call('get', self.host + "/identity/oauth/token", args,
+            mode='accesstoken')
         if data is None:
             raise Exception("Empty Response")
         if 'error' in data:
@@ -309,8 +310,6 @@ class MarketoClient:
             'get', self.host + "/rest/v1/lead/" + str(id) + ".json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_multiple_leads_by_filter_type(self, filterType, filterValues, fields=None, batchSize=None):
@@ -342,8 +341,6 @@ class MarketoClient:
                 'post', self.host + "/rest/v1/leads.json", args=None, data=data, mode='nojsondumps')
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             result_list.extend(result['result'])
             if len(result['result']) == 0 or 'nextPageToken' not in result:
                 break
@@ -373,8 +370,6 @@ class MarketoClient:
                                     str(listId) + "/leads.json", args, data, mode='nojsondumps')
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             result_list.extend(result['result'])
             if len(result['result']) == 0 or 'nextPageToken' not in result:
                 break
@@ -403,8 +398,6 @@ class MarketoClient:
                                     str(listId) + "/leads.json", args, data, mode='nojsondumps')
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 yield result['result']
                 if len(result['result']) == 0 or 'nextPageToken' not in result:
@@ -432,8 +425,6 @@ class MarketoClient:
                                     mode='nojsondumps')
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             result_list.extend(result['result'])
             if len(result['result']) == 0 or 'nextPageToken' not in result:
                 break
@@ -459,8 +450,6 @@ class MarketoClient:
                                     mode='nojsondumps')
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 yield result['result']
                 if len(result['result']) == 0 or 'nextPageToken' not in result:
@@ -492,8 +481,6 @@ class MarketoClient:
         #result['result'] = data
         result = self._api_call(
             'post', self.host + "/rest/v1/leads/programs/" + str(id) + "/status.json", args, data)
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def create_update_leads(self, leads, action=None, lookupField=None, asyncProcessing=None, partitionName=None):
@@ -516,8 +503,6 @@ class MarketoClient:
             'post', self.host + "/rest/v1/leads.json", args, data)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def associate_lead(self, id, cookie):
@@ -536,8 +521,6 @@ class MarketoClient:
             'post', self.host + "/rest/v1/leads/" + str(id) + "/associate.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         # there is no 'result' node returned in this call
         return result['success']
 
@@ -573,8 +556,6 @@ class MarketoClient:
             'post', self.host + "/rest/v1/leads/push.json", args, data)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def merge_lead(self, id, leadIds, mergeInCRM=False):
@@ -594,8 +575,6 @@ class MarketoClient:
                                 str(id) + "/merge.json", args, mode='merge_lead')
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         # there is no 'result' node returned in this call
         return result['success']
 
@@ -610,8 +589,6 @@ class MarketoClient:
             'get', self.host + "/rest/v1/leads/partitions.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     # --------- LISTS ---------
@@ -627,8 +604,6 @@ class MarketoClient:
             'get', self.host + "/rest/v1/lists/" + str(id) + ".json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_multiple_lists(self, id=None, name=None, programName=None, workspaceName=None, batchSize=None):
@@ -655,8 +630,6 @@ class MarketoClient:
                 'get', self.host + "/rest/v1/lists.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             result_list.extend(result['result'])
             if len(result['result']) == 0 or 'nextPageToken' not in result:
                 break
@@ -681,8 +654,6 @@ class MarketoClient:
             'post', self.host + "/rest/v1/lists/" + str(listId) + "/leads.json", args, data)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def remove_leads_from_list(self, listId, id):
@@ -703,8 +674,6 @@ class MarketoClient:
             'delete', self.host + "/rest/v1/lists/" + str(listId) + "/leads.json", args, data)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def member_of_list(self, listId, id):
@@ -726,8 +695,6 @@ class MarketoClient:
                                 str(listId) + "/leads/ismember.json", args, data)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     # --------- CAMPAIGNS ---------
@@ -744,8 +711,6 @@ class MarketoClient:
             'get', self.host + "/rest/v1/campaigns/" + str(id) + ".json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_multiple_campaigns(self, id=None, name=None, programName=None, workspaceName=None, batchSize=None):
@@ -775,8 +740,6 @@ class MarketoClient:
                 'post', self.host + "/rest/v1/campaigns.json", args, data, mode='nojsondumps')
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             result_list.extend(result['result'])
             if len(result['result']) == 0 or 'nextPageToken' not in result:
                 break
@@ -806,8 +769,6 @@ class MarketoClient:
             data['input']['tokens'] = token_list
         result = self._api_call(
             'post', self.host + "/rest/v1/campaigns/" + str(id) + "/schedule.json", args, data)
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['success']
 
     def request_campaign(self, id, leads, tokens=None):
@@ -839,8 +800,6 @@ class MarketoClient:
             }
         result = self._api_call(
             'post', self.host + "/rest/v1/campaigns/" + str(id) + "/trigger.json", args, data)
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['success']
 
     # --------- IMPORT LEADS ---------
@@ -867,8 +826,6 @@ class MarketoClient:
             'post', self.host + "/bulk/v1/leads.json", args, files=file, filename="file")
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_import_lead_status(self, id):
@@ -882,8 +839,6 @@ class MarketoClient:
             'get', self.host + "/bulk/v1/leads/batch/" + str(id) + ".json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_import_failure_file(self, id):
@@ -923,8 +878,6 @@ class MarketoClient:
             'get', self.host + "/rest/v1/leads/describe.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     # --------- ACTIVITIES ---------
@@ -938,8 +891,6 @@ class MarketoClient:
             'get', self.host + "/rest/v1/activities/types.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_paging_token(self, sinceDatetime):
@@ -952,8 +903,6 @@ class MarketoClient:
             'get', self.host + "/rest/v1/activities/pagingtoken.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['nextPageToken']
 
     def process_lead_activity_until_datetime(self, result, untilDatetime):
@@ -1010,8 +959,6 @@ class MarketoClient:
                 'get', self.host + "/rest/v1/activities.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 if untilDatetime is not None:
                     new_result = self.process_lead_activity_until_datetime(
@@ -1058,8 +1005,6 @@ class MarketoClient:
                 'get', self.host + "/rest/v1/activities.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 if untilDatetime is not None:
                     new_result = self.process_lead_activity_until_datetime(
@@ -1117,8 +1062,6 @@ class MarketoClient:
                 'get', self.host + "/rest/v1/activities/leadchanges.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 if untilDatetime is not None:
                     new_result = self.process_lead_activity_until_datetime(
@@ -1163,8 +1106,6 @@ class MarketoClient:
                 'get', self.host + "/rest/v1/activities/leadchanges.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 if untilDatetime is not None:
                     new_result = self.process_lead_activity_until_datetime(
@@ -1207,8 +1148,6 @@ class MarketoClient:
             'post', self.host + "/rest/v1/activities/external.json", args, data)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     # --------- USAGE ---------
@@ -1222,8 +1161,6 @@ class MarketoClient:
             'get', self.host + "/rest/v1/stats/usage.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_last_7_days_usage(self):
@@ -1235,8 +1172,6 @@ class MarketoClient:
             'get', self.host + "/rest/v1/stats/usage/last7days.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_daily_errors(self):
@@ -1248,8 +1183,6 @@ class MarketoClient:
             'get', self.host + "/rest/v1/stats/errors.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_last_7_days_errors(self):
@@ -1261,8 +1194,6 @@ class MarketoClient:
             'get', self.host + "/rest/v1/stats/errors/last7days.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     # --------- VARIOUS ---------
@@ -1282,8 +1213,6 @@ class MarketoClient:
                                 "/rest/v1/leads.json", args, data)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_deleted_leads(self, nextPageToken=None, sinceDatetime=None, batchSize=None):
@@ -1308,8 +1237,6 @@ class MarketoClient:
                 'get', self.host + "/rest/v1/activities/deletedleads.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 result_list.extend(result['result'])
             if result['moreResult'] is False:
@@ -1332,8 +1259,6 @@ class MarketoClient:
             data['input'].append(lead)
         result = self._api_call(
             'post', self.host + "/rest/v1/leads/partitions.json", args, data)
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     # --------- FOLDERS ---------
@@ -1360,8 +1285,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/folders.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_folder_by_id(self, id, type):
@@ -1379,8 +1302,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/folder/" + str(id) + ".json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_folder_by_name(self, name, type=None, root=None, workSpace=None):
@@ -1402,8 +1323,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/folder/byName.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_folder_contents(self, id, type, maxReturn=None):
@@ -1431,8 +1350,6 @@ class MarketoClient:
                 'get', self.host + "/rest/asset/v1/folder/" + str(id) + "/content.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 if len(result['result']) < maxReturn:
                     result_list.extend(result['result'])
@@ -1462,8 +1379,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/folder/" + str(id) + ".json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def delete_folder(self, id):
@@ -1478,8 +1393,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/folder/" + str(id) + "/delete.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def browse_folders(self, root, maxDepth=None, maxReturn=None, workSpace=None):
@@ -1509,8 +1422,6 @@ class MarketoClient:
                 'get', self.host + "/rest/asset/v1/folders.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 if len(result['result']) < maxReturn:
                     result_list.extend(result['result'])
@@ -1551,8 +1462,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/folder/" + str(id) + "/tokens.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_tokens(self, id, folderType):
@@ -1570,8 +1479,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/folder/" + str(id) + "/tokens.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def delete_tokens(self, id, folderType, name, type):
@@ -1597,8 +1504,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/folder/" + str(id) + "/tokens/delete.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     # --------- EMAIL TEMPLATES ---------
@@ -1628,8 +1533,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/emailTemplates.json", args, files=content, filename="content")
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_email_template_by_id(self, id, status=None):
@@ -1645,8 +1548,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/emailTemplate/" + str(id) + ".json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_email_template_by_name(self, name, status=None):
@@ -1664,8 +1565,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/emailTemplate/byName.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def update_email_template(self, id, name=None, description=None):
@@ -1683,8 +1582,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/emailTemplate/" + str(id) + ".json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def delete_email_template(self, id):
@@ -1698,8 +1595,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/delete.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_email_templates(self, maxReturn=None, status=None):
@@ -1723,8 +1618,6 @@ class MarketoClient:
                 'get', self.host + "/rest/asset/v1/emailTemplates.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 if len(result['result']) < maxReturn:
                     result_list.extend(result['result'])
@@ -1752,8 +1645,6 @@ class MarketoClient:
             result = self._api_call('get', self.host + "/rest/asset/v1/emailTemplates.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 if return_full_result:
                     yield result
@@ -1779,8 +1670,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/content", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def update_email_template_content(self, id, content):
@@ -1797,8 +1686,6 @@ class MarketoClient:
                                 files=content, filename="content")
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def approve_email_template(self, id):
@@ -1812,8 +1699,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/approveDraft.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def unapprove_email_template(self, id):
@@ -1827,8 +1712,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/unapprove.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def discard_email_template_draft(self, id):
@@ -1842,8 +1725,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/discardDraft.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def clone_email_template(self, id, name, folderId, folderType):
@@ -1868,8 +1749,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/emailTemplate/" + str(id) + "/clone.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     # --------- EMAILS ---------
@@ -1911,8 +1790,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/emails.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_email_by_id(self, id, status=None):
@@ -1928,8 +1805,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/email/" + str(id) + ".json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_email_by_name(self, name, status=None, folderId=None, folderType=None):
@@ -1950,8 +1825,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/email/byName.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def delete_email(self, id):
@@ -1965,8 +1838,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/email/" + str(id) + "/delete.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def update_email(self, id, name=None, description=None):
@@ -1984,8 +1855,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/email/" + str(id) + ".json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_emails(self, maxReturn=None, status=None, folderId=None, folderType=None):
@@ -2012,8 +1881,6 @@ class MarketoClient:
                 'get', self.host + "/rest/asset/v1/emails.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 if len(result['result']) < maxReturn:
                     result_list.extend(result['result'])
@@ -2044,8 +1911,6 @@ class MarketoClient:
             result = self._api_call('get', self.host + "/rest/asset/v1/emails.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 if return_full_result:
                     yield result
@@ -2071,8 +1936,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/email/" + str(id) + "/content.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def update_email_content(self, id, type, subject=None, fromName=None, fromEmail=None, replyTo=None):
@@ -2101,8 +1964,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/email/" + str(id) + "/content.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def update_email_content_in_editable_section(self, id, htmlId, type, value, textValue=None):
@@ -2133,8 +1994,6 @@ class MarketoClient:
                                 ".json", args, data, mode='nojsondumps')
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_email_dynamic_content(self, id, dynamicContentId, status):
@@ -2153,8 +2012,6 @@ class MarketoClient:
                                 str(dynamicContentId) + ".json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def update_email_dynamic_content(self, id, dynamicContentId, segment, value, type, data_method='data'):
@@ -2195,8 +2052,6 @@ class MarketoClient:
                                 str(dynamicContentId) + ".json", args, data, mode='nojsondumps')
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def approve_email(self, id):
@@ -2210,8 +2065,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/email/" + str(id) + "/approveDraft.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def unapprove_email(self, id):
@@ -2225,8 +2078,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/email/" + str(id) + "/unapprove.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def discard_email_draft(self, id):
@@ -2240,8 +2091,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/email/" + str(id) + "/discardDraft.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def clone_email(self, id, name, folderId, folderType, description=None, operational=None):
@@ -2270,8 +2119,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/email/" + str(id) + "/clone.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def send_sample_email(self, id, emailAddress, textOnly=None, leadId=None):
@@ -2293,8 +2140,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/email/" + str(id) + "/sendSample.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_email_full_content(self, id, status=None, leadId=None, type=None):
@@ -2314,8 +2159,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/email/" + str(id) + "/fullContent.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     # -------LANDING PAGES ---------#
@@ -2361,8 +2204,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/landingPages.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_landing_page_by_id(self, id, status=None):
@@ -2378,8 +2219,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/landingPage/" + str(id) + ".json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_landing_page_by_name(self, name, status=None):
@@ -2397,8 +2236,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/landingPage/byName.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def delete_landing_page(self, id):
@@ -2412,8 +2249,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/landingPage/" + str(id) + "/delete.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def update_landing_page(self, id, name=None, description=None, title=None, keywords=None,
@@ -2451,8 +2286,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/landingPage/" + str(id) + ".json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_landing_pages(self, maxReturn=None, status=None, folderId=None, folderType=None):
@@ -2480,8 +2313,6 @@ class MarketoClient:
             if result is None:
                 raise Exception("Empty Response")
             #if not result['success']: raise MarketoException(result['errors'][0] + ". Request ID: " + result['requestId'])
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 if len(result['result']) < maxReturn:
                     result_list.extend(result['result'])
@@ -2513,8 +2344,6 @@ class MarketoClient:
             if result is None:
                 raise Exception("Empty Response")
             #if not result['success']: raise MarketoException(result['errors'][0] + ". Request ID: " + result['requestId'])
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 if return_full_result:
                     yield result
@@ -2540,8 +2369,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/landingPage/" + str(id) + "/content.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def create_landing_page_content_section(self, id, type, value, backgroundColor=None, borderColor=None,
@@ -2600,8 +2427,6 @@ class MarketoClient:
                                 data, mode='nojsondumps')
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def update_landing_page_content_section(self, id, contentId, type, value, index=None, backgroundColor=None,
@@ -2663,8 +2488,6 @@ class MarketoClient:
                                 ".json", args, data, mode='nojsondumps')
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def delete_landing_page_content_section(self, id, contentId):
@@ -2681,8 +2504,6 @@ class MarketoClient:
                                 "/delete.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_landing_page_dynamic_content(self, id, dynamicContentId, status=None):
@@ -2701,8 +2522,6 @@ class MarketoClient:
                                 str(dynamicContentId) + ".json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def update_landing_page_dynamic_content(self, id, dynamicContentId, segment, value, type, index=None,
@@ -2768,8 +2587,6 @@ class MarketoClient:
                                 str(dynamicContentId) + ".json", args, data, mode='nojsondumps')
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def approve_landing_page(self, id):
@@ -2783,8 +2600,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/landingPage/" + str(id) + "/approveDraft.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def unapprove_landing_page(self, id):
@@ -2798,8 +2613,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/landingPage/" + str(id) + "/unapprove.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def discard_landing_page_draft(self, id):
@@ -2813,8 +2626,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/landingPage/" + str(id) + "/discardDraft.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def clone_landing_page(self, id, name, folderId, folderType, description=None, template=None):
@@ -2843,8 +2654,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/landingPage/" + str(id) + "/clone.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     # --------- FORMS ---------
@@ -2889,8 +2698,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/forms.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_form_by_id(self, id, status=None):
@@ -2906,8 +2713,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/form/" + str(id) + ".json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_form_by_name(self, name, status=None):
@@ -2925,8 +2730,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/form/byName.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def delete_form(self, id):
@@ -2940,8 +2743,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/form/" + str(id) + "/delete.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def update_form(self, id, name=None, description=None, language=None, locale=None, progressiveProfiling=None,
@@ -2979,8 +2780,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/form/" + str(id) + ".json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_forms(self, maxReturn=None, status=None, folderId=None, folderType=None):
@@ -3007,8 +2806,6 @@ class MarketoClient:
                 'get', self.host + "/rest/asset/v1/forms.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 if len(result['result']) < maxReturn:
                     result_list.extend(result['result'])
@@ -3039,8 +2836,6 @@ class MarketoClient:
             result = self._api_call('get', self.host + "/rest/asset/v1/forms.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 if return_full_result:
                     yield result
@@ -3066,8 +2861,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/form/" + str(id) + "/fields.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def create_form_field(self, id, fieldId, label=None, labelWidth=None, fieldWidth=None, instructions=None,
@@ -3122,8 +2915,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/form/" + str(id) + "/fields.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def update_form_field(self, id, fieldId, label=None, fieldType=None, labelWidth=None, fieldWidth=None, instructions=None,
@@ -3180,8 +2971,6 @@ class MarketoClient:
                                 ".json", args, data, mode='nojsondumps')
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def delete_form_field(self, id, fieldId):
@@ -3198,8 +2987,6 @@ class MarketoClient:
                                 "/delete.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def approve_form(self, id):
@@ -3213,8 +3000,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/form/" + str(id) + "/approveDraft.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def unapprove_form(self, id):
@@ -3228,8 +3013,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/form/" + str(id) + "/unapprove.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def discard_form_draft(self, id):
@@ -3243,8 +3026,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/form/" + str(id) + "/discardDraft.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def clone_form(self, id, name, folderId, folderType, description=None):
@@ -3271,8 +3052,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/form/" + str(id) + "/clone.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     # --------- FILES ---------
@@ -3301,8 +3080,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/files.json", args, files=file, filename="file")
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_file_by_id(self, id):
@@ -3316,8 +3093,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/file/" + str(id) + ".json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_file_by_name(self, name):
@@ -3333,8 +3108,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/file/byName.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def list_files(self, folder=None, maxReturn=None):
@@ -3358,8 +3131,6 @@ class MarketoClient:
                 'get', self.host + "/rest/asset/v1/files.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 if len(result['result']) < maxReturn:
                     result_list.extend(result['result'])
@@ -3387,8 +3158,6 @@ class MarketoClient:
             result = self._api_call('get', self.host + "/rest/asset/v1/files.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 if return_full_result:
                     yield result
@@ -3415,8 +3184,6 @@ class MarketoClient:
                                 filename="file")
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     # --------- SNIPPETS ---------------
@@ -3443,8 +3210,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/snippets.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_snippet_by_id(self, id, status=None):
@@ -3460,8 +3225,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/snippet/" + str(id) + ".json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def delete_snippet(self, id):
@@ -3475,8 +3238,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/snippet/" + str(id) + "/delete.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def update_snippet(self, id, name=None, description=None):
@@ -3494,8 +3255,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/snippet/" + str(id) + ".json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_snippets(self, maxReturn=None, status=None):
@@ -3519,8 +3278,6 @@ class MarketoClient:
                 'get', self.host + "/rest/asset/v1/snippets.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 if len(result['result']) < maxReturn:
                     result_list.extend(result['result'])
@@ -3548,8 +3305,6 @@ class MarketoClient:
             result = self._api_call('get', self.host + "/rest/asset/v1/snippets.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 if return_full_result:
                     yield result
@@ -3575,8 +3330,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/snippet/" + str(id) + "/content.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def update_snippet_content(self, id, type, content):
@@ -3600,8 +3353,6 @@ class MarketoClient:
                                 mode='nojsondumps')
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def approve_snippet(self, id):
@@ -3615,8 +3366,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/snippet/" + str(id) + "/approveDraft.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def unapprove_snippet(self, id):
@@ -3630,8 +3379,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/snippet/" + str(id) + "/unapprove.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def discard_snippet_draft(self, id):
@@ -3645,8 +3392,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/snippet/" + str(id) + "/discardDraft.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def clone_snippet(self, id, name, folderId, folderType, description=None):
@@ -3673,8 +3418,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/snippet/" + str(id) + "/clone.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def update_snippet_dynamic_content(self, id, segmentId, value=None, type=None):
@@ -3695,8 +3438,6 @@ class MarketoClient:
                                 str(segmentId) + ".json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_snippet_dynamic_content(self, id):
@@ -3710,8 +3451,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/snippet/" + str(id) + "/dynamicContent.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     # ----- SEGMENTATIONS -----
@@ -3727,8 +3466,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/segmentation.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         if has_empty_warning(result):
             return []
         return result['result']
@@ -3747,8 +3484,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/segmentation/" + str(id) + "/segments.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     # ----- LANDING PAGE TEMPLATES -----
@@ -3777,8 +3512,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/landingPageTemplates.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_landing_page_template_by_id(self, id, status=None):
@@ -3794,8 +3527,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + ".json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_landing_page_template_by_name(self, name, status=None):
@@ -3813,8 +3544,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/landingPageTemplate/byName.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_landing_page_templates(self, maxReturn=None, status=None, folderId=None, folderType=None):
@@ -3841,8 +3570,6 @@ class MarketoClient:
                 'get', self.host + "/rest/asset/v1/landingPageTemplates.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 if len(result['result']) < maxReturn:
                     result_list.extend(result['result'])
@@ -3873,8 +3600,6 @@ class MarketoClient:
             result = self._api_call('get', self.host + "/rest/asset/v1/landingPageTemplates.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 if return_full_result:
                     yield result
@@ -3900,8 +3625,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/content.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def update_landing_page_template_content(self, id, content):
@@ -3918,8 +3641,6 @@ class MarketoClient:
                                 files=content, filename="content")
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def update_landing_page_template(self, id, name=None, description=None):
@@ -3937,8 +3658,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + ".json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def delete_landing_page_template(self, id):
@@ -3952,8 +3671,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/delete.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def approve_landing_page_template(self, id):
@@ -3967,8 +3684,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/approveDraft.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def unapprove_landing_page_template(self, id):
@@ -3982,8 +3697,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/unapprove.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def discard_landing_page_template_draft(self, id):
@@ -3997,8 +3710,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/discardDraft.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def clone_landing_page_template(self, id, name, folderId, folderType):
@@ -4023,8 +3734,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/landingPageTemplate/" + str(id) + "/clone.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     # --------- PROGRAM ---------
@@ -4067,8 +3776,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/programs.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_program_by_id(self, id):
@@ -4082,8 +3789,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/program/" + str(id) + ".json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_program_by_name(self, name):
@@ -4099,8 +3804,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/program/byName.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_program_by_tag_type(self, tagType, tagValue):
@@ -4120,8 +3823,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/program/byTag.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def update_program(self, id, name=None, description=None, tags=None):
@@ -4146,8 +3847,6 @@ class MarketoClient:
                                 str(id) + ".json", args, data, mode='nojsondumps')
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def delete_program(self, id):
@@ -4161,8 +3860,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/program/" + str(id) + "/delete.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def browse_programs(self, maxReturn=20, status=None, earliestUpdatedAt=None, latestUpdatedAt=None):
@@ -4187,8 +3884,6 @@ class MarketoClient:
                 'get', self.host + "/rest/asset/v1/programs.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 if len(result['result']) < maxReturn:
                     result_list.extend(result['result'])
@@ -4224,8 +3919,6 @@ class MarketoClient:
             result = self._api_call('get', self.host + "/rest/asset/v1/programs.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 if return_full_result:
                     yield result
@@ -4262,8 +3955,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/program/" + str(id) + "/clone.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def approve_program(self, id):
@@ -4277,8 +3968,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/program/" + str(id) + "/approve.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def unapprove_program(self, id):
@@ -4292,8 +3981,6 @@ class MarketoClient:
             'post', self.host + "/rest/asset/v1/program/" + str(id) + "/unapprove.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_channels(self, maxReturn=None):
@@ -4315,8 +4002,6 @@ class MarketoClient:
                 'get', self.host + "/rest/asset/v1/channels.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 if len(result['result']) < maxReturn:
                     result_list.extend(result['result'])
@@ -4341,8 +4026,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/channel/byName.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_tags(self, maxReturn=None):
@@ -4364,8 +4047,6 @@ class MarketoClient:
                 'get', self.host + "/rest/asset/v1/tagTypes.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             if 'result' in result:
                 if len(result['result']) < maxReturn:
                     result_list.extend(result['result'])
@@ -4390,8 +4071,6 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/tagType/byName.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     # --------- CUSTOM OBJECTS ---------
@@ -4407,8 +4086,6 @@ class MarketoClient:
             'get', self.host + "/rest/v1/customobjects.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def describe_custom_object(self, name):
@@ -4423,8 +4100,6 @@ class MarketoClient:
             'get', self.host + "/rest/v1/customobjects/" + name + "/describe.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def create_update_custom_objects(self, name, input, action=None, dedupeBy=None):
@@ -4449,8 +4124,6 @@ class MarketoClient:
             data['dedupeBy'] = dedupeBy
         result = self._api_call(
             'post', self.host + "/rest/v1/customobjects/" + name + ".json", args, data)
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def delete_custom_objects(self, name, input, deleteBy=None):
@@ -4473,8 +4146,6 @@ class MarketoClient:
             data['deleteBy'] = deleteBy
         result = self._api_call(
             'post', self.host + "/rest/v1/customobjects/" + name + "/delete.json", args, data)
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_custom_objects(self, name, input, filterType, fields=None, batchSize=None):
@@ -4509,8 +4180,6 @@ class MarketoClient:
                 'post', self.host + "/rest/v1/customobjects/" + name + ".json", args, data)
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             result_list.extend(result['result'])
             if len(result['result']) == 0 or 'nextPageToken' not in result:
                 break
@@ -4528,8 +4197,6 @@ class MarketoClient:
             'get', self.host + "/rest/v1/opportunities/describe.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def create_update_opportunities(self, input, action=None, dedupeBy=None):
@@ -4551,8 +4218,6 @@ class MarketoClient:
             data['dedupeBy'] = dedupeBy
         result = self._api_call(
             'post', self.host + "/rest/v1/opportunities.json", args, data)
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def delete_opportunities(self, input, deleteBy=None):
@@ -4572,8 +4237,6 @@ class MarketoClient:
             data['deleteBy'] = deleteBy
         result = self._api_call(
             'post', self.host + "/rest/v1/opportunities/delete.json", args, data)
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_opportunities(self, filterType, filterValues, fields=None, batchSize=None):
@@ -4605,8 +4268,6 @@ class MarketoClient:
                 'post', self.host + "/rest/v1/opportunities.json", args, data, mode='nojsondumps')
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             result_list.extend(result['result'])
             if len(result['result']) == 0 or 'nextPageToken' not in result:
                 break
@@ -4622,8 +4283,6 @@ class MarketoClient:
             'get', self.host + "/rest/v1/opportunities/roles/describe.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def create_update_opportunities_roles(self, input, action=None, dedupeBy=None):
@@ -4645,8 +4304,6 @@ class MarketoClient:
             data['dedupeBy'] = dedupeBy
         result = self._api_call(
             'post', self.host + "/rest/v1/opportunities/roles.json", args, data)
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def delete_opportunity_roles(self, input, deleteBy=None):
@@ -4666,8 +4323,6 @@ class MarketoClient:
             data['deleteBy'] = deleteBy
         result = self._api_call(
             'post', self.host + "/rest/v1/opportunities/roles/delete.json", args, data)
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_opportunity_roles(self, filterType, filterValues, fields=None, batchSize=None):
@@ -4699,8 +4354,6 @@ class MarketoClient:
                 'post', self.host + "/rest/v1/opportunities/roles.json", args, data, mode='nojsondumps')
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             result_list.extend(result['result'])
             if len(result['result']) == 0 or 'nextPageToken' not in result:
                 break
@@ -4718,8 +4371,6 @@ class MarketoClient:
             'get', self.host + "/rest/v1/companies/describe.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def create_update_companies(self, input, action=None, dedupeBy=None):
@@ -4741,8 +4392,6 @@ class MarketoClient:
             data['dedupeBy'] = dedupeBy
         result = self._api_call(
             'post', self.host + "/rest/v1/companies.json", args, data)
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def delete_companies(self, input, deleteBy=None):
@@ -4762,8 +4411,6 @@ class MarketoClient:
             data['deleteBy'] = deleteBy
         result = self._api_call(
             'post', self.host + "/rest/v1/companies/delete.json", args, data)
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_companies(self, filterType, filterValues, fields=None, batchSize=None):
@@ -4795,8 +4442,6 @@ class MarketoClient:
                 'post', self.host + "/rest/v1/companies.json", args, data, mode='nojsondumps')
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             result_list.extend(result['result'])
             if len(result['result']) == 0 or 'nextPageToken' not in result:
                 break
@@ -4814,8 +4459,6 @@ class MarketoClient:
             'get', self.host + "/rest/v1/salespersons/describe.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def create_update_sales_persons(self, input, action=None, dedupeBy=None):
@@ -4837,8 +4480,6 @@ class MarketoClient:
             data['dedupeBy'] = dedupeBy
         result = self._api_call(
             'post', self.host + "/rest/v1/salespersons.json", args, data)
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def delete_sales_persons(self, input, deleteBy=None):
@@ -4858,8 +4499,6 @@ class MarketoClient:
             data['deleteBy'] = deleteBy
         result = self._api_call(
             'post', self.host + "/rest/v1/salespersons/delete.json", args, data)
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_sales_persons(self, filterType, filterValues, fields=None, batchSize=None):
@@ -4891,8 +4530,6 @@ class MarketoClient:
                 'post', self.host + "/rest/v1/salespersons.json", args, data, mode='nojsondumps')
             if result is None:
                 raise Exception("Empty Response")
-            if not result['success']:
-                raise MarketoException(result['errors'][0])
             result_list.extend(result['result'])
             if len(result['result']) == 0 or 'nextPageToken' not in result:
                 break
@@ -4908,8 +4545,6 @@ class MarketoClient:
             'get', self.host + "/rest/v1/activities/external/types.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def describe_custom_activity_type(self, apiName, draft=None):
@@ -4925,8 +4560,6 @@ class MarketoClient:
                                 args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def create_custom_activity_type(self, apiName, name, triggerName, filterName, primaryAttributeApiName,
@@ -4968,8 +4601,6 @@ class MarketoClient:
             'post', self.host + "/rest/v1/activities/external/type.json", args, data)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def update_custom_activity_type(self, apiName, name=None, triggerName=None, filterName=None,
@@ -5002,8 +4633,6 @@ class MarketoClient:
             'post', self.host + "/rest/v1/activities/external/type/" + apiName + ".json", args, data)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def approve_custom_activity_type(self, apiName):
@@ -5017,8 +4646,6 @@ class MarketoClient:
                                 self.host + "/rest/v1/activities/external/type/" + apiName + "/approve.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def discard_custom_activity_type_draft(self, apiName):
@@ -5032,8 +4659,6 @@ class MarketoClient:
                                 self.host + "/rest/v1/activities/external/type/" + apiName + "/discardDraft.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def delete_custom_activity_type(self, apiName):
@@ -5047,8 +4672,6 @@ class MarketoClient:
                                 self.host + "/rest/v1/activities/external/type/" + apiName + "/delete.json", args)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def create_custom_activity_type_attribute(self, apiName, attributes):
@@ -5069,8 +4692,6 @@ class MarketoClient:
                                 args, data)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def update_custom_activity_type_attribute(self, apiName, attributes):
@@ -5091,8 +4712,6 @@ class MarketoClient:
                                 args, data)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def delete_custom_activity_type_attribute(self, apiName, attributes):
@@ -5112,8 +4731,6 @@ class MarketoClient:
                                 "/attributes/delete.json", args, data)
         if result is None:
             raise Exception("Empty Response")
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     # --------- BULK EXTRACT LEADS & ACTIVITIES ---------
@@ -5125,8 +4742,6 @@ class MarketoClient:
         }
         result = self._api_call(
             'get', self.host + '/bulk/v1/{}/export.json'.format(entity), args)
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def _create_bulk_export_job(self, entity, fields=None, filters=None, format='CSV', columnHeaderNames=None):
@@ -5143,8 +4758,6 @@ class MarketoClient:
         }
         result = self._api_call(
             'post', self.host + '/bulk/v1/{}/export/create.json'.format(entity), args, data)
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def _export_job_state_machine(self, entity, state, job_id):
@@ -5167,8 +4780,6 @@ class MarketoClient:
                                 args, mode=state_info[state]['mode'])
         if state is 'file' and result.status_code is 200:
             return result.content
-        if not result['success']:
-            raise MarketoException(result['errors'][0])
         return result['result']
 
     def get_leads_export_job_file(self, *args, **kargs):
