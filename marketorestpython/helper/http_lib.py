@@ -11,7 +11,6 @@ retryable_error_codes = {
     '604': 'Request timed out',
     '606': 'Max rate limit ‘%s’ exceeded with in ‘%s’ secs',
     '608': 'API Temporarily Unavailable',
-    '611': 'System error',
     '614': 'Invalid Subscription',
     '615': 'Concurrent access limit reached',
     '713': 'Transient Error',
@@ -87,6 +86,7 @@ class HttpLib:
     def delete(self, endpoint, args, data):
         headers = {'Content-type': 'application/json'}
         r = requests.delete(endpoint, params=args, json=data, headers=headers)
+        r_json = r.json()
         if r_json.get('success'):
             return r.json()
         else:
