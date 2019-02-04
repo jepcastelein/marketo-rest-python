@@ -24,11 +24,11 @@ retryable_error_codes = {
 }
 
 def fatal_marketo_error_code(e):
-        # Given a MarketoException, decide whether it is fatal or retryable.
-        return e.code not in retryable_error_codes
+    # Given a MarketoException, decide whether it is fatal or retryable.
+    return e.code not in retryable_error_codes
 
 class HttpLib:
-    num_calls_per_second = 5  # can run five times per second at most (at 100/20 rate limit)
+    num_calls_per_second = 5  # five calls per second max (at 100/20 rate limit)
     max_retry_time = 300 # retry for five minutes upon retryable failure
 
     def _rate_limited(maxPerSecond):
@@ -47,24 +47,27 @@ class HttpLib:
         return decorate
 
     @backoff.on_exception(backoff.expo, MarketoException,
-        max_time=max_retry_time, giveup=fatal_marketo_error_code)
+                          max_time=max_retry_time,
+                          giveup=fatal_marketo_error_code)
     @_rate_limited(num_calls_per_second)
     def get(self, endpoint, args=None, mode=None):
-            headers = {'Accept-Encoding': 'gzip'}
-            r = requests.get(endpoint, params=args, headers=headers)
-            if mode is 'nojson':
-                return r
+        headers = {'Accept-Encoding': 'gzip'}
+        r = requests.get(endpoint, params=args, headers=headers)
+        if mode is 'nojson':
+            return r
+        else:
+            r_json = r.json()
+            if mode is 'accesstoken' or r_json.get('success'):
+                return r_json
             else:
-                r_json = r.json()
-                if mode is 'accesstoken' or r_json.get('success'):
-                    return r_json
-                else:
-                    raise MarketoException(r_json['errors'][0])
+                raise MarketoException(r_json['errors'][0])
 
     @backoff.on_exception(backoff.expo, MarketoException,
-        max_time=max_retry_time, giveup=fatal_marketo_error_code)
+                          max_time=max_retry_time,
+                          giveup=fatal_marketo_error_code)
     @_rate_limited(num_calls_per_second)
-    def post(self, endpoint, args, data=None, files=None, filename=None, mode=None):
+    def post(self, endpoint, args, data=None, files=None, filename=None,
+             mode=None):
         if mode is 'nojsondumps':
             r = requests.post(endpoint, params=args, data=data)
         elif files is None:
