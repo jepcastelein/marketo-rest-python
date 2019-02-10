@@ -30,7 +30,7 @@ class HttpLib:
     num_calls_per_second = 5  # five calls per second max (at 100/20 rate limit)
     max_retry_time = 300  # retry for five minutes upon retryable failure
 
-    def _rate_limited(self, maxPerSecond):
+    def _rate_limited(maxPerSecond):
         minInterval = 1.0 / float(maxPerSecond)
         def decorate(func):
             lastTimeCalled = [0.0]
