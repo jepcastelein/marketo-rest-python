@@ -1,4 +1,5 @@
 import json, os, uuid
+from random import randint
 from marketorestpython.client import MarketoClient
 
 try:
@@ -29,7 +30,10 @@ list_name = uuid.uuid4()
 
 
 def test_create_update_leads():
-    leads = [{"email": "joe@example.com", "firstName": "Joey"}, {"email": "jill@example.com", "firstName": "Jillian"}]
+    random_number = randint(100, 999)
+    email1 = "joe{}@example.com".format(random_number)
+    email2 = "jill{}@example.com".format(random_number)
+    leads = [{"email": email1, "firstName": "Joey"}, {"email": email2, "firstName": "Jillian"}]
     response = mc.execute(method='create_update_leads', leads=leads)
     global lead_id_1
     lead_id_1 = response[0]['id']
