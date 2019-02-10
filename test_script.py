@@ -1,4 +1,4 @@
-import json, os
+import json, os, uuid
 from marketorestpython.client import MarketoClient
 
 try:
@@ -25,6 +25,7 @@ list_folder_id = None
 list_id = None
 files_folder_id = None
 bulk_lead_export_id = None
+list_name = uuid.uuid4()
 
 
 def test_create_update_leads():
@@ -48,17 +49,20 @@ def test_get_folder_by_name():
 def test_create_list():
     global list_folder_id
     global list_id
-    list = mc.execute(method='create_list', name='unit test list', folderId=list_folder_id, folderType='Folder')
-    print(list)
-    list_id = list[0]['id']
-    assert list
+    global list_name
+    static_list = mc.execute(method='create_list', name=list_name, folderId=list_folder_id, folderType='Folder')
+    print(static_list)
+    list_id = static_list[0]['id']
+    assert static_list
 
 
 def test_update_list():
     global list_id
-    list = mc.execute(method='update_list', id=list_id, name='unit test list (renamed)', description='added description')
-    print(list)
-    assert list
+    global list_name
+    static_list = mc.execute(method='update_list', id=list_id, name='{} (renamed)'.format(list_name),
+                             description='added description')
+    print(static_list)
+    assert static_list
 
 
 def test_add_leads_to_list():
