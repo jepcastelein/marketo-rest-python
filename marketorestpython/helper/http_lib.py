@@ -9,29 +9,28 @@ from marketorestpython.helper.exceptions import MarketoException
 retryable_error_codes = {
     '502': 'Bad Gateway',
     '604': 'Request timed out',
-    '606': 'Max rate limit ‘%s’ exceeded with in ‘%s’ secs',
+    '606': 'Max rate limit exceeded',
     '608': 'API Temporarily Unavailable',
-    '614': 'Invalid Subscription',
     '615': 'Concurrent access limit reached',
     '713': 'Transient Error',
     '1014': 'Failed to create Object',
     '1016': 'Too many imports',
     '1019': 'Import in progress',
-    '1021': 'Company update not allowed',
     '1022': 'Object in use',
-    '1025': 'Program status not found',
     '1029': 'Too many jobs in queue'
 }
+
 
 def fatal_marketo_error_code(e):
     # Given a MarketoException, decide whether it is fatal or retryable.
     return e.code not in retryable_error_codes
 
+
 class HttpLib:
     num_calls_per_second = 5  # five calls per second max (at 100/20 rate limit)
-    max_retry_time = 300 # retry for five minutes upon retryable failure
+    max_retry_time = 300  # retry for five minutes upon retryable failure
 
-    def _rate_limited(maxPerSecond):
+    def _rate_limited(self, maxPerSecond):
         minInterval = 1.0 / float(maxPerSecond)
         def decorate(func):
             lastTimeCalled = [0.0]
