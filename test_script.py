@@ -3,9 +3,9 @@ from marketorestpython.client import MarketoClient
 
 try:
     # Travis testing
-    MUNCHKIN_ID = os.environ['munchkin_id']
-    CLIENT_ID = os.environ['client_id']
-    CLIENT_SECRET = os.environ['client_secret']
+    MUNCHKIN_ID = os.environ['MUNCHKIN_ID']
+    CLIENT_ID = os.environ['CLIENT_ID']
+    CLIENT_SECRET = os.environ['CLIENT_SECRET']
 except KeyError:
     # local testing
     with open('conf.json', 'r', encoding='utf-8') as f:
