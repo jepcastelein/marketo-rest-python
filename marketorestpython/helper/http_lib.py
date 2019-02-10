@@ -1,11 +1,35 @@
-import requests
-import time
 import mimetypes
+import time
+
+import backoff
+import requests
+
+from marketorestpython.helper.exceptions import MarketoException
+
+retryable_error_codes = {
+    '502': 'Bad Gateway',
+    '604': 'Request timed out',
+    '606': 'Max rate limit ‘%s’ exceeded with in ‘%s’ secs',
+    '608': 'API Temporarily Unavailable',
+    '614': 'Invalid Subscription',
+    '615': 'Concurrent access limit reached',
+    '713': 'Transient Error',
+    '1014': 'Failed to create Object',
+    '1016': 'Too many imports',
+    '1019': 'Import in progress',
+    '1021': 'Company update not allowed',
+    '1022': 'Object in use',
+    '1025': 'Program status not found',
+    '1029': 'Too many jobs in queue'
+}
+
+def fatal_marketo_error_code(e):
+    # Given a MarketoException, decide whether it is fatal or retryable.
+    return e.code not in retryable_error_codes
 
 class HttpLib:
-    max_retries = 3
-    sleep_duration = 3
-    num_calls_per_second = 5  # can run five times per second at most (at 100/20 rate limit)
+    num_calls_per_second = 5  # five calls per second max (at 100/20 rate limit)
+    max_retry_time = 300 # retry for five minutes upon retryable failure
 
     def _rate_limited(maxPerSecond):
         minInterval = 1.0 / float(maxPerSecond)
@@ -22,107 +46,51 @@ class HttpLib:
             return rateLimitedFunction
         return decorate
 
+    @backoff.on_exception(backoff.expo, MarketoException,
+                          max_time=max_retry_time,
+                          giveup=fatal_marketo_error_code)
     @_rate_limited(num_calls_per_second)
     def get(self, endpoint, args=None, mode=None):
-        retries = 1
-        while True:
-            if retries > self.max_retries:
-                return None
-            try:
-                headers = {'Accept-Encoding': 'gzip'}
-                r = requests.get(endpoint, params=args, headers=headers)
-                if mode is 'nojson':
-                    return r
-                else:
-                    r_json = r.json()
-                    # if we still hit the rate limiter, do not return anything so the call will be retried
-                    if 'success' in r_json:  # this is for all normal API calls (but not the access token call)
-                        if r_json['success'] == False:
-                            print('error from http_lib.py: ' + str(r_json['errors'][0]))
-                            if r_json['errors'][0]['code'] in ('606', '615', '604'):
-                                # this handles Marketo exceptions; HTTP response is still 200, but error is in the JSON
-                                error_code = r_json['errors'][0]['code']
-                                error_description = {
-                                    '606': 'rate limiter',
-                                    '615': 'concurrent call limit',
-                                    '604': 'timeout'}
-                                if retries < self.max_retries:
-                                    print('Attempt %s. Error %s, %s. Pausing, then trying again.' % (retries, error_code, error_description[error_code]))
-                                else:
-                                    print('Attempt %s. Error %s, %s. This was the final attempt.' % (retries, error_code, error_description[error_code]))
-                                time.sleep(self.sleep_duration)
-                                retries += 1
-                            else:
-                                # fatal exceptions will still error out; exceptions caught above may be recoverable
-                                return r_json
-                        else:
-                            return r_json
-                    else:
-                        return r_json  # this is only for the access token call
-            except Exception as e:
-                print("HTTP Get Exception! Retrying.....")
-                time.sleep(self.sleep_duration)
-                retries += 1
+        headers = {'Accept-Encoding': 'gzip'}
+        r = requests.get(endpoint, params=args, headers=headers)
+        if mode is 'nojson':
+            return r
+        else:
+            r_json = r.json()
+            if mode is 'accesstoken' or r_json.get('success'):
+                return r_json
+            else:
+                raise MarketoException(r_json['errors'][0])
 
+    @backoff.on_exception(backoff.expo, MarketoException,
+                          max_time=max_retry_time,
+                          giveup=fatal_marketo_error_code)
     @_rate_limited(num_calls_per_second)
-    def post(self, endpoint, args, data=None, files=None, filename=None, mode=None):
-        retries = 1
-        while True:
-            if retries > self.max_retries:
-                return None
-            try:
-                if mode is 'nojsondumps':
-                    r = requests.post(endpoint, params=args, data=data)
-                elif files is None:
-                    headers = {'Content-type': 'application/json'}
-                    r = requests.post(endpoint, params=args, json=data, headers=headers)
-                elif files is not None:
-                    mimetype = mimetypes.guess_type(files)[0]
-                    file = {filename: (files, open(files, 'rb'), mimetype)}
-                    r = requests.post(endpoint, params=args, json=data, files=file)
-                r_json = r.json()
-                # if we still hit the rate limiter, do not return anything so the call will be retried
-                if 'success' in r_json:  # this is for all normal API calls (but not the access token call)
-                    if r_json['success'] == False:
-                        print('error from http_lib.py: ' + str(r_json['errors'][0]))
-                        if r_json['errors'][0]['code'] in ('606', '615', '604'):
-                            # this handles Marketo exceptions; HTTP response is still 200, but error is in the JSON
-                            error_code = r_json['errors'][0]['code']
-                            error_description = {
-                                '606': 'rate limiter',
-                                '615': 'concurrent call limit',
-                                '604': 'timeout'}
-                            if retries < self.max_retries:
-                                print('Attempt %s. Error %s, %s. Pausing, then trying again.' % (
-                                retries, error_code, error_description[error_code]))
-                            else:
-                                print('Attempt %s. Error %s, %s. This was the final attempt.' % (
-                                retries, error_code, error_description[error_code]))
-                            time.sleep(self.sleep_duration)
-                            retries += 1
-                        else:
-                            # fatal exceptions will still error out; exceptions caught above may be recoverable
-                            return r_json
-                    else:
-                        return r_json
-                else:
-                    return r_json
-            except Exception as e:
-                print("HTTP Post Exception! Retrying....."+ str(e))
-                time.sleep(self.sleep_duration)
-                retries += 1
+    def post(self, endpoint, args, data=None, files=None, filename=None,
+             mode=None):
+        if mode is 'nojsondumps':
+            r = requests.post(endpoint, params=args, data=data)
+        elif files is None:
+            headers = {'Content-type': 'application/json'}
+            r = requests.post(endpoint, params=args, json=data, headers=headers)
+        elif files is not None:
+            mimetype = mimetypes.guess_type(files)[0]
+            file = {filename: (files, open(files, 'rb'), mimetype)}
+            r = requests.post(endpoint, params=args, json=data, files=file)
+        r_json = r.json()
+        if r_json.get('success'):
+            return r_json
+        else:
+            raise MarketoException(r_json['errors'][0])
 
+    @backoff.on_exception(backoff.expo, MarketoException,
+        max_time=max_retry_time, giveup=fatal_marketo_error_code)
     @_rate_limited(num_calls_per_second)
     def delete(self, endpoint, args, data):
-        retries = 0
-        while True:
-            if retries > self.max_retries:
-                return None
-            try:
-                headers = {'Content-type': 'application/json'}
-                r = requests.delete(endpoint, params=args, json=data, headers=headers)
-                return r.json()
-            except Exception as e:
-                print("HTTP Delete Exception! Retrying....."+ str(e))
-                time.sleep(self.sleep_duration)
-                retries += 1
+        headers = {'Content-type': 'application/json'}
+        r = requests.delete(endpoint, params=args, json=data, headers=headers)
+        r_json = r.json()
+        if r_json.get('success'):
+            return r.json()
+        else:
+            raise MarketoException(r_json['errors'][0])
