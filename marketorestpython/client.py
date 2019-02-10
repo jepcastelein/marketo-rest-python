@@ -64,6 +64,9 @@ class MarketoClient:
                     'push_lead': self.push_lead,
                     'merge_lead': self.merge_lead,
                     'get_lead_partitions': self.get_lead_partitions,
+                    'create_list': self.create_list,
+                    'update_list': self.update_list,
+                    'delete_list': self.delete_list,
                     'get_list_by_id': self.get_list_by_id,
                     'get_multiple_lists': self.get_multiple_lists,
                     'add_leads_to_list': self.add_leads_to_list,
@@ -615,6 +618,49 @@ class MarketoClient:
         return result['result']
 
     # --------- LISTS ---------
+
+    def create_list(self, name, folderId, folderType, description=None):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        data = {
+            'name': name,
+            'folder': json.dumps({'id': folderId, 'type': folderType})
+        }
+        if description is not None:
+            data['description'] = description
+        result = self._api_call('post', self.host + "/rest/asset/v1/staticLists.json", args, data, mode='nojsondumps')
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
+
+    def update_list(self, id, name=None, description=None):
+        self.authenticate()
+        assert name or description
+        args = {
+            'access_token': self.token
+        }
+        data = {}
+        if name is not None:
+            data['name'] = name
+        if description is not None:
+            data['description'] = description
+        result = self._api_call('post', self.host + "/rest/asset/v1/staticList/{}.json".format(id), args, data,
+                                mode='nojsondumps')
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
+
+    def delete_list(self, id):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        result = self._api_call('post', self.host + "/rest/asset/v1/staticList/{}/delete.json".format(id), args)
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
 
     def get_list_by_id(self, id):
         self.authenticate()
