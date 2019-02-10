@@ -69,7 +69,9 @@ class MarketoClient:
                     'update_list': self.update_list,
                     'delete_list': self.delete_list,
                     'get_list_by_id': self.get_list_by_id,
+                    'get_list_by_name': self.get_list_by_name,
                     'get_multiple_lists': self.get_multiple_lists,
+                    'browse_lists': self.browse_lists,
                     'add_leads_to_list': self.add_leads_to_list,
                     'remove_leads_from_list': self.remove_leads_from_list,
                     'member_of_list': self.member_of_list,
@@ -642,13 +644,23 @@ class MarketoClient:
 
     def get_list_by_id(self, id):
         self.authenticate()
-        if id is None:
-            raise ValueError("Invalid argument: required argument id is none.")
         args = {
             'access_token': self.token
         }
         result = self._api_call(
-            'get', self.host + "/rest/v1/lists/" + str(id) + ".json", args)
+            'get', self.host + "/rest/asset/v1/staticList/" + str(id) + ".json", args)
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
+
+    def get_list_by_name(self, name):
+        self.authenticate()
+        args = {
+            'access_token': self.token,
+            'name': name
+        }
+        result = self._api_call(
+            'get', self.host + "/rest/asset/v1/staticList/byName.json", args)
         if result is None:
             raise Exception("Empty Response")
         return result['result']
@@ -681,6 +693,44 @@ class MarketoClient:
             if len(result['result']) == 0 or 'nextPageToken' not in result:
                 break
             args['nextPageToken'] = result['nextPageToken']
+        return result_list
+
+    def browse_lists(self, folderId=None, folderType=None, offset=None, maxReturn=None, earliestUpdatedAt =None,
+                     latestUpdatedAt=None):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        if folderId and folderType:
+            args['folder'] = json.dumps({'id': folderId, 'type': folderType})
+        if offset:
+            args['offset'] = offset
+        else:
+            offset = 0
+        if maxReturn:
+            args['maxReturn'] = maxReturn
+        else:
+            maxReturn = 20
+        if earliestUpdatedAt:
+            args['earliestUpdatedAt'] = earliestUpdatedAt
+        if latestUpdatedAt:
+            args['latestUpdatedAt'] = latestUpdatedAt
+        result_list = []
+        while True:
+            self.authenticate()
+            args['access_token'] = self.token
+            result = self._api_call('get', self.host + "/rest/asset/v1/staticLists.json", args)
+            if result is None:
+                raise Exception("Empty Response")
+            if 'result' in result:
+                if len(result['result']) < maxReturn:
+                    result_list.extend(result['result'])
+                    break
+            else:
+                break
+            result_list.extend(result['result'])
+            offset += maxReturn
+            args['offset'] = offset
         return result_list
 
     def add_leads_to_list(self, listId, id):

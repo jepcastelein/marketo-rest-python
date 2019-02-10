@@ -72,6 +72,36 @@ def test_update_list():
     assert static_list
 
 
+def test_get_list_by_id():
+    global list_id
+    global list_name
+    static_list = mc.execute(method='get_list_by_id', id=list_id)
+    assert static_list[0]['name'] == '{} (renamed)'.format(list_name)
+
+
+def test_get_list_by_name():
+    global list_id
+    global list_name
+    new_list_name = '{} (renamed)'.format(list_name)
+    static_list = mc.execute(method='get_list_by_name', name=new_list_name)
+    assert static_list[0]['id'] == list_id
+
+
+def test_get_multiple_lists():
+    global list_id
+    global list_name
+    new_list_name = '{} (renamed)'.format(list_name)
+    static_list = mc.execute(method='get_multiple_lists', name=new_list_name)
+    assert static_list[0]['id'] == list_id
+
+
+def test_browse_lists():
+    global list_folder_id
+    static_lists = mc.execute(method='browse_lists', folderId=list_folder_id, folderType='Folder',
+                              earliestUpdatedAt='2019-02-01')
+    assert len(static_lists) >= 1
+
+
 def test_add_leads_to_list():
     global lead_id_1
     global lead_id_2

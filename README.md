@@ -1,7 +1,8 @@
 Marketo REST Python
 ===================
+[![Build Status](https://travis-ci.org/jepcastelein/marketo-rest-python.svg?branch=master)](https://travis-ci.org/jepcastelein/marketo-rest-python)
 
-Python Client that covers the complete Marketo REST API. It handles authentication, error handling and rate limiting
+Python Client that covers most of the Marketo REST API. It handles authentication, error handling and rate limiting
 to the standard limit of 100 calls in 20 seconds (defined in http_lib module). This is a fork of the project started by 
 Arunim Samat at https://github.com/asamat/python_marketo, which had stalled. <br />
 
@@ -15,11 +16,20 @@ Installation
 Unit tests
 ==========
 
+See tests in `test_script.py` and see `.travis.yml` for automated
+testing setup. Travis does not test pull requests. 
+
+To test locally, create a local file `conf.json` and enter your Marketo credentials and 
+type `pytest` on the command line: 
+```json
+{
+  "munchkin_id": "",
+  "client_id": "",
+  "client_secret": ""
+}
 ```
-python setup.py develop
-pip install -r requirements-tests.txt
-py.test tests/
-```
+This runs `test_script.py`. It will automatically create and delete Person records and Assets
+in Marketo (self-contained). It is recommended to only run it on a sandbox instance. 
 
 Usage
 =====
@@ -28,7 +38,15 @@ from marketorestpython.client import MarketoClient
 munchkin_id = "" # fill in Munchkin ID, typical format 000-AAA-000
 client_id = "" # enter Client ID from Admin > LaunchPoint > View Details
 client_secret= "" # enter Client ID and Secret from Admin > LaunchPoint > View Details
-mc = MarketoClient(munchkin_id, client_id, client_secret)
+api_limit=None
+max_retry_time=None
+mc = MarketoClient(munchkin_id, client_id, client_secret, api_limit, max_retry_time)
+
+# 'api_limit' and 'max_retry_time' are optional;
+# 'api_limit' limits the number of Marketo API calls made by this instance of MarketoClient
+# 'max_retry_time' defaults to 300 and sets the time in seconds to retry failed API calls that 
+#   are retryable; if it still fails after the configured time period, it will throw a 
+#   MarketoException
 ```
 Then use mc.execute(method='') to call the various methods (see documentation below) 
 
@@ -171,22 +189,6 @@ Get Lead Partitions
 API Ref: http://developers.marketo.com/documentation/rest/get-lead-partitions/
 ```python
 lead = mc.execute(method='get_lead_partitions')
-```
-
-Get List by Id
---------------
-API Ref: http://developers.marketo.com/documentation/rest/get-list-by-id/
-```python
-lead = mc.execute(method='get_list_by_id', id=724)
-```
-
-Get Multiple Lists
-------------------
-API Ref: http://developers.marketo.com/documentation/rest/get-multiple-lists/
-```python
-lead = mc.execute(method='get_multiple_lists', id=[724,725], name=None, programName=None, workspaceName=None, batchSize=300)
-
-# all parameters are optional; no parameters returns all lists
 ```
 
 Add Leads to List
@@ -589,6 +591,71 @@ API Ref: http://developers.marketo.com/documentation/asset-api/delete-tokens-by-
 ```python
 tokens = mc.execute(method='delete_tokens', id="28", folderType="Folder", name="test", type="text")
 ```
+
+Lists
+=====
+
+Get List by Id
+--------------
+API Ref: http://developers.marketo.com/rest-api/assets/static-lists/#by_id
+```python
+lead = mc.execute(method='get_list_by_id', id=724)
+```
+
+Get List by Name
+--------------
+API Ref: http://developers.marketo.com/rest-api/assets/static-lists/#by_id
+```python
+lead = mc.execute(method='get_list_by_name', id='My Test List')
+```
+
+Get Multiple Lists
+------------------
+API Ref: http://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Static_Lists/getListsUsingGET
+```python
+lead = mc.execute(method='get_multiple_lists', id=[724,725], name=None, programName=None, workspaceName=None, batchSize=300)
+
+# NOTE: this call has different options compared to 'browse_lists' below
+# all parameters are optional; no parameters returns all lists
+```
+
+Browse Lists
+------------------
+API Ref: http://developers.marketo.com/rest-api/assets/static-lists/#browse
+```python
+lead = mc.execute(method='browse_lists', folderId=8, folderType='Folder', offset=None, 
+                  maxReturn=None, earliestUpdatedAt=None, latestUpdatedAt=None)
+
+# NOTE: this call has different options compared to 'get_multiple_lists' above
+# all parameters are optional; no parameters returns all lists
+```
+
+Create List
+-----------
+API Ref: http://developers.marketo.com/rest-api/assets/static-lists/#create_and_update
+```python
+lead = mc.execute(method='create_list', folderId=8, folderType='Folder', name='Test List', description='Optional')
+
+# 'folderType' is either 'Folder' or 'Program'
+# description is optional
+```
+
+Update List
+----------
+API Ref: http://developers.marketo.com/rest-api/assets/static-lists/#create_and_update
+```python
+lead = mc.execute(method='update_list', id=123, name='new name', description='new description')
+
+# 'id' and either 'name' or 'description' need to be specified (or all of them)
+```
+
+Delete List
+-----------
+API Ref: http://developers.marketo.com/rest-api/assets/static-lists/#delete
+```python
+lead = mc.execute(method='delete_list', id=123)
+```
+
 
 Email Templates
 ===============
