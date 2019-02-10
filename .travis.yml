@@ -1,9 +1,14 @@
 language: python
 python:
-  - "2.7"
-  - "3.7"
+- '2.7'
+- '3.7'
 install:
-  - pip install -r requirements.txt
-  - pip install -r requirements-tests.txt
+- pip install -r requirements.txt
+- pip install -r requirements-tests.txt
 script:
-  - pytest
+- pytest
+env:
+  global:
+  - secure: kZ28wlnnWAydcbCvgVlYYE5CKjY8WVdfcAovgVwy/Stb66tOUqnUIR5mTtvTXSj2duHFQHHnCSccO9mBMfBN0/E3jYBAKWo95TModXO/jfw1Yan5gL0A+aytarkMHhzPNlNxFVIiy+UEAFT/UzxFyPIbl3ObHs7yBcmDBujclwZD33ekipx4ezhePUfLMfAL2BKyDwwb+OoNuVbyGsc26DgwUfwtL0hTJMFqytvCNozTZQgsZp5e1CkUt//fTzFTxgziisdo8KrztSYNZnwtqLnmjKLkBy6x/psHEebCsqqW86yCLPHpvIHoSuE8wFXjkOaDOn4pSizwd523OItwvREVOXa9NBLE7TKVV28fx40YtSUquGkMlt0RmxI1d4GtEljVHb1awCTbl2qbG2RxXYm5Ahq4Lc6vR0lrU3oFCYgIg1RtZIo+fmfgR8mX8tVD+YwNjpkTkM/QNphfri0FKjyxCgkTTdza2kOQBQI96KhB7CBwrmV74J9KZ3T4C3zoo9LIpJf1flm2mrxsXI1qutRj4sK7vFiI5tA5WhpH2R2s8oGA15HB10Sfe1U88DOetKcWHw2UEwPqri3MpnMOJCoMdJz9NTOAeMWYoZ8IFiE/6y2E+i0f2qthg69J3XVpWgQf79MXgcQDeGHrgBMZw2KD7X+ehkeAKZ7uoRCq/h8=
+  - secure: NMh2peEEzn9UPVoyvhPEHCSVoSQSwzOnEUa5MQd85u01XM4yPEiePzbwiTBHl3gL0tJe+o8C2CALAkFUUqhJ2N8gWsNj9MlwvWmEtSUDT72Vtt47g84nLVXO5P+UE+Weak/Skiv9RNBqR1YOEgGScQM03XMjZwNBlVHfPleNEgsMg298ZUf0EtBHZSN5qhIfPWLLa9nKHNq+vogluUl0LGN2zqMRCcKiWiiWXtFdKQ3omxocsLD/GoTbOwlcdmUZkUK9AMp0o+85Jgbn9BZYnFLQacoBOhm4FOiYczbjvdBcw1uFNcbIx7Iswci72CKl5LNHDJaeIirrJ/xnmMWyFtQPrro8DJ/dvrAvm8sLaCtmEZinakP/wX/WwtHKWg07SVt6rOBYf9WkDS3/dS90br7OnTTc1MxgRhfZLENerpmDs8dyFLsY2WF2bol3vBiuvRDu/kTOP1SXrxD6PQUAw1vtzG7R470EgyWg4Xs3kwBeQ667mV12fGiSDv7hohv5Mgme7y0TTlt/HRQ3JvUN2Ftg4l1BOJcaj/TJi4KdLLenjh+mP3Ind3vZqVn4Dw/1IBepehjcRF8ZtB7ZhTXQCcehaSBijASEAVmlSgd4zwuLruxtA5d0QwWG5QBe/k/Skyg4/PeSklWISZEBzgcQ33qhaNa6ECpiqhpklomQK/k=
+  - MUNCHKIN_ID=874-MZK-132
