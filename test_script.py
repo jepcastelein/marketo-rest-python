@@ -72,17 +72,24 @@ def test_add_leads_to_list():
 def test_create_lead_export_job():
     global list_id
     global bulk_lead_export_id
-    job = mc.execute(method='create_activities_export_job', fields=['firstName', 'lastName', 'email'],
-               filters={'staticListId': list_id})
+    job = mc.execute(method='create_leads_export_job', fields=['firstName', 'lastName', 'email'],
+                     filters={'staticListId': list_id})
     bulk_lead_export_id = job[0]['exportId']
-    assert bulk_lead_export_id[0]['status'] == 'Created'
+    assert job[0]['status'] == 'Created'
 
 
 def test_enqueue_lead_export_job():
     global bulk_lead_export_id
-    enqueued_job_details = mc.execute(method='enqueue_activities_export_job',
+    enqueued_job_details = mc.execute(method='enqueue_leads_export_job',
                                       job_id=bulk_lead_export_id)
     assert enqueued_job_details[0]['status'] == 'Queued'
+
+
+def test_cancel_lead_export_job():
+    global bulk_lead_export_id
+    cancelled_job = mc.execute(method='cancel_leads_export_job',
+                               job_id=bulk_lead_export_id)
+    assert cancelled_job[0]['status'] == 'Cancelled'
 
 
 def test_segments():
