@@ -30,6 +30,16 @@ class HttpLib:
     num_calls_per_second = 5  # five calls per second max (at 100/20 rate limit)
     max_retry_time = 300  # retry for five minutes upon retryable failure
 
+    def __init__(self, max_retry_time_conf):
+        if max_retry_time_conf:
+            global max_retry_time
+            max_retry_time = max_retry_time_conf
+
+    def lookup_max_time():
+        # this function is needed to dynamically set the max_time for backoff; should not have 'self'
+        global max_retry_time
+        return max_retry_time
+
     def _rate_limited(maxPerSecond):
         minInterval = 1.0 / float(maxPerSecond)
         def decorate(func):
@@ -46,7 +56,7 @@ class HttpLib:
         return decorate
 
     @backoff.on_exception(backoff.expo, MarketoException,
-                          max_time=max_retry_time,
+                          max_time=lookup_max_time,
                           giveup=fatal_marketo_error_code)
     @_rate_limited(num_calls_per_second)
     def get(self, endpoint, args=None, mode=None):
@@ -62,7 +72,7 @@ class HttpLib:
                 raise MarketoException(r_json['errors'][0])
 
     @backoff.on_exception(backoff.expo, MarketoException,
-                          max_time=max_retry_time,
+                          max_time=lookup_max_time,
                           giveup=fatal_marketo_error_code)
     @_rate_limited(num_calls_per_second)
     def post(self, endpoint, args, data=None, files=None, filename=None,
@@ -83,7 +93,7 @@ class HttpLib:
             raise MarketoException(r_json['errors'][0])
 
     @backoff.on_exception(backoff.expo, MarketoException,
-        max_time=max_retry_time, giveup=fatal_marketo_error_code)
+        max_time=lookup_max_time, giveup=fatal_marketo_error_code)
     @_rate_limited(num_calls_per_second)
     def delete(self, endpoint, args, data):
         headers = {'Content-type': 'application/json'}

@@ -1,6 +1,9 @@
-import json, os, uuid
+import json, os, uuid, time, logging
 from random import randint
 from marketorestpython.client import MarketoClient
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger()
 
 try:
     # Travis testing
@@ -15,7 +18,7 @@ except KeyError:
     CLIENT_ID = creds['client_id']
     CLIENT_SECRET = creds['client_secret']
 
-mc = MarketoClient(munchkin_id=MUNCHKIN_ID, client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
+mc = MarketoClient(munchkin_id=MUNCHKIN_ID, client_id=CLIENT_ID, client_secret=CLIENT_SECRET, max_retry_time=30)
 
 segmentation_id = 1001
 
@@ -167,3 +170,27 @@ def test_delete_leads():
     response = mc.execute(method='delete_lead', id=[lead_id_1, lead_id_2])
     assert response[0]['status'] == 'deleted' and response[1]['status'] == 'deleted'
 
+
+def test_max_retry_time():
+    day = 1
+    time_elapsed = 0
+    for i in range(11):
+        start_time = time.time()
+        export_filter = {
+          "createdAt": {
+             "startAt": "2018-07-0{}".format(day),
+             "endAt": "2018-07-0{}".format(day+1)
+          },
+          "activityTypeIds": [1]
+        }
+        job = mc.execute(method='create_activities_export_job', filters=export_filter)
+        job_id = job[0]['exportId']
+        try:
+            enqueue = mc.execute(method='enqueue_activities_export_job', job_id=job_id)
+        except Exception as e:
+            e_dict = eval(str(e))
+            logger.info('error: {}'.format(e_dict))
+            time_elapsed = time.time() - start_time
+            break
+        day += 1
+    assert 30 < time_elapsed < 35
