@@ -22,7 +22,7 @@ class MarketoClient:
     scope = None
     last_request_id = None  # intended to save last request id, but not used right now
 
-    def __init__(self, munchkin_id, client_id, client_secret, api_limit=None, max_retry_time=None):
+    def __init__(self, munchkin_id, client_id, client_secret, api_limit=None, max_retry_time=300):
         assert(munchkin_id is not None)
         assert(client_id is not None)
         assert(client_secret is not None)

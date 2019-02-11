@@ -18,7 +18,7 @@ except KeyError:
     CLIENT_ID = creds['client_id']
     CLIENT_SECRET = creds['client_secret']
 
-mc = MarketoClient(munchkin_id=MUNCHKIN_ID, client_id=CLIENT_ID, client_secret=CLIENT_SECRET, max_retry_time=30)
+mc = MarketoClient(munchkin_id=MUNCHKIN_ID, client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
 
 segmentation_id = 1001
 
@@ -201,6 +201,9 @@ def test_delete_leads():
     assert response[0]['status'] == 'deleted' and response[1]['status'] == 'deleted'
 
 
+mc2 = MarketoClient(munchkin_id=MUNCHKIN_ID, client_id=CLIENT_ID, client_secret=CLIENT_SECRET, max_retry_time=30)
+
+
 def test_max_retry_time():
     day = 1
     time_elapsed = 0
@@ -213,10 +216,10 @@ def test_max_retry_time():
           },
           "activityTypeIds": [1]
         }
-        job = mc.execute(method='create_activities_export_job', filters=export_filter)
+        job = mc2.execute(method='create_activities_export_job', filters=export_filter)
         job_id = job[0]['exportId']
         try:
-            enqueue = mc.execute(method='enqueue_activities_export_job', job_id=job_id)
+            enqueue = mc2.execute(method='enqueue_activities_export_job', job_id=job_id)
         except Exception as e:
             e_dict = eval(str(e))
             logger.info('error: {}'.format(e_dict))

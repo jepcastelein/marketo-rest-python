@@ -28,12 +28,10 @@ def fatal_marketo_error_code(e):
 
 class HttpLib:
     num_calls_per_second = 5  # five calls per second max (at 100/20 rate limit)
-    max_retry_time = 300  # retry for five minutes upon retryable failure
 
     def __init__(self, max_retry_time_conf):
-        if max_retry_time_conf:
-            global max_retry_time
-            max_retry_time = max_retry_time_conf
+        global max_retry_time
+        max_retry_time = max_retry_time_conf
 
     def lookup_max_time():
         # this function is needed to dynamically set the max_time for backoff; should not have 'self'
