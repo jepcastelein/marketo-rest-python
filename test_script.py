@@ -26,6 +26,7 @@ lead_id_1 = None
 lead_id_2 = None
 file_id = None
 list_folder_id = None
+new_folder_id = None
 list_id = None
 files_folder_id = None
 bulk_lead_export_id = None
@@ -51,6 +52,32 @@ def test_get_folder_by_name():
     print(list_folder)
     list_folder_id = list_folder[0]['id']
     print(list_folder_id)
+    assert list_folder_id
+
+
+def test_create_folder():
+    global new_folder_id
+    new_folder = mc.execute(method='create_folder', name='temp test folder',
+                            parentId=19,
+                            parentType='Folder', description='temp description')
+    new_folder_id = new_folder[0]['id']
+    print(new_folder_id)
+    assert new_folder_id
+
+
+def test_create_token():
+    global new_folder_id
+    new_token = mc.execute(method='create_token', id=new_folder_id,
+                           folderType='Folder',
+                           type='rich text', name='test token',
+                           value='<p><strong>Important</strong></p>')
+    assert new_token
+
+
+def test_delete_folder():
+    global new_folder_id
+    deleted_folder = mc.execute(method='delete_folder', id=new_folder_id)
+    assert deleted_folder
 
 
 def test_create_list():

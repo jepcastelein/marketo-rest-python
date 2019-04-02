@@ -1534,29 +1534,20 @@ class MarketoClient:
 
     def create_token(self, id, folderType, type, name, value):
         self.authenticate()
-        if id is None:
-            raise ValueError("Invalid argument: required argument id is none.")
-        if folderType is None:
-            raise ValueError(
-                "Invalid argument: folderType should be 'Folder' or 'Program'.")
-        if type is None:
-            raise ValueError(
-                "Invalid argument: required argument type is none.")
-        if name is None:
-            raise ValueError(
-                "Invalid argument: required argument name is none.")
-        if value is None:
-            raise ValueError(
-                "Invalid argument: required argument value is none.")
+        assert id and folderType and type and name and value
         args = {
-            'access_token': self.token,
+            'access_token': self.token
+        }
+        data = {
             'folderType': folderType,
             'type': type,
             'name': name,
             'value': value
         }
         result = self._api_call(
-            'post', self.host + "/rest/asset/v1/folder/" + str(id) + "/tokens.json", args)
+            'post',
+            "{}/rest/asset/v1/folder/{}/tokens.json".format(self.host, id),
+            args, data, mode="nojsondumps")
         if result is None:
             raise Exception("Empty Response")
         return result['result']
