@@ -74,7 +74,7 @@ def test_create_token():
                            folderType='Folder',
                            type='rich text', name='test token',
                            value=token_value)
-    assert str(new_token[0]['tokens'][0]['value']) == str(token_value)
+    assert new_token[0]['tokens'][0]['value'].encode('utf-8') == token_value
 
 
 def test_delete_folder():
