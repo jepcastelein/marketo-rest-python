@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-from builtins import dict, str
 import json, os, uuid, time, logging
 from random import randint
 from marketorestpython.client import MarketoClient
@@ -69,7 +67,10 @@ def test_create_folder():
 
 def test_create_token():
     global new_folder_id
-    token_value = str('<p><strong>Important—</strong></p>')
+    try:
+        token_value = '<p><strong>Important—</strong></p>'
+    except SyntaxError as e:
+        token_value = u'<p><strong>Important—</strong></p>'
     new_token = mc.execute(method='create_token', id=new_folder_id,
                            folderType='Folder',
                            type='rich text', name='test token',
