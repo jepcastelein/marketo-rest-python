@@ -69,7 +69,7 @@ def test_create_token():
     global new_folder_id
     try:
         token_value = '<p><strong>Important—</strong></p>'
-    except SyntaxError as e:
+    except Exception as e:
         token_value = u'<p><strong>Important—</strong></p>'
     new_token = mc.execute(method='create_token', id=new_folder_id,
                            folderType='Folder',
