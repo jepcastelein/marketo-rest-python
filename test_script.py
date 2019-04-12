@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+from builtins import dict, str
 import json, os, uuid, time, logging
 from random import randint
 from marketorestpython.client import MarketoClient
