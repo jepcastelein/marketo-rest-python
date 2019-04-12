@@ -76,9 +76,10 @@ class HttpLib:
     def post(self, endpoint, args, data=None, files=None, filename=None,
              mode=None):
         if mode is 'nojsondumps':
-            r = requests.post(endpoint, params=args, data=data)
+            headers = {'Content-type': 'application/x-www-form-urlencoded; charset=utf-8'}
+            r = requests.post(endpoint, params=args, data=data, headers=headers)
         elif files is None:
-            headers = {'Content-type': 'application/json'}
+            headers = {'Content-type': 'application/json; charset=utf-8'}
             r = requests.post(endpoint, params=args, json=data, headers=headers)
         elif files is not None:
             mimetype = mimetypes.guess_type(files)[0]
@@ -94,7 +95,7 @@ class HttpLib:
         max_time=lookup_max_time, giveup=fatal_marketo_error_code)
     @_rate_limited(num_calls_per_second)
     def delete(self, endpoint, args, data):
-        headers = {'Content-type': 'application/json'}
+        headers = {'Content-type': 'application/json; charset=utf-8'}
         r = requests.delete(endpoint, params=args, json=data, headers=headers)
         r_json = r.json()
         if r_json.get('success'):
