@@ -69,7 +69,7 @@ def test_create_folder():
 
 def test_create_token():
     global new_folder_id
-    token_value = '<p><strong>Important—</strong></p>'
+    token_value = str('<p><strong>Important—</strong></p>')
     new_token = mc.execute(method='create_token', id=new_folder_id,
                            folderType='Folder',
                            type='rich text', name='test token',
