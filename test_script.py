@@ -233,6 +233,40 @@ def test_delete_leads():
     assert response[0]['status'] == 'deleted' and response[1]['status'] == 'deleted'
 
 
+def test_get_smart_campaign_by_id():
+    campaign = mc.execute(method='get_smart_campaign_by_id', id=1109)
+    assert campaign[0]['id'] == 1109
+
+
+def test_get_smart_campaigns():
+    first_campaigns = None
+    second_campaigns = None
+    third_campaigns = None
+    for campaigns in mc.execute(method='get_smart_campaigns'):
+        first_campaigns = campaigns
+        logger.info('found {} campaigns'.format(len(campaigns)))
+        break
+    for campaigns in mc.execute(method='get_smart_campaigns', folderId=1031, folderType='Program'):
+        second_campaigns = campaigns
+        logger.info('found {} campaigns in Program 1031'.format(len(campaigns)))
+        break
+    for campaigns in mc.execute(method='get_smart_campaigns', offset=5, maxReturn=10):
+        third_campaigns = campaigns
+        logger.info('found {} campaigns with maxReturn=10'.format(len(campaigns)))
+        break
+    assert len(first_campaigns) > 20 and len(second_campaigns) == 2 and len(third_campaigns) == 10
+
+
+def test_activate_smart_campaign():
+    campaign = mc.execute(method='activate_smart_campaign', id=1109)
+    assert campaign[0]['id'] == 1109
+
+
+def test_deactivate_smart_campaign():
+    campaign = mc.execute(method='deactivate_smart_campaign', id=1109)
+    assert campaign[0]['id'] == 1109
+
+
 mc2 = MarketoClient(munchkin_id=MUNCHKIN_ID, client_id=CLIENT_ID, client_secret=CLIENT_SECRET, max_retry_time=30)
 
 

@@ -75,10 +75,14 @@ class MarketoClient:
                     'add_leads_to_list': self.add_leads_to_list,
                     'remove_leads_from_list': self.remove_leads_from_list,
                     'member_of_list': self.member_of_list,
+                    'get_smart_campaign_by_id': self.get_smart_campaign_by_id,
+                    'get_smart_campaigns': self.get_smart_campaigns,
                     'get_campaign_by_id': self.get_campaign_by_id,
                     'get_multiple_campaigns': self.get_multiple_campaigns,
                     'schedule_campaign': self.schedule_campaign,
                     'request_campaign': self.request_campaign,
+                    'activate_smart_campaign': self.activate_smart_campaign,
+                    'deactivate_smart_campaign': self.deactivate_smart_campaign,
                     'import_lead': self.import_lead,
                     'get_import_lead_status': self.get_import_lead_status,
                     'get_import_failure_file': self.get_import_failure_file,
@@ -796,6 +800,49 @@ class MarketoClient:
 
     # --------- CAMPAIGNS ---------
 
+    def get_smart_campaign_by_id(self, id):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        result = self._api_call('get', self.host + "/rest/asset/v1/smartCampaign/{}.json".format(id), args)
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
+
+    def get_smart_campaigns(self, earliestUpdatedAt=None, latestUpdatedAt=None, folderId=None, folderType=None,
+                            maxReturn=200, offset=0, return_full_result=False):
+        self.authenticate()
+        args = {
+            'access_token': self.token,
+            'maxReturn': maxReturn,
+            'offset': offset
+        }
+        if earliestUpdatedAt:
+            args['earliestUpdatedAt'] = earliestUpdatedAt
+        if latestUpdatedAt:
+            args['latestUpdatedAt'] = latestUpdatedAt
+        if folderId and folderType:
+            args['folder'] = json.dumps({'id': folderId, 'type': folderType})
+        while True:
+            self.authenticate()
+            # for long-running processes, this updates the access token
+            args['access_token'] = self.token
+            result = self._api_call('get', self.host + "/rest/asset/v1/smartCampaigns.json", args)
+            if result is None:
+                raise Exception("Empty Response")
+            if 'result' in result:
+                if return_full_result:
+                    yield result
+                else:
+                    yield result['result']
+                if len(result['result']) < maxReturn:
+                    break
+            else:
+                break
+            offset += maxReturn
+            args['offset'] = offset
+
     def get_campaign_by_id(self, id):
         self.authenticate()
         if id is None:
@@ -898,6 +945,26 @@ class MarketoClient:
         result = self._api_call(
             'post', self.host + "/rest/v1/campaigns/" + str(id) + "/trigger.json", args, data)
         return result['success']
+
+    def activate_smart_campaign(self, id):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        result = self._api_call('post', self.host + "/rest/asset/v1/smartCampaign/{}/activate.json".format(id), args)
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
+
+    def deactivate_smart_campaign(self, id):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        result = self._api_call('post', self.host + "/rest/asset/v1/smartCampaign/{}/deactivate.json".format(id), args)
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
 
     # --------- IMPORT LEADS ---------
 

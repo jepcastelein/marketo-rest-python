@@ -216,15 +216,41 @@ API Ref: http://developers.marketo.com/documentation/rest/member-of-list/
 lead = mc.execute(method='member_of_list', listId=728, id=[3482093,3482095,3482096])
 ```
 
-Get Campaign by Id
-------------------
-API Ref: http://developers.marketo.com/documentation/rest/get-campaign-by-id/
+Get Smart Campaign by Id
+-----------------------
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Smart_Campaigns/getSmartCampaignByIdUsingGET
 ```python
-lead = mc.execute(method='get_campaign_by_id', id=1170)
+campaign = mc.execute(method='get_smart_campaign_by_id', id=1170)
 ```
 
-Get Multiple Campaigns
+Get Campaign by Id - SUPERCEDED
+------------------
+Use "Get Smart Campaign by Id" instead. 
+
+API Ref: http://developers.marketo.com/documentation/rest/get-campaign-by-id/
+```python
+campaign = mc.execute(method='get_campaign_by_id', id=1170)
+```
+
+Get Smart Campaigns (Generator)
+-------------------
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Smart_Campaigns/getAllSmartCampaignsGET
+```python
+for campaigns in mc.execute(method='get_smart_campaigns', earliestUpdatedAt=None, latestUpdatedAt=None, 
+                            folderId=None, folderType=None,
+                            maxReturn=200, offset=0, 
+                            return_full_result=False): 
+    print(campaigns)
+
+# all parameters are optional; folderId and folderType need to be specified together; 
+# folderType can be "Folder" or "Program"
+# set return_full_result to True to get the full API response including requestId (not just the 'result' key)
+```
+
+Get Multiple Campaigns - SUPERCEDED
 ----------------------
+Use "Get Smart Campaigns" instead. 
+
 API Ref: http://developers.marketo.com/documentation/rest/get-multiple-campaigns/
 ```python
 lead = mc.execute(method='get_multiple_campaigns', id=[1170,1262], name=None, programName=None, workspaceName=None, batchSize=None)
@@ -258,6 +284,20 @@ lead = mc.execute(method='request_campaign', id=1880, leads=[46,38], tokens={'my
 
 # tokens is optional
 # returns True
+```
+
+Activate Smart Campaign
+-----------------------
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Smart_Campaigns/activateSmartCampaignUsingPOST
+```python
+campaign = mc.execute(method='activate_smart_campaign', id=1880)
+```
+
+Deactivate Smart Campaign
+-----------------------
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Smart_Campaigns/deactivateSmartCampaignUsingPOST
+```python
+campaign = mc.execute(method='deactivate_smart_campaign', id=1880)
 ```
 
 Import Lead
