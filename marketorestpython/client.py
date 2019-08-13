@@ -88,6 +88,7 @@ class MarketoClient:
                     'get_import_failure_file': self.get_import_failure_file,
                     'get_import_warning_file': self.get_import_warning_file,
                     'describe': self.describe,
+                    'describe2': self.describe2,
                     'get_activity_types': self.get_activity_types,
                     'get_paging_token': self.get_paging_token,
                     'get_lead_activities': self.get_lead_activities,

@@ -356,6 +356,13 @@ API Ref: http://developers.marketo.com/documentation/rest/describe/
 lead = mc.execute(method='describe')
 ```
 
+Describe2
+--------
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Leads/describeUsingGET_6
+```python
+lead = mc.execute(method='describe2')
+```
+
 Get Activity Types
 ------------------
 API Ref: http://developers.marketo.com/documentation/rest/get-activity-types/
