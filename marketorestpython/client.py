@@ -1044,6 +1044,17 @@ class MarketoClient:
             raise Exception("Empty Response")
         return result['result']
 
+    def describe2(self):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        result = self._api_call(
+            'get', self.host + "/rest/v1/leads/describe2.json", args)
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
+
     # --------- ACTIVITIES ---------
 
     def get_activity_types(self):
