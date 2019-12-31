@@ -88,6 +88,7 @@ class MarketoClient:
                     'get_import_failure_file': self.get_import_failure_file,
                     'get_import_warning_file': self.get_import_warning_file,
                     'describe': self.describe,
+                    'describe2': self.describe2,
                     'get_activity_types': self.get_activity_types,
                     'get_paging_token': self.get_paging_token,
                     'get_lead_activities': self.get_lead_activities,
@@ -1040,6 +1041,17 @@ class MarketoClient:
         }
         result = self._api_call(
             'get', self.host + "/rest/v1/leads/describe.json", args)
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
+
+    def describe2(self):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        result = self._api_call(
+            'get', self.host + "/rest/v1/leads/describe2.json", args)
         if result is None:
             raise Exception("Empty Response")
         return result['result']
