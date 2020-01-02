@@ -387,7 +387,7 @@ class MarketoClient:
             args['nextPageToken'] = result['nextPageToken']
         return result_list
 
-    def get_multiple_leads_by_list_id_yield(self, listId, fields=None, batchSize=None):
+    def get_multiple_leads_by_list_id_yield(self, listId, fields=None, batchSize=None, return_full_result=False):
         self.authenticate()
         if listId is None:
             raise ValueError(
@@ -410,7 +410,10 @@ class MarketoClient:
             if result is None:
                 raise Exception("Empty Response")
             if 'result' in result:
-                yield result['result']
+                if return_full_result:
+                    yield result
+                else:
+                    yield result['result']
                 if len(result['result']) == 0 or 'nextPageToken' not in result:
                     break
                 else:
@@ -2109,7 +2112,7 @@ class MarketoClient:
         self.authenticate()
         if id is None:
             raise ValueError("Invalid argument: required argument id is none.")
-        if type is not "Text" and type is not "DynamicContent":
+        if type != "Text" and type != "DynamicContent":
             raise ValueError("Invalid argument: type should be "
                              "'Text' or 'DynamicContent'.")
         args = {
@@ -2140,7 +2143,7 @@ class MarketoClient:
         if htmlId is None:
             raise ValueError(
                 "Invalid argument: required argument htmlId is none.")
-        if type is not "Text" and type is not "DynamicContent" and type is not "Snippet":
+        if type != "Text" and type != "DynamicContent" and type != "Snippet":
             raise ValueError(
                 "Invalid argument: type should be 'Text', 'DynamicContent' or 'Snippet'.")
         if value is None:
@@ -4945,7 +4948,7 @@ class MarketoClient:
                                 self.host + '/bulk/v1/{}/export/{}{}'.format(entity, job_id,
                                                                                       state_info[state]['suffix']),
                                 args, mode=state_info[state]['mode'])
-        if state is 'file' and result.status_code is 200:
+        if state == 'file' and result.status_code == 200:
             return result.content
         return result['result']
 

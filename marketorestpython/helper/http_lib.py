@@ -60,11 +60,11 @@ class HttpLib:
     def get(self, endpoint, args=None, mode=None):
         headers = {'Accept-Encoding': 'gzip'}
         r = requests.get(endpoint, params=args, headers=headers)
-        if mode is 'nojson':
+        if mode == 'nojson':
             return r
         else:
             r_json = r.json()
-            if mode is 'accesstoken' or r_json.get('success'):
+            if mode == 'accesstoken' or r_json.get('success'):
                 return r_json
             else:
                 raise MarketoException(r_json['errors'][0])
@@ -75,7 +75,7 @@ class HttpLib:
     @_rate_limited(num_calls_per_second)
     def post(self, endpoint, args, data=None, files=None, filename=None,
              mode=None):
-        if mode is 'nojsondumps':
+        if mode == 'nojsondumps':
             headers = {'Content-type': 'application/x-www-form-urlencoded; charset=utf-8'}
             r = requests.post(endpoint, params=args, data=data, headers=headers)
         elif files is None:

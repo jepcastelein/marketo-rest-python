@@ -90,18 +90,20 @@ Get Multiple Leads by List Id Yield (Generator)
 API Ref: http://developers.marketo.com/documentation/rest/get-multiple-leads-by-list-id/
 ```python
 for leads in mc.execute(method='get_multiple_leads_by_list_id_yield', listId='676', 
-                fields=['email','firstName','lastName'], batchSize=None):
+                fields=['email','firstName','lastName'], batchSize=None, return_full_result=False):
     print(len(leads))
 
 # OR: 
 
 leads = mc.execute(method='get_multiple_leads_by_list_id_yield', listId='676', 
-                fields=['email','firstName','lastName'], batchSize=None)
+                fields=['email','firstName','lastName'], batchSize=None, return_full_result=False)
 lead_chunk = next(leads) # keep calling next until no more Leads
 
 # this is a generator, so it will return chunks of Leads rather that all Leads on the 
 #   List at once; therefore, it's useful for Lists with large numbers of Leads 
 # fields and batchSize are optional; batchSize defaults to 300, which is the max
+# set return_full_result to True to get the nextPageToken and requestId returned; actual 
+#  result will be in the 'result' key
 # static lists only (does not work with smart lists)
 ```
 
