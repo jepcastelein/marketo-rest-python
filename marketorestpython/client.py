@@ -268,7 +268,17 @@ class MarketoClient:
                     'get_leads_export_job_status': self.get_leads_export_job_status,
                     'get_activities_export_job_status': self.get_activities_export_job_status,
                     'get_leads_export_job_file': self.get_leads_export_job_file,
-                    'get_activities_export_job_file': self.get_activities_export_job_file
+                    'get_activities_export_job_file': self.get_activities_export_job_file,
+                    'get_named_accounts': self.get_named_accounts,
+                    'sync_named_accounts': self.sync_named_accounts,
+                    'delete_named_accounts': self.delete_named_accounts,
+                    'describe_named_accounts': self.describe_named_accounts,
+                    'get_named_account_list_members': self.get_named_account_list_members,
+                    'add_named_account_list_members': self.add_named_account_list_members,
+                    'remove_named_account_list_members': self.remove_named_account_list_members,
+                    'get_named_account_lists': self.get_named_account_lists,
+                    'sync_named_account_lists': self.sync_named_account_lists,
+                    'delete_named_account_lists': self.delete_named_account_lists
                 }
                 result = method_map[method](*args, **kargs)
             except MarketoException as e:
@@ -4987,3 +4997,144 @@ class MarketoClient:
 
     def get_activities_export_jobs_list(self):
         return self._get_export_jobs_list('activities')
+
+    # --- NAMED ACCOUNTS ---
+
+    def get_named_accounts(self, filterType, filterValues, fields=None, batchSize=None, return_full_result=False,
+                           nextPageToken=None):
+        self.authenticate()
+        if filterType is None:
+            raise ValueError("Invalid argument: required argument filterType is none.")
+        if filterValues is None:
+            raise ValueError("Invalid argument: required argument filter_values is none.")
+        args = {
+            'access_token': self.token,
+            '_method': 'GET'
+        }
+        filterValues = filterValues.split() if type(
+            filterValues) is str else filterValues
+        data = [('filterValues', (',').join(filterValues)),
+                ('filterType', filterType)]
+        if fields is not None:
+            data.append(('fields', fields))
+        if batchSize is not None:
+            data.append(('batchSize', batchSize))
+        if nextPageToken:
+            args['nextPageToken'] = nextPageToken
+        result_list = []
+        while True:
+            self.authenticate()
+            # for long-running processes, this updates the access token
+            args['access_token'] = self.token
+            result = self._api_call('post', self.host + "/rest/v1/namedaccounts.json", args, data, mode='nojsondumps')
+            if result is None:
+                raise Exception("Empty Response")
+            if 'result' in result:
+                if return_full_result:
+                    yield result
+                else:
+                    yield result['result']
+                if len(result['result']) == 0 or 'nextPageToken' not in result:
+                    break
+                else:
+                    args['nextPageToken'] = result['nextPageToken']
+
+    def sync_named_accounts(self):
+        pass
+
+    def delete_named_accounts(self):
+        pass
+
+    def describe_named_accounts(self):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        result = self._api_call('get', self.host + "/rest/v1/namedaccounts/describe.json", args)
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
+
+    def get_named_account_list_members(self, id, fields=None, batchSize=None, return_full_result=False,
+                                       nextPageToken=None):
+        self.authenticate()
+        if id is None:
+            raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token,
+            '_method': 'GET'
+        }
+        data = []
+        if fields is not None:
+            data.append(('fields', fields))
+        if batchSize is not None:
+            data.append(('batchSize', batchSize))
+        if nextPageToken:
+            args['nextPageToken'] = nextPageToken
+        while True:
+            self.authenticate()
+            # for long-running processes, this updates the access token
+            args['access_token'] = self.token
+            result = self._api_call('post', self.host + "/rest/v1/namedAccountList/" +
+                                    str(id) + "/namedAccounts.json", args, data, mode='nojsondumps')
+            if result is None:
+                raise Exception("Empty Response")
+            if 'result' in result:
+                if return_full_result:
+                    yield result
+                else:
+                    yield result['result']
+                if len(result['result']) == 0 or 'nextPageToken' not in result:
+                    break
+                else:
+                    args['nextPageToken'] = result['nextPageToken']
+
+    def add_named_account_list_members(self):
+        pass
+
+    def remove_named_account_list_members(self):
+        pass
+
+    def get_named_account_lists(self, filterType, filterValues, batchSize=None, return_full_result=False,
+                                nextPageToken=None):
+        self.authenticate()
+        if filterType is None:
+            raise ValueError("Invalid argument: required argument filterType is none.")
+        if filterValues is None:
+            raise ValueError("Invalid argument: required argument filter_values is none.")
+        args = {
+            'access_token': self.token,
+            '_method': 'GET'
+        }
+        filterValues = filterValues.split() if type(
+            filterValues) is str else filterValues
+        data = [('filterValues', (',').join(filterValues)),
+                ('filterType', filterType)]
+        if batchSize is not None:
+            data.append(('batchSize', batchSize))
+        if nextPageToken:
+            args['nextPageToken'] = nextPageToken
+        result_list = []
+        while True:
+            self.authenticate()
+            # for long-running processes, this updates the access token
+            args['access_token'] = self.token
+            result = self._api_call('post', self.host + "/rest/v1/namedAccountLists.json", args, data,
+                                    mode='nojsondumps')
+            if result is None:
+                raise Exception("Empty Response")
+            if 'result' in result:
+                if return_full_result:
+                    yield result
+                else:
+                    yield result['result']
+                if len(result['result']) == 0 or 'nextPageToken' not in result:
+                    break
+                else:
+                    args['nextPageToken'] = result['nextPageToken']
+
+    def sync_named_account_lists(self):
+        pass
+
+    def delete_named_account_lists(self):
+        pass

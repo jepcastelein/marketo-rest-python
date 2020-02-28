@@ -2048,6 +2048,62 @@ API Ref: http://developers.marketo.com/rest-api/endpoint-reference/lead-database
 export_file_contents = mc.execute(method='get_activities_export_job_file', job_id='284742ec-1e5a-46f2-b164-498a41fcaaf6')
 ```
 
+Named Account Object
+==============
+
+Describe Named Accounts
+----------------
+```python
+mc.execute(method='describe_named_accounts')
+```
+
+Get Named Accounts
+-----------------
+```python
+for accounts in mc.execute(method='get_named_accounts', filterType='name', filterValues='Acme', 
+                        fields='name,score1,annualRevenue', batchSize=None, return_full_result=False, 
+                        nextPageToken=None):
+    print(accounts)
+
+# filterType may be any single field returned in the searchableFields member of the describe result for named accounts
+# specify up to 300 filterValues comma-separated or as a list; you are out of luck if your filterValues have commas
+# default and maximum batchSize is 300 (in the response) 
+# return_full_result=True will return requestId and nextPageToken
+# nextPageToken: optional; normally you wouldn't need it, unless you are resuming a prior export 
+```
+
+Get Named Account Lists
+-----------------
+```python
+for lists in mc.execute(method='get_named_account_lists', filterType='dedupeFields', filterValues='Accounts Tier 1',
+                        batchSize=None, return_full_result=False, nextPageToken=None):
+    print(lists)
+
+# instead of 'dedupeFields' you can also use 'idField', which would be the marketoGUID
+# specify up to 300 filterValues comma-separated or as a list; you are out of luck if your filterValues have commas
+# default and maximum batchSize is 300 (in the response)
+# return_full_result=True will return requestId and nextPageToken
+# nextPageToken: optional; normally you wouldn't need it, unless you are resuming a prior export 
+```
+
+Get Named Account List Members
+------------------
+```python
+for accounts in mc.execute(method='get_named_account_list_members', id='d5080d12-a40c-4b9f-ae01-453bdf662fdd', 
+                        fields='name,score1', batchSize=None, return_full_result=False, nextPageToken=None):
+    print(accounts)
+
+# default and maximum batchSize is 300 
+# return_full_result=True will return requestId and nextPageToken
+# nextPageToken: optional; normally you wouldn't need it, unless you are resuming a prior export 
+```
+
+Other Named Account Methods
+------
+There are stubs for other Named Account methods in `client.py` but those aren't implemented yet. 
+
+
+
 
 Programming Conventions
 =======================
