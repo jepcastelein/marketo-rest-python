@@ -1,7 +1,5 @@
 Marketo REST Python
 ===================
-[![Build Status](https://travis-ci.org/jepcastelein/marketo-rest-python.svg?branch=master)](https://travis-ci.org/jepcastelein/marketo-rest-python)
-
 Python Client that covers most of the Marketo REST API. It handles authentication, error handling and rate limiting
 to the standard limit of 100 calls in 20 seconds (defined in http_lib module). This is a fork of the project started by 
 Arunim Samat at https://github.com/asamat/python_marketo, which had stalled. <br />
