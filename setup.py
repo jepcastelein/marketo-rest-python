@@ -24,7 +24,7 @@ Originally developed by asamat with contributions from sandipsinha and osamakhn
 
 setup(
     name='marketorestpython',
-    version= '0.5.3',
+    version= '0.5.4',
     url='https://github.com/jepcastelein/marketo-rest-python',
     author='Jep Castelein',
     author_email='jep@castelein.net',
@@ -33,6 +33,7 @@ setup(
     install_requires=[
         'backoff',
         'requests',
+        'pytz'
     ],
     keywords = ['Marketo', 'REST API', 'Wrapper', 'Client'],
     description='Python Client for the Marketo REST API',

@@ -1,5 +1,6 @@
 import time
 from datetime import datetime
+import pytz
 import json
 from marketorestpython.helper.http_lib import HttpLib
 from marketorestpython.helper.exceptions import MarketoException
@@ -1096,22 +1097,28 @@ class MarketoClient:
 
     def process_lead_activity_until_datetime(self, result, untilDatetime):
         latest_until_date = result[len(result)-1]['activityDate']
-        result_until = datetime.strptime(
-            latest_until_date, '%Y-%m-%dT%H:%M:%SZ')
+        result_until = datetime.strptime(latest_until_date, '%Y-%m-%dT%H:%M:%SZ')
         try:
-            specified_until = datetime.strptime(
-                untilDatetime, '%Y-%m-%dT%H:%M:%S')
-        except:
+            specified_until = datetime.strptime(untilDatetime, '%Y-%m-%dT%H:%M:%S')
+        except ValueError:
             try:
                 specified_until = datetime.strptime(untilDatetime, '%Y-%m-%d')
-            except:
-                raise(
-                    'incorrect format for untilDatetime, use YYYY-MM-DDTHH:MM:SS or YYYY-MM-DD')
+            except ValueError:
+                if ":" == untilDatetime[-3]:  # in Python 3.6 and earlier a colon is not allowed in timezone offset
+                    untilDatetime = untilDatetime[:-3] + untilDatetime[-2:]
+                specified_until = datetime.strptime(untilDatetime, '%Y-%m-%dT%H:%M:%S%z')
+                utc = pytz.UTC
+                result_until = utc.localize(result_until)
         if result_until > specified_until:
             partial_result = []
             for record in result:
-                if datetime.strptime(record['activityDate'], '%Y-%m-%dT%H:%M:%SZ') <= specified_until:
-                    partial_result.append(record)
+                try:
+                    if datetime.strptime(record['activityDate'], '%Y-%m-%dT%H:%M:%SZ') <= specified_until:
+                        partial_result.append(record)
+                except TypeError as e:
+                    utc = pytz.UTC
+                    if utc.localize(datetime.strptime(record['activityDate'], '%Y-%m-%dT%H:%M:%SZ')) <= specified_until:
+                        partial_result.append(record)
             return partial_result
         return result
 
@@ -1148,11 +1155,15 @@ class MarketoClient:
                 'get', self.host + "/rest/v1/activities.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if 'result' in result:
+            if 'result' in result and result['result']:
                 if untilDatetime is not None:
-                    new_result = self.process_lead_activity_until_datetime(
-                        result['result'], untilDatetime)
-                    result_list.extend(new_result)
+                    new_result = self.process_lead_activity_until_datetime(result['result'], untilDatetime)
+                    if new_result:
+                        result_list.extend(new_result)
+                        if len(new_result) < len(result['result']):
+                            break  # in case only some of the results meet the datetime criteria (most common)
+                    else:
+                        break  # in case none of the results meet the datetime criteria
                 else:
                     result_list.extend(result['result'])
             if result['moreResult'] is False:
@@ -1194,18 +1205,19 @@ class MarketoClient:
                 'get', self.host + "/rest/v1/activities.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if 'result' in result:
+            if 'result' in result and result['result']:
                 if untilDatetime is not None:
-                    new_result = self.process_lead_activity_until_datetime(
-                        result['result'], untilDatetime)
+                    new_result = self.process_lead_activity_until_datetime(result['result'], untilDatetime)
                     if new_result:
                         if return_full_result:
                             result['result'] = new_result
                             yield result
                         else:
                             yield new_result
-                    if len(new_result) < len(result['result']):
-                        break
+                        if len(new_result) < len(result['result']):
+                            break  # in case only some of the results meet the datetime criteria (most common)
+                    else:
+                        break  # in case none of the results meet the datetime criteria
                 else:
                     if return_full_result:
                         yield result
@@ -1251,11 +1263,15 @@ class MarketoClient:
                 'get', self.host + "/rest/v1/activities/leadchanges.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if 'result' in result:
+            if 'result' in result and result['result']:
                 if untilDatetime is not None:
-                    new_result = self.process_lead_activity_until_datetime(
-                        result['result'], untilDatetime)
-                    result_list.extend(new_result)
+                    new_result = self.process_lead_activity_until_datetime(result['result'], untilDatetime)
+                    if new_result:
+                        result_list.extend(new_result)
+                        if len(new_result) < len(result['result']):
+                            break  # in case only some of the results meet the datetime criteria (most common)
+                    else:
+                        break  # in case none of the results meet the datetime criteria
                 else:
                     result_list.extend(result['result'])
             if result['moreResult'] is False:
@@ -1295,7 +1311,7 @@ class MarketoClient:
                 'get', self.host + "/rest/v1/activities/leadchanges.json", args)
             if result is None:
                 raise Exception("Empty Response")
-            if 'result' in result:
+            if 'result' in result and result['result']:
                 if untilDatetime is not None:
                     new_result = self.process_lead_activity_until_datetime(
                         result['result'], untilDatetime)
@@ -1305,8 +1321,10 @@ class MarketoClient:
                             yield result
                         else:
                             yield new_result
-                    if len(new_result) < len(result['result']):
-                        break
+                        if len(new_result) < len(result['result']):
+                            break  # in case only some of the results meet the datetime criteria (most common)
+                    else:
+                        break  # in case none of the results meet the datetime criteria
                 else:
                     if return_full_result:
                         yield result
