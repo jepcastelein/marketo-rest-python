@@ -28,11 +28,13 @@ lead_id_1 = None
 lead_id_2 = None
 file_id = None
 list_folder_id = None
+smart_list_folder_id = None
 new_folder_id = None
 list_id = None
 files_folder_id = None
 bulk_lead_export_id = None
 list_name = uuid.uuid4()
+cloned_smart_list_id = None
 
 
 def test_create_update_leads():
@@ -50,11 +52,16 @@ def test_create_update_leads():
 
 def test_get_folder_by_name():
     global list_folder_id
+    global smart_list_folder_id
     list_folder = mc.execute(method='get_folder_by_name', name='Group Lists')
+    smart_list_folder = mc.execute(method='get_folder_by_name', name='Group Smart Lists')
     print(list_folder)
     list_folder_id = list_folder[0]['id']
-    print(list_folder_id)
-    assert list_folder_id
+    smart_list_folder_id = smart_list_folder[0]['id']
+    print('list_folder_id: {}'.format(list_folder_id))
+    print('smart_list_folder_id: {}'.format(smart_list_folder_id))
+    logger.info('smart_list_folder: {}'.format(smart_list_folder_id))
+    assert list_folder_id and smart_list_folder_id
 
 
 def test_create_folder():
@@ -267,6 +274,45 @@ def test_deactivate_smart_campaign():
     assert campaign[0]['id'] == 1109
 
 
+def test_get_smart_list_by_id():
+    original_smart_list = mc.execute(method='get_smart_list_by_id', id=5944)
+    assert original_smart_list[0]['id'] == 5944
+
+
+def test_get_smart_list_by_name():
+    original_smart_list = mc.execute(method='get_smart_list_by_name', name='Do not delete')
+    assert original_smart_list[0]['id'] == 5944
+
+
+def test_clone_smart_list():
+    global cloned_smart_list_id
+    cloned_smart_list = mc.execute(method='clone_smart_list', id=5944, name='temp smart list',
+                                   folderId=smart_list_folder_id, folderType='Folder', return_full_result=False)
+    cloned_smart_list_id = cloned_smart_list[0]['id']
+    assert cloned_smart_list_id
+
+
+def get_smart_lists():
+    my_list_batch = []
+    for my_lists in mc.execute(method='get_smart_lists', folderId=smart_list_folder_id, folderType='Folder'):
+        my_list_batch += my_lists
+    assert len(my_list_batch) > 1  # we have the original and the cloned smart list
+
+
+def test_delete_smart_list():
+    deleted_smart_list = mc.execute(method='delete_smart_list', id=cloned_smart_list_id)
+    assert deleted_smart_list
+
+def test_get_smart_list_by_smart_campaign_id():
+    campaign_smart_list = mc.execute(method='get_smart_list_by_smart_campaign_id', id=1125)
+    assert len(campaign_smart_list) == 1  # there is only 1 trigger in this specific Smart Campaign's Smart List
+
+def test_get_smart_list_by_program_id():
+    email_program_smart_list = mc.execute(method='get_smart_list_by_program_id', id=1027)
+    assert len(email_program_smart_list) == 1  # there is only 1 trigger in this specific Program's Smart List
+
+
+'''
 mc2 = MarketoClient(munchkin_id=MUNCHKIN_ID, client_id=CLIENT_ID, client_secret=CLIENT_SECRET, max_retry_time=30)
 
 
@@ -293,3 +339,4 @@ def test_max_retry_time():
             break
         day += 1
     assert 30 < time_elapsed < 35
+'''

@@ -216,90 +216,6 @@ API Ref: http://developers.marketo.com/documentation/rest/member-of-list/
 lead = mc.execute(method='member_of_list', listId=728, id=[3482093,3482095,3482096])
 ```
 
-Get Smart Campaign by Id
------------------------
-API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Smart_Campaigns/getSmartCampaignByIdUsingGET
-```python
-campaign = mc.execute(method='get_smart_campaign_by_id', id=1170)
-```
-
-Get Campaign by Id - SUPERCEDED
-------------------
-Use "Get Smart Campaign by Id" instead. 
-
-API Ref: http://developers.marketo.com/documentation/rest/get-campaign-by-id/
-```python
-campaign = mc.execute(method='get_campaign_by_id', id=1170)
-```
-
-Get Smart Campaigns (Generator)
--------------------
-API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Smart_Campaigns/getAllSmartCampaignsGET
-```python
-for campaigns in mc.execute(method='get_smart_campaigns', earliestUpdatedAt=None, latestUpdatedAt=None, 
-                            folderId=None, folderType=None,
-                            maxReturn=200, offset=0, 
-                            return_full_result=False): 
-    print(campaigns)
-
-# all parameters are optional; folderId and folderType need to be specified together; 
-# folderType can be "Folder" or "Program"
-# set return_full_result to True to get the full API response including requestId (not just the 'result' key)
-```
-
-Get Multiple Campaigns - SUPERCEDED
-----------------------
-Use "Get Smart Campaigns" instead. 
-
-API Ref: http://developers.marketo.com/documentation/rest/get-multiple-campaigns/
-```python
-lead = mc.execute(method='get_multiple_campaigns', id=[1170,1262], name=None, programName=None, workspaceName=None, batchSize=None)
-
-# all parameters are optional
-```
-
-Schedule Campaign
------------------
-API Ref: http://developers.marketo.com/documentation/rest/schedule-campaign/
-```python
-# date format: 2015-11-08T15:43:12-08:00
-from datetime import datetime, timezone, timedelta
-now = datetime.now(timezone.utc)
-now_no_ms = now.replace(microsecond=0)
-now_plus_7 = now_no_ms + timedelta(minutes = 7)
-time_as_txt = now_plus_7.astimezone().isoformat()
-print(time_as_txt)
-lead = mc.execute(method='schedule_campaign', id=1878, runAt=time_as_txt, tokens={'my.Campaign Name': 'new token value'}, cloneToProgramName=None)
-
-# runAt is optional; default is 5 minutes from now; if specified, it needs to be at least 5 minutes from now
-# tokens and cloneToProgramName are optional
-# returns True
-```
-
-Request Campaign
-----------------
-API Ref: http://developers.marketo.com/documentation/rest/request-campaign/
-```python
-lead = mc.execute(method='request_campaign', id=1880, leads=[46,38], tokens={'my.increment': '+2'})
-
-# tokens is optional
-# returns True
-```
-
-Activate Smart Campaign
------------------------
-API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Smart_Campaigns/activateSmartCampaignUsingPOST
-```python
-campaign = mc.execute(method='activate_smart_campaign', id=1880)
-```
-
-Deactivate Smart Campaign
------------------------
-API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Smart_Campaigns/deactivateSmartCampaignUsingPOST
-```python
-campaign = mc.execute(method='deactivate_smart_campaign', id=1880)
-```
-
 Import Lead
 -----------
 API Ref: http://developers.marketo.com/documentation/rest/import-lead/
@@ -639,24 +555,24 @@ API Ref: http://developers.marketo.com/documentation/asset-api/delete-tokens-by-
 tokens = mc.execute(method='delete_tokens', id="28", folderType="Folder", name="test", type="text")
 ```
 
-Lists
+Static Lists
 =====
 
-Get List by Id
+Get Static List by Id
 --------------
 API Ref: http://developers.marketo.com/rest-api/assets/static-lists/#by_id
 ```python
 lead = mc.execute(method='get_list_by_id', id=724)
 ```
 
-Get List by Name
+Get Static List by Name
 --------------
 API Ref: http://developers.marketo.com/rest-api/assets/static-lists/#by_id
 ```python
 lead = mc.execute(method='get_list_by_name', id='My Test List')
 ```
 
-Get Multiple Lists
+Get Multiple Lists (OLD)
 ------------------
 API Ref: http://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Static_Lists/getListsUsingGET
 ```python
@@ -666,7 +582,7 @@ lead = mc.execute(method='get_multiple_lists', id=[724,725], name=None, programN
 # all parameters are optional; no parameters returns all lists
 ```
 
-Browse Lists
+Get Static Lists
 ------------------
 API Ref: http://developers.marketo.com/rest-api/assets/static-lists/#browse
 ```python
@@ -677,7 +593,7 @@ lead = mc.execute(method='browse_lists', folderId=8, folderType='Folder', offset
 # all parameters are optional; no parameters returns all lists
 ```
 
-Create List
+Create Static List
 -----------
 API Ref: http://developers.marketo.com/rest-api/assets/static-lists/#create_and_update
 ```python
@@ -687,7 +603,7 @@ lead = mc.execute(method='create_list', folderId=8, folderType='Folder', name='T
 # description is optional
 ```
 
-Update List
+Update Static List
 ----------
 API Ref: http://developers.marketo.com/rest-api/assets/static-lists/#create_and_update
 ```python
@@ -701,6 +617,158 @@ Delete List
 API Ref: http://developers.marketo.com/rest-api/assets/static-lists/#delete
 ```python
 lead = mc.execute(method='delete_list', id=123)
+```
+
+Smart Lists
+=====
+
+Get Smart List by Id
+-------------------
+API ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Smart_Lists/getSmartListByIdUsingGET
+```python
+smart_list = mc.execute(method='get_smart_list_by_id', id=123, return_full_result=False)
+# set return_full_result to get the nextPageToken and requestId returned; actual 
+#  result will be in the 'result' key
+```
+
+Get Smart List by Name
+-------------------
+API ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Smart_Lists/getSmartListByNameUsingGET
+```python
+smart_list = mc.execute(method='get_smart_list_by_name', name='Abc', return_full_result=False)
+# set return_full_result to get the nextPageToken and requestId returned; actual 
+#  result will be in the 'result' key
+```
+
+Get Smart Lists
+-------------------
+API ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Smart_Lists/getSmartListsUsingGET
+```python
+for smart_lists in mc.execute(method='get_smart_lists', folderId=123, folderType='Folder', offset=None, 
+                              maxReturn=None, earliestUpdatedAt=None, latestUpdatedAt=None, return_full_result=False):
+    print(smart_lists)
+# all parameters are optional; no parameters returns all lists
+# maxReturn defaults to 200
+# offset defaults to 0; it is automatically incremented, so it's only for when you want to start at a specific offset
+# set return_full_result to get the nextPageToken and requestId returned; actual 
+#  result will be in the 'result' key
+```
+
+Delete Smart List
+-------------------
+API ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Smart_Lists/deleteSmartListByIdUsingPOST 
+```python
+smart_list = mc.execute(method='delete_smart_list', id=123)
+# set return_full_result to get the nextPageToken and requestId returned; actual 
+#  result will be in the 'result' key
+```
+
+Clone Smart List
+-------------------
+API ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Smart_Lists/cloneSmartListUsingPOST 
+```python
+smart_list = mc.execute(method='clone_smart_list', id=123, name='cloned smart list', folderId=123, folderType='Folder', 
+                        return_full_result=False, description=None)
+# set return_full_result to get the nextPageToken and requestId returned; actual 
+#  result will be in the 'result' key
+# description is optional
+```
+
+Smart Campaigns
+================
+
+
+Get Smart Campaign by Id
+-----------------------
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Smart_Campaigns/getSmartCampaignByIdUsingGET
+```python
+campaign = mc.execute(method='get_smart_campaign_by_id', id=1170)
+```
+
+Get Campaign by Id - SUPERCEDED
+------------------
+Use "Get Smart Campaign by Id" instead. 
+
+API Ref: http://developers.marketo.com/documentation/rest/get-campaign-by-id/
+```python
+campaign = mc.execute(method='get_campaign_by_id', id=1170)
+```
+
+Get Smart Campaigns (Generator)
+-------------------
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Smart_Campaigns/getAllSmartCampaignsGET
+```python
+for campaigns in mc.execute(method='get_smart_campaigns', earliestUpdatedAt=None, latestUpdatedAt=None, 
+                            folderId=None, folderType=None,
+                            maxReturn=200, offset=0, 
+                            return_full_result=False): 
+    print(campaigns)
+
+# all parameters are optional; folderId and folderType need to be specified together; 
+# folderType can be "Folder" or "Program"
+# set return_full_result to True to get the full API response including requestId (not just the 'result' key)
+```
+
+Get Multiple Campaigns - SUPERCEDED
+----------------------
+Use "Get Smart Campaigns" instead. 
+
+API Ref: http://developers.marketo.com/documentation/rest/get-multiple-campaigns/
+```python
+lead = mc.execute(method='get_multiple_campaigns', id=[1170,1262], name=None, programName=None, workspaceName=None, batchSize=None)
+
+# all parameters are optional
+```
+
+Schedule Campaign
+-----------------
+API Ref: http://developers.marketo.com/documentation/rest/schedule-campaign/
+```python
+# date format: 2015-11-08T15:43:12-08:00
+from datetime import datetime, timezone, timedelta
+now = datetime.now(timezone.utc)
+now_no_ms = now.replace(microsecond=0)
+now_plus_7 = now_no_ms + timedelta(minutes = 7)
+time_as_txt = now_plus_7.astimezone().isoformat()
+print(time_as_txt)
+lead = mc.execute(method='schedule_campaign', id=1878, runAt=time_as_txt, tokens={'my.Campaign Name': 'new token value'}, cloneToProgramName=None)
+
+# runAt is optional; default is 5 minutes from now; if specified, it needs to be at least 5 minutes from now
+# tokens and cloneToProgramName are optional
+# returns True
+```
+
+Request Campaign
+----------------
+API Ref: http://developers.marketo.com/documentation/rest/request-campaign/
+```python
+lead = mc.execute(method='request_campaign', id=1880, leads=[46,38], tokens={'my.increment': '+2'})
+
+# tokens is optional
+# returns True
+```
+
+Activate Smart Campaign
+-----------------------
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Smart_Campaigns/activateSmartCampaignUsingPOST
+```python
+campaign = mc.execute(method='activate_smart_campaign', id=1880)
+```
+
+Deactivate Smart Campaign
+-----------------------
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Smart_Campaigns/deactivateSmartCampaignUsingPOST
+```python
+campaign = mc.execute(method='deactivate_smart_campaign', id=1880)
+```
+
+Get Smart List by Smart Campaign Id
+--------------------------
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Smart_Campaigns/getSmartListBySmartCampaignIdUsingGET 
+```python
+smart_list = mc.execute(method='get_smart_list_by_smart_campaign_id', id=123, includeRules=True, 
+                        return_full_result=False)
+# set includeRules to False if you do not want to get all triggers and filters of the smart list in the response 
 ```
 
 
@@ -1206,14 +1274,14 @@ Get Form Thank You Page
 ------------------
 API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/get-form-thank-you-page/
 ```python
-not implemented yet
+# not implemented yet
 ```
 
 Update Form Thank You Page
 --------------------------
 API Ref: http://developers.marketo.com/documentation/marketo-rest-apis-web-page-objects/update-form-thank-you-page/
 ```python
-not implemented yet
+# not implemented yet
 ```
 
 Update Form Metadata
@@ -1721,6 +1789,16 @@ Unapprove Program
 API Ref: http://developers.marketo.com/documentation/programs/unapprove-program/
 ```python
 program = mc.execute(method='approve_program', id=1208)
+```
+
+Get Smart List by Program Id
+--------------------------
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Programs/getSmartListByProgramIdUsingGET 
+```python
+smart_list = mc.execute(method='get_smart_list_by_program_id', id=123, includeRules=True, 
+                        return_full_result=False)
+# only works to get the built-in Smart List for Email Programs
+# set includeRules to False if you do not want to get all filters of the smart list in the response 
 ```
 
 Get Channels

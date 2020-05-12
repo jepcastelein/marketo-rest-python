@@ -76,6 +76,11 @@ class MarketoClient:
                     'add_leads_to_list': self.add_leads_to_list,
                     'remove_leads_from_list': self.remove_leads_from_list,
                     'member_of_list': self.member_of_list,
+                    'get_smart_list_by_id': self.get_smart_list_by_id,
+                    'get_smart_list_by_name': self.get_smart_list_by_name,
+                    'get_smart_lists': self.get_smart_lists,
+                    'delete_smart_list': self.delete_smart_list,
+                    'clone_smart_list': self.clone_smart_list,
                     'get_smart_campaign_by_id': self.get_smart_campaign_by_id,
                     'get_smart_campaigns': self.get_smart_campaigns,
                     'get_campaign_by_id': self.get_campaign_by_id,
@@ -84,6 +89,7 @@ class MarketoClient:
                     'request_campaign': self.request_campaign,
                     'activate_smart_campaign': self.activate_smart_campaign,
                     'deactivate_smart_campaign': self.deactivate_smart_campaign,
+                    'get_smart_list_by_smart_campaign_id': self.get_smart_list_by_smart_campaign_id,
                     'import_lead': self.import_lead,
                     'get_import_lead_status': self.get_import_lead_status,
                     'get_import_failure_file': self.get_import_failure_file,
@@ -223,6 +229,7 @@ class MarketoClient:
                     'clone_program': self.clone_program,
                     'approve_program': self.approve_program,
                     'unapprove_program': self.unapprove_program,
+                    'get_smart_list_by_program_id': self.get_smart_list_by_program_id,
                     'get_channels': self.get_channels,
                     'get_channel_by_name': self.get_channel_by_name,
                     'get_tags': self.get_tags,
@@ -813,7 +820,114 @@ class MarketoClient:
             raise Exception("Empty Response")
         return result['result']
 
-    # --------- CAMPAIGNS ---------
+    # --------- SMART LISTS ---------
+
+    def get_smart_list_by_id(self, id, return_full_result=False):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        result = self._api_call('get', self.host + "/rest/asset/v1/smartList/{}.json".format(id), args)
+        if result is None:
+            raise Exception("Empty Response")
+        if return_full_result:
+            return result
+        else:
+            return result['result']
+
+    def get_smart_list_by_name(self, name, return_full_result=False):
+        self.authenticate()
+        args = {
+            'access_token': self.token,
+            'name': name
+        }
+        result = self._api_call('get', self.host + "/rest/asset/v1/smartList/byName.json".format(id), args)
+        if result is None:
+            raise Exception("Empty Response")
+        if return_full_result:
+            return result
+        else:
+            return result['result']
+
+    def get_smart_lists(self, earliestUpdatedAt=None, latestUpdatedAt=None, folderId=None, folderType=None,
+                        maxReturn=200, offset=0, return_full_result=False):
+        self.authenticate()
+        args = {
+            'access_token': self.token,
+            'maxReturn': maxReturn,
+            'offset': offset,
+        }
+        if earliestUpdatedAt:
+            args['earliestUpdatedAt'] = earliestUpdatedAt
+        if latestUpdatedAt:
+            args['latestUpdatedAt'] = latestUpdatedAt
+        if folderId and folderType:
+            args['folder'] = json.dumps({'id': folderId, 'type': folderType})
+        while True:
+            self.authenticate()
+            # for long-running processes, this updates the access token
+            args['access_token'] = self.token
+            result = self._api_call('get', self.host + "/rest/asset/v1/smartLists.json", args)
+            if result is None:
+                raise Exception("Empty Response")
+            if 'result' in result:
+                if return_full_result:
+                    yield result
+                else:
+                    yield result['result']
+                if len(result['result']) < maxReturn:
+                    break
+            else:
+                break
+            offset += maxReturn
+            args['offset'] = offset
+
+    def delete_smart_list(self, id, return_full_result=False):
+        self.authenticate()
+        if id is None:
+            raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = self._api_call(
+            'post', self.host + "/rest/asset/v1/smartList/" + str(id) + "/delete.json", args)
+        if result is None:
+            raise Exception("Empty Response")
+        if return_full_result:
+            return result
+        else:
+            return result['result']
+
+    def clone_smart_list(self, id, name, folderId, folderType, return_full_result=False, description=None):
+        self.authenticate()
+        if id is None:
+            raise ValueError("Invalid argument: required argument id is none.")
+        if name is None:
+            raise ValueError(
+                "Invalid argument: required argument name is none.")
+        if folderId is None:
+            raise ValueError(
+                "Invalid argument: required argument folder is none.")
+        if folderType is None:
+            raise ValueError(
+                "Invalid argument: folderType should be 'Folder' or 'Program'.")
+        args = {
+            'access_token': self.token,
+            'name': name,
+            'folder': "{'id': " + str(folderId) + ", 'type': " + folderType + "}"
+        }
+        if description:
+            args['description'] = description
+        result = self._api_call(
+            'post', self.host + "/rest/asset/v1/smartList/" + str(id) + "/clone.json", args)
+        if result is None:
+            raise Exception("Empty Response")
+        if return_full_result:
+            return result
+        else:
+            return result['result']
+
+    # --------- SMART CAMPAIGNS ---------
 
     def get_smart_campaign_by_id(self, id):
         self.authenticate()
@@ -981,6 +1095,20 @@ class MarketoClient:
             raise Exception("Empty Response")
         return result['result']
 
+    def get_smart_list_by_smart_campaign_id(self, id, includeRules=True, return_full_result=False):
+        self.authenticate()
+        args = {
+            'access_token': self.token,
+            'includeRules': includeRules
+        }
+        result = self._api_call('get', self.host + "/rest/asset/v1/smartCampaign/{}/smartList.json".format(id), args)
+        if result is None:
+            raise Exception("Empty Response")
+        if return_full_result:
+            return result
+        else:
+            return result['result']
+
     # --------- IMPORT LEADS ---------
 
     def import_lead(self, format, file, lookupField=None, listId=None, partitionName=None):
@@ -1123,7 +1251,7 @@ class MarketoClient:
         return result
 
     def get_lead_activities(self, activityTypeIds, nextPageToken=None, sinceDatetime=None, untilDatetime=None,
-                            batchSize=None, listId=None, leadIds=None):
+                            batchSize=None, listId=None, leadIds=None, assetIds=None):
         self.authenticate()
         if activityTypeIds is None:
             raise ValueError(
@@ -1141,6 +1269,8 @@ class MarketoClient:
             args['listId'] = listId
         if leadIds is not None:
             args['leadIds'] = leadIds
+        if assetIds:
+            args['assetIds'] = assetIds
         if batchSize is not None:
             args['batchSize'] = batchSize
         if nextPageToken is None:
@@ -1172,7 +1302,7 @@ class MarketoClient:
         return result_list
 
     def get_lead_activities_yield(self, activityTypeIds, nextPageToken=None, sinceDatetime=None, untilDatetime=None,
-                                  batchSize=None, listId=None, leadIds=None, return_full_result=False,
+                                  batchSize=None, listId=None, leadIds=None, assetIds=None, return_full_result=False,
                                   max_empty_more_results=None):
         self.authenticate()
         if activityTypeIds is None:
@@ -1191,6 +1321,8 @@ class MarketoClient:
             args['listId'] = listId
         if leadIds is not None:
             args['leadIds'] = leadIds
+        if assetIds:
+            args['assetIds'] = assetIds
         if batchSize is not None:
             args['batchSize'] = batchSize
         if nextPageToken is None:
@@ -4180,6 +4312,20 @@ class MarketoClient:
         if result is None:
             raise Exception("Empty Response")
         return result['result']
+
+    def get_smart_list_by_program_id(self, id, includeRules=True, return_full_result=False):
+        self.authenticate()
+        args = {
+            'access_token': self.token,
+            'includeRules': includeRules
+        }
+        result = self._api_call('get', self.host + "/rest/asset/v1/program/{}/smartList.json".format(id), args)
+        if result is None:
+            raise Exception("Empty Response")
+        if return_full_result:
+            return result
+        else:
+            return result['result']
 
     def get_channels(self, maxReturn=None):
         self.authenticate()
