@@ -13,6 +13,7 @@ Installation
 
 Unit tests
 ==========
+[![Build Status](https://travis-ci.org/jepcastelein/marketo-rest-python.svg?branch=master)](https://travis-ci.org/jepcastelein/marketo-rest-python)
 
 See tests in `test_script.py` and see `.travis.yml` for automated
 testing setup. Travis does not test pull requests. 
