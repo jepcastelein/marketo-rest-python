@@ -405,7 +405,8 @@ class MarketoClient:
             args['nextPageToken'] = result['nextPageToken']
         return result_list
 
-    def get_multiple_leads_by_list_id_yield(self, listId, fields=None, batchSize=None, return_full_result=False):
+    def get_multiple_leads_by_list_id_yield(self, listId, fields=None, batchSize=None, nextPageToken=None,
+                                            return_full_result=False):
         self.authenticate()
         if listId is None:
             raise ValueError(
@@ -414,6 +415,8 @@ class MarketoClient:
             'access_token': self.token,
             '_method': 'GET'
         }
+        if nextPageToken:
+            args['nextPageToken'] = nextPageToken
         data = []
         if fields is not None:
             data.append(('fields', fields))
@@ -463,12 +466,15 @@ class MarketoClient:
             args['nextPageToken'] = result['nextPageToken']
         return result_list
 
-    def get_multiple_leads_by_program_id_yield(self, programId, fields=None, batchSize=None):
+    def get_multiple_leads_by_program_id_yield(self, programId, fields=None, batchSize=None, nextPageToken=None,
+                                               return_full_result=False):
         self.authenticate()
         args = {
             'access_token': self.token,
             '_method': 'GET'
         }
+        if nextPageToken:
+            args['nextPageToken'] = nextPageToken
         data = []
         if fields is not None:
             data.append(('fields', fields))
@@ -483,7 +489,10 @@ class MarketoClient:
             if result is None:
                 raise Exception("Empty Response")
             if 'result' in result:
-                yield result['result']
+                if return_full_result:
+                    yield result
+                else:
+                    yield result['result']
                 if len(result['result']) == 0 or 'nextPageToken' not in result:
                     break
                 else:
