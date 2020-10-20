@@ -151,6 +151,7 @@ class MarketoClient:
                     'clone_email': self.clone_email,
                     'send_sample_email': self.send_sample_email,
                     'get_email_full_content': self.get_email_full_content,
+                    'update_email_full_content': self.update_email_full_content,
                     'create_landing_page': self.create_landing_page,
                     'get_landing_page_by_id': self.get_landing_page_by_id,
                     'get_landing_page_by_name': self.get_landing_page_by_name,
@@ -2179,7 +2180,7 @@ class MarketoClient:
             raise Exception("Empty Response")
         return result['result']
 
-    def update_email(self, id, name=None, description=None):
+    def update_email(self, id, name=None, description=None, preHeader=None, operational=None, published=None, textOnly=None, webView=None):
         self.authenticate()
         if id is None:
             raise ValueError("Invalid argument: required argument id is none.")
@@ -2190,6 +2191,16 @@ class MarketoClient:
             args['name'] = name
         if description is not None:
             args['description'] = description
+        if preHeader is not None:
+            args['preHeader'] = preHeader
+        if operational is not None:
+            args['operational'] = operational
+        if published is not None:
+            args['published'] = published
+        if textOnly is not None:
+            args['textOnly'] = textOnly
+        if webView is not None:
+            args['webView'] = webView
         result = self._api_call(
             'post', self.host + "/rest/asset/v1/email/" + str(id) + ".json", args)
         if result is None:
@@ -2496,6 +2507,21 @@ class MarketoClient:
             args['type'] = type
         result = self._api_call(
             'get', self.host + "/rest/asset/v1/email/" + str(id) + "/fullContent.json", args)
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
+
+    def update_email_full_content(self, id, content):
+        self.authenticate()
+        if id is None:
+            raise ValueError("Invalid argument: required argument id is none.")
+        if content is None:
+            raise ValueError("Invalid argument: required argument content is none.")
+        args = {
+            'access_token': self.token,
+        }
+        result = self._api_call(
+            'post', self.host + "/rest/asset/v1/email/" + str(id) + "/fullContent.json", args, files=content, filename="content")
         if result is None:
             raise Exception("Empty Response")
         return result['result']

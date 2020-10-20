@@ -927,7 +927,7 @@ Update Email
 ------------
 API Ref: http://developers.marketo.com/documentation/asset-api/update-email/
 ```python
-email = mc.execute(method='update_email', id=264, name="API Email 2", description='Hello New Description')
+email = mc.execute(method='update_email', id=264, name="API Email 2", description='Hello New Description', preHeader=None, operational=None, published=None, textOnly=None, webView=None)
 
 # name and description are optional, but - of course - you want to pass in at least 1 of them
 ```
@@ -1032,6 +1032,16 @@ API Ref: http://developers.marketo.com/documentation/asset-api/send-sample-email
 email = mc.execute(method='send_sample_email', id=117, emailAddress='jep@example.com', textOnly=None, leadId=46)
 
 # textOnly and leadId are optional; textOnly will send the text version of the email in additional to the html version
+```
+
+Update Email Full Content
+-----------------
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Emails/createEmailFullContentUsingPOST
+```python
+email = mc.execute(method='update_email_full_content', id=117, content='email_content.html')
+
+# NOTE: Replaces the HTML of an Email that has had its relationship broken from its template; currently appears there is no way to set text only content
+# content should be an HTML document to update with (cannot include JavaScript or script tags)
 ```
 
 Landing pages
