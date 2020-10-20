@@ -1034,6 +1034,17 @@ email = mc.execute(method='send_sample_email', id=117, emailAddress='jep@example
 # textOnly and leadId are optional; textOnly will send the text version of the email in additional to the html version
 ```
 
+Get Email Full Content
+-----------------
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Emails/getEmailFullContentUsingGET
+```python
+email = mc.execute(method='get_email_full_content', id=117, status=None, leadId=None, type=None)
+
+# status, leadId, and type are optional; status defaults to approved if asset is approved, draft if not.
+# leadId defines the lead to impersonate
+# default for type is HTML
+```
+
 Update Email Full Content
 -----------------
 API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Emails/createEmailFullContentUsingPOST
