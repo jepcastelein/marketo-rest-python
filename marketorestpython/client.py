@@ -758,7 +758,7 @@ class MarketoClient:
             if result is None:
                 raise Exception("Empty Response")
             if 'result' in result:
-                if len(result['result']) < maxReturn:
+                if len(result['result']) <= maxReturn:
                     result_list.extend(result['result'])
                     break
             else:
@@ -766,6 +766,7 @@ class MarketoClient:
             result_list.extend(result['result'])
             offset += maxReturn
             args['offset'] = offset
+
         return result_list
 
     def add_leads_to_list(self, listId, id):

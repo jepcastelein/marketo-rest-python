@@ -140,6 +140,17 @@ def test_browse_lists():
                               earliestUpdatedAt='2019-02-01')
     assert len(static_lists) >= 1
 
+    # test maxReturn
+    paginated_lists_max_return = mc.execute(method='browse_lists', folderId=list_folder_id, folderType='Folder',
+                              earliestUpdatedAt='2019-02-01', maxReturn=1)
+    assert len(paginated_lists_max_return) == 1
+    assert paginated_lists_max_return[0]["name"] == static_lists[0]["name"]
+
+    # test offset
+    paginated_lists_offset = mc.execute(method='browse_lists', folderId=list_folder_id, folderType='Folder',
+                              earliestUpdatedAt='2019-02-01', offset=1)
+    assert paginated_lists_offset[0]["name"] == static_lists[1]["name"]
+
 
 def test_add_leads_to_list():
     global lead_id_1
