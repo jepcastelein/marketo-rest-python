@@ -4171,7 +4171,7 @@ class MarketoClient:
             raise Exception("Empty Response")
         return result['result']
 
-    def get_program_by_tag_type(self, tagType, tagValue):
+    def get_program_by_tag_type(self, tagType, tagValue, maxReturn=20):
         self.authenticate()
         if tagType is None:
             raise ValueError(
@@ -4182,13 +4182,27 @@ class MarketoClient:
         args = {
             'access_token': self.token,
             'tagType': tagType,
-            'tagValue': tagValue
+            'tagValue': tagValue,
+            'maxReturn': maxReturn
         }
-        result = self._api_call(
-            'get', self.host + "/rest/asset/v1/program/byTag.json", args)
-        if result is None:
-            raise Exception("Empty Response")
-        return result['result']
+        result_list = []
+        offset = 0
+        while True:
+            self.authenticate()
+            args['access_token'] = self.token
+            result = self._api_call('get', self.host + "/rest/asset/v1/program/byTag.json", args)
+            if result is None:
+                raise Exception("Empty Response")
+            if 'result' in result:
+                if len(result['result']) < maxReturn:
+                    result_list.extend(result['result'])
+                    break
+            else:
+                break
+            result_list.extend(result['result'])
+            offset += maxReturn
+            args['offset'] = offset
+        return result_list
 
     def update_program(self, id, name=None, description=None, tags=None):
         self.authenticate()

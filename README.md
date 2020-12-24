@@ -1758,9 +1758,10 @@ Get Program by Tag Type
 API Ref: http://developers.marketo.com/documentation/programs/get-programs-by-tag-type/
 ```python
 try:
-    program = mc.execute(method='get_program_by_tag_type', tagType='Language', tagValue='English')
+    program = mc.execute(method='get_program_by_tag_type', tagType='Language', tagValue='English', maxReturn=20)
 except KeyError:
     program = False
+# maxReturn defaults to 20 and can be set to 200 max; this loops and gets all programs with the specific Tag & Value
 ```
 
 Update Program
