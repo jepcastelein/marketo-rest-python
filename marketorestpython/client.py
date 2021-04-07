@@ -235,6 +235,11 @@ class MarketoClient:
                     'get_channel_by_name': self.get_channel_by_name,
                     'get_tags': self.get_tags,
                     'get_tag_by_name': self.get_tag_by_name,
+                    'create_update_custom_object_type': self.create_update_custom_object_type,
+                    'delete_custom_object_type': self.delete_custom_object_type,
+                    'approve_custom_object_type': self.approve_custom_object_type,                    
+                    'discard_custom_object_type': self.discard_custom_object_type,
+                    'add_field_custom_object_type': self.add_field_custom_object_type,
                     'get_list_of_custom_objects': self.get_list_of_custom_objects,
                     'describe_custom_object': self.describe_custom_object,
                     'create_update_custom_objects': self.create_update_custom_objects,
@@ -4466,6 +4471,79 @@ class MarketoClient:
             raise Exception("Empty Response")
         return result['result']
 
+    # --------- CUSTOM OBJECT TYPES ---------
+
+    def create_update_custom_object_type(self, apiName, action='createOrUpdate', displayName=None, pluralName=None,
+            description=None, showInLeadDetail=None):
+        self.authenticate()      
+        args = {
+            'access_token': self.token
+        }
+        data = {
+            'action': action,
+            'apiName': apiName
+        }
+        if displayName is not None:
+            data['displayName'] = displayName
+        if pluralName is not None:
+            data['pluralName'] = pluralName
+        if description is not None:
+            data['description'] = description
+        if showInLeadDetail is not None:
+            data['showInLeadDetail'] = showInLeadDetail
+        result = self._api_call(
+            'post', self.host + "/rest/v1/customobjects/schema.json", args, data)
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
+
+    def delete_custom_object_type(self, apiName):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        result = self._api_call(
+            'post', self.host + "/rest/v1/customobjects/schema/"+ apiName +"/delete.json", args)
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
+
+    def approve_custom_object_type(self, apiName):
+        self.authenticate()      
+        args = {
+            'access_token': self.token
+        }
+        result = self._api_call(
+            'post', self.host + "/rest/v1/customobjects/schema/"+ apiName +"/approve.json", args, data)
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
+
+    def discard_custom_object_type(self, apiName):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        result = self._api_call(
+            'post', self.host + "/rest/v1/customobjects/schema/"+ str(apiName) +"/discardDraft.json", args, data)
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
+
+    def add_field_custom_object_type(self, apiName, fields):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        data = {
+            'input': fields
+        }
+        result = self._api_call(
+            'post', self.host + "/rest/v1/customobjects/schema/" + str(apiName) +"/addField.json", args, data)
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
+                   
     # --------- CUSTOM OBJECTS ---------
 
     def get_list_of_custom_objects(self, names=None):
