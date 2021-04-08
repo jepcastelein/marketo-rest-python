@@ -4503,7 +4503,7 @@ class MarketoClient:
             'access_token': self.token
         }
         result = self._api_call(
-            'post', self.host + "/rest/v1/customobjects/schema/"+ apiName +"/delete.json", args)
+            'post', self.host + "/rest/v1/customobjects/schema/"+ str(apiName) +"/delete.json", args)
         if result is None:
             raise Exception("Empty Response")
         return result['result']
@@ -4514,7 +4514,7 @@ class MarketoClient:
             'access_token': self.token
         }
         result = self._api_call(
-            'post', self.host + "/rest/v1/customobjects/schema/"+ apiName +"/approve.json", args, data)
+            'post', self.host + "/rest/v1/customobjects/schema/"+ str(apiName) +"/approve.json", args, data)
         if result is None:
             raise Exception("Empty Response")
         return result['result']
