@@ -239,6 +239,8 @@ class MarketoClient:
                     'delete_custom_object_type': self.delete_custom_object_type,
                     'approve_custom_object_type': self.approve_custom_object_type,                    
                     'discard_custom_object_type': self.discard_custom_object_type,
+                    'get_list_of_custom_object_types': self.get_list_of_custom_object_types,
+                    'describe_custom_object_type': self.describe_custom_object_type,
                     'add_field_custom_object_type': self.add_field_custom_object_type,
                     'get_list_of_custom_objects': self.get_list_of_custom_objects,
                     'describe_custom_object': self.describe_custom_object,
@@ -4539,11 +4541,33 @@ class MarketoClient:
             'input': fields
         }
         result = self._api_call(
-            'post', self.host + "/rest/v1/customobjects/schema/" + str(apiName) +"/addField.json", args, data)
+            'post', self.host + "/rest/v1/customobjects/schema/" + str(apiName) + "/addField.json", args, data)
         if result is None:
             raise Exception("Empty Response")
         return result['result']
-                   
+
+    def get_list_of_custom_object_types(self):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        result = self._api_call(
+            'get', self.host + "/rest/v1/customobjects/schema.json", args)
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
+
+    def describe_custom_object_type(self, apiName):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        result = self._api_call(
+            'get', self.host + "/rest/v1/customobjects/schema/" + str(apiName) + "/describe.json", args)
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
+
     # --------- CUSTOM OBJECTS ---------
 
     def get_list_of_custom_objects(self, names=None):

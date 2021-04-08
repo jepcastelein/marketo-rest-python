@@ -1865,7 +1865,7 @@ except KeyError:
 Custom Object Types
 ===================
 
-Create or Update Custom Object Type
+Create/Update Custom Object Type
 -----------------------------------
 API Ref: https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Custom_Objects/syncCustomObjectTypeUsingPOST
 ```python
@@ -1895,7 +1895,7 @@ API Ref: https://developers.marketo.com/rest-api/endpoint-reference/lead-databas
 
 Add Custom Object Type Fields
 -----------------------------
-https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Custom_Objects/addCustomObjectTypeFieldsUsingPOST
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Custom_Objects/addCustomObjectTypeFieldsUsingPOST
 ```python
     fields = [{"displayName": "Customer ID", "description": "Customer ID", "name": "cid", "dataType": "integer", "relatedTo": '{"name": "customer", "field": "cid"}'},
     {"displayName": "Transaction ID", "description": "Transaction ID", "name": "txid", "dataType": "integer", "isDedupeField", True},
@@ -1903,16 +1903,21 @@ https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoin
     result = mc.execute(method='add_field_custom_object_type', apiName='transactions',fields=fields)
 ```
 
-
-** Not currently implemented **
-
 List Custom Object Types
 ------------------------
-https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Custom_Objects/listCustomObjectTypesUsingGET
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Custom_Objects/listCustomObjectTypesUsingGET
+```python
+    coTypes = mc.execute(method='get_list_of_custom_object_types')
+```
 
 Describe Custom Object Type
 ---------------------------
-https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Custom_Objects/describeCustomObjectTypeUsingGET
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Custom_Objects/describeCustomObjectTypeUsingGET
+```python
+    description = mc.execute(method='describe_custom_object_type')
+```
+
+** Not currently implemented **
 
 Delete Custom Object Type Fields
 --------------------------------
