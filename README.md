@@ -1862,6 +1862,78 @@ except KeyError:
     tag = False
 ```
 
+Custom Object Types
+===================
+
+Create or Update Custom Object Type
+-----------------------------------
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Custom_Objects/syncCustomObjectTypeUsingPOST
+```python
+    resultType = mc.execute(method='create_update_custom_object_type', action='createOnly', apiName='transactions', action='createOnly', displayName='Transactions' description='Transactions custom object for the transactions')
+```
+
+
+Delete Custom Object Type
+-------------------------
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Custom_Objects/deleteCustomObjectsUsingPOST
+```python
+    result = mc.execute(method='delete_custom_object_type', apiName='transactions')
+```
+
+Approve Custom Object Type
+--------------------------
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Custom_Objects/approveCustomObjectTypeUsingPOST
+```python
+    result = mc.execute(method='approve_custom_object_type', apiName='transactions')
+```
+
+Discard Custom Object Type Draft
+--------------------------------
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Custom_Objects/discardCustomObjectTypeUsingPOST
+```python
+    fields = [{"displayName": "Customer ID", "description": "Customer ID", "name": "cid", "dataType": "integer", "relatedTo": '{"name": "customer", "field": "cid"}'},
+    {"displayName": "Transaction ID", "description": "Transaction ID", "name": "txid", "dataType": "integer", "isDedupeField", True},
+    {"displayName": "Total", "description": "Transaction total", "name": "total", "dataType": "float"}]
+    result = mc.execute(method='discard_custom_object_type', apiName='transactions', fields=fields)
+```
+
+Add Custom Object Type Fields
+-----------------------------
+https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Custom_Objects/addCustomObjectTypeFieldsUsingPOST
+```python
+    result = mc.execute(method='add_field_custom_object_type', apiName='transactions', data)
+```
+
+
+** Not currently implemented **
+
+List Custom Object Types
+------------------------
+https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Custom_Objects/listCustomObjectTypesUsingGET
+
+Describe Custom Object Type
+---------------------------
+https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Custom_Objects/describeCustomObjectTypeUsingGET
+
+Delete Custom Object Type Fields
+--------------------------------
+https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Custom_Objects/deleteCustomObjectTypeFieldsUsingPOST
+
+Update Custom Object Type Field
+-------------------------------
+https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Custom_Objects/updateCustomObjectTypeFieldUsingPOST
+
+Get Custom Object Type Field Data Types
+---------------------------------------
+https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Custom_Objects/getCustomObjectTypeFieldDataTypesUsingGET
+
+Get Custom Object Linkable Objects
+----------------------------------
+https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Custom_Objects/getCustomObjectTypeLinkableObjectsUsingGET
+
+Get Custom Object Dependent Assets
+----------------------------------
+https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Custom_Objects/getCustomObjectTypeDependentAssetsUsingGET
 
 Custom Objects
 ==============
