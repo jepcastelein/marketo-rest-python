@@ -1897,7 +1897,7 @@ Add Custom Object Type Fields
 -----------------------------
 API Ref: https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Custom_Objects/addCustomObjectTypeFieldsUsingPOST
 ```python
-    fields = [{"displayName": "Customer ID", "description": "Customer ID", "name": "cid", "dataType": "integer", "relatedTo": '{"name": "customer", "field": "cid"}'},
+    fields = [{"displayName": "Email", "description": "Email", "name": "email", "dataType": "link", "relatedTo": {"name": "lead", "field": "email"}},
     {"displayName": "Transaction ID", "description": "Transaction ID", "name": "txid", "dataType": "integer", "isDedupeField", True},
     {"displayName": "Total", "description": "Transaction total", "name": "total", "dataType": "float"}]
     result = mc.execute(method='add_field_custom_object_type', apiName='transactions',fields=fields)

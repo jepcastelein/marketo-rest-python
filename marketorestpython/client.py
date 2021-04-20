@@ -4475,7 +4475,7 @@ class MarketoClient:
 
     # --------- CUSTOM OBJECT TYPES ---------
 
-    def create_update_custom_object_type(self, apiName, action='createOrUpdate', displayName=None, pluralName=None,
+    def create_update_custom_object_type(self, apiName, action='createOrUpdate', displayName, pluralName=None,
             description=None, showInLeadDetail=None):
         self.authenticate()      
         args = {
@@ -4483,10 +4483,9 @@ class MarketoClient:
         }
         data = {
             'action': action,
-            'apiName': apiName
+            'apiName': apiName,
+            'displayName': displayName
         }
-        if displayName is not None:
-            data['displayName'] = displayName
         if pluralName is not None:
             data['pluralName'] = pluralName
         if description is not None:
@@ -4516,7 +4515,7 @@ class MarketoClient:
             'access_token': self.token
         }
         result = self._api_call(
-            'post', self.host + "/rest/v1/customobjects/schema/"+ str(apiName) +"/approve.json", args, data)
+            'post', self.host + "/rest/v1/customobjects/schema/"+ str(apiName) +"/approve.json", args)
         if result is None:
             raise Exception("Empty Response")
         return result['result']
@@ -4527,7 +4526,7 @@ class MarketoClient:
             'access_token': self.token
         }
         result = self._api_call(
-            'post', self.host + "/rest/v1/customobjects/schema/"+ str(apiName) +"/discardDraft.json", args, data)
+            'post', self.host + "/rest/v1/customobjects/schema/"+ str(apiName) +"/discardDraft.json", args)
         if result is None:
             raise Exception("Empty Response")
         return result['result']
