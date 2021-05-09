@@ -1869,7 +1869,7 @@ Create/Update Custom Object Type
 -----------------------------------
 API Ref: https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Custom_Objects/syncCustomObjectTypeUsingPOST
 ```python
-    resultType = mc.execute(method='create_update_custom_object_type', action='createOnly', apiName='transactions', action='createOnly', displayName='Transactions' description='Transactions custom object for the transactions')
+    resultType = mc.execute(method='create_update_custom_object_type', apiName='transactions', displayName='Transactions', action='createOnly', description='Transactions custom object for the transactions')
 ```
 
 Delete Custom Object Type

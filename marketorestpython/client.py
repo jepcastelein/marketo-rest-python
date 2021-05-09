@@ -4475,7 +4475,7 @@ class MarketoClient:
 
     # --------- CUSTOM OBJECT TYPES ---------
 
-    def create_update_custom_object_type(self, apiName, action='createOrUpdate', displayName, pluralName=None,
+    def create_update_custom_object_type(self, apiName, displayName, action='createOrUpdate', pluralName=None,
             description=None, showInLeadDetail=None):
         self.authenticate()      
         args = {
