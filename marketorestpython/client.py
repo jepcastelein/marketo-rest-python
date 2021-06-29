@@ -17,20 +17,20 @@ def has_empty_warning(result):
 
 
 class MarketoClient:
-    token = None
     expires_in = None
     token_type = None
     scope = None
     last_request_id = None  # intended to save last request id, but not used right now
 
-    def __init__(self, munchkin_id, client_id, client_secret, api_limit=None, max_retry_time=300):
+    def __init__(self, munchkin_id, client_id=None, client_secret=None, api_limit=None, max_retry_time=300,
+                 access_token=None):
         assert(munchkin_id is not None)
-        assert(client_id is not None)
-        assert(client_secret is not None)
+        assert((client_id and client_secret) or access_token)
         self.valid_until = None
         self.host = "https://" + munchkin_id + ".mktorest.com"
         self.client_id = client_id
         self.client_secret = client_secret
+        self.token = access_token
         self.API_CALLS_MADE = 0
         self.API_LIMIT = api_limit
         self.max_retry_time = max_retry_time
@@ -311,8 +311,7 @@ class MarketoClient:
         return result
 
     def authenticate(self):
-        if self.valid_until is not None and \
-                self.valid_until - time.time() >= 60:
+        if (self.valid_until is not None and self.valid_until - time.time() >= 60) or not self.client_secret:
             return
         args = {
             'grant_type': 'client_credentials',

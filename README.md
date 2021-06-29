@@ -49,6 +49,16 @@ mc = MarketoClient(munchkin_id, client_id, client_secret, api_limit, max_retry_t
 ```
 Then use mc.execute(method='') to call the various methods (see documentation below) 
 
+For very specific use cases where you only have the access_token, you can also pass that in directly; you are then
+responsible for requesting the initial access_token and renewing it when it expires. 
+```python
+from marketorestpython.client import MarketoClient
+munchkin_id = "" # fill in Munchkin ID, typical format 000-AAA-000
+access_token = "" # enter access_token
+mc = MarketoClient(munchkin_id, access_token=access_token)
+```
+
+
 Lead, List, Activity and Campaign Objects
 =========================================
 
