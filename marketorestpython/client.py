@@ -302,7 +302,7 @@ class MarketoClient:
                 601 -> auth token not valid
                 602 -> auth token expired
                 '''
-                if e.code in ['601', '602']:
+                if e.code in ['601', '602'] and self.client_secret:
                     self.authenticate()
                     continue
                 else:
