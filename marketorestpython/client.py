@@ -531,7 +531,7 @@ class MarketoClient:
             'post', self.host + "/rest/v1/leads/programs/" + str(id) + "/status.json", args, data)
         return result['result']
 
-    def create_update_leads(self, leads, action=None, lookupField=None, asyncProcessing=None, partitionName=None):
+    def create_update_leads(self, leads, action=None, lookupField=None, asyncProcessing=None, partitionName=None, dedupeBy=None):
         self.authenticate()
         args = {
             'access_token': self.token
@@ -547,6 +547,8 @@ class MarketoClient:
             data['asyncProcessing '] = asyncProcessing
         if partitionName is not None:
             data['partitionName'] = partitionName
+        if dedupeBy is not None:
+            data['dedupeBy'] = dedupeBy
         result = self._api_call(
             'post', self.host + "/rest/v1/leads.json", args, data)
         if result is None:
