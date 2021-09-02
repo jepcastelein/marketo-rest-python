@@ -1,4 +1,5 @@
 *.egg-info
 *.cache
 *.pyc
+*.idea/*
 conf.json
