@@ -580,7 +580,7 @@ Get Static List by Name
 --------------
 API Ref: http://developers.marketo.com/rest-api/assets/static-lists/#by_id
 ```python
-lead = mc.execute(method='get_list_by_name', id='My Test List')
+lead = mc.execute(method='get_list_by_name', name='My Test List')
 ```
 
 Get Multiple Lists (OLD)
