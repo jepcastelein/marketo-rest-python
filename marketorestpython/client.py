@@ -110,6 +110,7 @@ class MarketoClient:
                     'delete_lead': self.delete_lead,
                     'get_deleted_leads': self.get_deleted_leads,
                     'update_leads_partition': self.update_leads_partition,
+                    'submit_form': self.submit_form,
                     'create_folder': self.create_folder,
                     'get_folder_by_id': self.get_folder_by_id,
                     'get_folder_by_name': self.get_folder_by_name,
@@ -237,7 +238,7 @@ class MarketoClient:
                     'get_tag_by_name': self.get_tag_by_name,
                     'create_update_custom_object_type': self.create_update_custom_object_type,
                     'delete_custom_object_type': self.delete_custom_object_type,
-                    'approve_custom_object_type': self.approve_custom_object_type,                    
+                    'approve_custom_object_type': self.approve_custom_object_type,
                     'discard_custom_object_type': self.discard_custom_object_type,
                     'get_list_of_custom_object_types': self.get_list_of_custom_object_types,
                     'describe_custom_object_type': self.describe_custom_object_type,
@@ -1614,6 +1615,26 @@ class MarketoClient:
             data['input'].append(lead)
         result = self._api_call(
             'post', self.host + "/rest/v1/leads/partitions.json", args, data)
+        return result['result']
+
+
+    def submit_form(self, formId, input):
+        self.authenticate()
+        if formId is None:
+            raise ValueError("Invalid argument: required argument formId is none.")
+        args = {
+            'access_token': self.token
+        }
+        data = {
+            'formId': int(formId),
+            'input': [
+                input
+            ],
+        }
+        result = self._api_call('post', self.host +
+                                "/rest/v1/leads/submitForm.json", args, data)
+        if result is None:
+            raise Exception("Empty Response")
         return result['result']
 
     # --------- FOLDERS ---------
@@ -4476,7 +4497,7 @@ class MarketoClient:
 
     def create_update_custom_object_type(self, apiName, displayName, action='createOrUpdate', pluralName=None,
             description=None, showInLeadDetail=None):
-        self.authenticate()      
+        self.authenticate()
         args = {
             'access_token': self.token
         }
@@ -4509,7 +4530,7 @@ class MarketoClient:
         return result['result']
 
     def approve_custom_object_type(self, apiName):
-        self.authenticate()      
+        self.authenticate()
         args = {
             'access_token': self.token
         }
