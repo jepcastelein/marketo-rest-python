@@ -185,6 +185,30 @@ lead = mc.execute(method='push_lead', leads=leads, lookupField='email', programN
 # to associate mkt_tok, put it in a field called 'mktToken' (see http://developers.marketo.com/rest-api/lead-database/leads/#push_lead_to_marketo)
 ```
 
+Submit Form
+------------
+API docs: https://developers.marketo.com/rest-api/lead-database/leads/#submit_form
+```python
+input = {
+   "leadFormFields":{
+      "firstName":"Marge",
+      "lastName":"Simpson",
+      "email":"marge.simpson@fox.com",
+      "pMCFField":"PMCF value"
+   },
+   "visitorData":{
+      "pageURL":"https://na-sjst.marketo.com/lp/063-GJP-217/UnsubscribePage.html",
+      "queryString":"Unsubscribed=yes",
+      "leadClientIpAddress":"192.150.22.5",
+      "userAgentString":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36"
+   },
+   "cookie":"id:063-GJP-217&token:_mch-marketo.com-1594662481190-60776"
+}
+response = mc.execute(method='submit_form', formId=1029, input=input)
+
+# please note that `input` doesn't need to contain a list, the method does that. 
+```
+
 Merge Lead
 ----------
 API Ref: http://developers.marketo.com/documentation/rest/merge-lead/

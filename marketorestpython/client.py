@@ -1617,7 +1617,6 @@ class MarketoClient:
             'post', self.host + "/rest/v1/leads/partitions.json", args, data)
         return result['result']
 
-
     def submit_form(self, formId, input):
         self.authenticate()
         if formId is None:
