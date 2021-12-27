@@ -276,16 +276,28 @@ class MarketoClient:
                     'delete_custom_activity_type_attribute': self.delete_custom_activity_type_attribute,
                     'get_leads_export_jobs_list': self.get_leads_export_jobs_list,
                     'get_activities_export_jobs_list': self.get_activities_export_jobs_list,
+                    'get_custom_objects_export_jobs_list': self.get_custom_objects_export_jobs_list,
+                    'get_program_members_export_jobs_list': self.get_program_members_export_jobs_list,
                     'create_leads_export_job': self.create_leads_export_job,
                     'create_activities_export_job': self.create_activities_export_job,
+                    'create_custom_objects_export_job': self.create_custom_objects_export_job,
+                    'create_program_members_export_job': self.create_program_members_export_job,
                     'enqueue_leads_export_job': self.enqueue_leads_export_job,
                     'enqueue_activities_export_job': self.enqueue_activities_export_job,
+                    'enqueue_custom_objects_export_job': self.enqueue_custom_objects_export_job,
+                    'enqueue_program_members_export_job': self.enqueue_program_members_export_job,
                     'cancel_leads_export_job': self.cancel_leads_export_job,
                     'cancel_activities_export_job': self.cancel_activities_export_job,
+                    'cancel_custom_objects_export_job': self.cancel_custom_objects_export_job,
+                    'cancel_program_members_export_job': self.cancel_program_members_export_job,
                     'get_leads_export_job_status': self.get_leads_export_job_status,
                     'get_activities_export_job_status': self.get_activities_export_job_status,
+                    'get_custom_objects_export_job_status': self.get_custom_objects_export_job_status,
+                    'get_program_members_export_job_status': self.get_program_members_export_job_status,
                     'get_leads_export_job_file': self.get_leads_export_job_file,
                     'get_activities_export_job_file': self.get_activities_export_job_file,
+                    'get_custom_objects_export_job_file': self.get_custom_objects_export_job_file,
+                    'get_program_members_export_job_file': self.get_program_members_export_job_file,
                     'get_named_accounts': self.get_named_accounts,
                     'sync_named_accounts': self.sync_named_accounts,
                     'delete_named_accounts': self.delete_named_accounts,
@@ -5248,7 +5260,10 @@ class MarketoClient:
 
     # --------- BULK EXTRACT LEADS & ACTIVITIES ---------
 
-    def _get_export_jobs_list(self, entity):
+    def _get_export_jobs_list(self, entity, object_name=None):
+        if entity == 'customobjects':
+            assert object_name is not None, 'Invalid argument: required field object_name is none.'
+            entity = '{}/{}'.format(entity, object_name)
         self.authenticate()
         args = {
             'access_token': self.token
@@ -5257,11 +5272,14 @@ class MarketoClient:
             'get', self.host + '/bulk/v1/{}/export.json'.format(entity), args)
         return result['result']
 
-    def _create_bulk_export_job(self, entity, fields=None, filters=None, format='CSV', columnHeaderNames=None):
-        assert entity is not None, 'Invalid argument: required fields is none.'
-        if entity == 'leads':
-            assert fields is not None, 'Invalid argument: required fields is none.'
-        assert filters is not None, 'Invalid argument: required filters is none.'
+    def _create_bulk_export_job(self, entity, fields=None, filters=None, format='CSV', columnHeaderNames=None, object_name=None):
+        assert entity is not None, 'Invalid argument: required field entity is none.'
+        if entity in ['leads', 'program/members', 'customobjects']:
+            assert fields is not None, 'Invalid argument: required field fields is none.'
+        assert filters is not None, 'Invalid argument: required field filters is none.'
+        if entity == 'customobjects':
+            assert object_name is not None, 'Invalid argument: required field object_name is none.'
+            entity = '{}/{}'.format(entity, object_name)
         data = {'fields': fields, 'format': format, 'filter': filters}
         if columnHeaderNames is not None:
             data['columnHeaderNames'] = columnHeaderNames
@@ -5273,10 +5291,13 @@ class MarketoClient:
             'post', self.host + '/bulk/v1/{}/export/create.json'.format(entity), args, data)
         return result['result']
 
-    def _export_job_state_machine(self, entity, state, job_id):
+    def _export_job_state_machine(self, entity, state, job_id, object_name=None):
         assert entity is not None, 'Invalid argument: required field "entity" is none.'
         assert state is not None, 'Invalid argument: required field "state" is none.'
         assert job_id is not None, 'Invalid argument: required field "job_id" is none.'
+        if entity == 'customobjects':
+            assert object_name is not None, 'Invalid argument: required field "object_name" is none.'
+            entity = '{}/{}'.format(entity, object_name)
         state_info = {
             'enqueue': {'suffix': '/enqueue.json', 'method': 'post', 'mode': None},
             'cancel': {'suffix': '/cancel.json', 'method': 'post', 'mode': None},
@@ -5289,7 +5310,7 @@ class MarketoClient:
         }
         result = self._api_call(state_info[state]['method'],
                                 self.host + '/bulk/v1/{}/export/{}{}'.format(entity, job_id,
-                                                                                      state_info[state]['suffix']),
+                                                                             state_info[state]['suffix']),
                                 args, mode=state_info[state]['mode'])
         if state == 'file' and result.status_code == 200:
             return result.content
@@ -5301,11 +5322,23 @@ class MarketoClient:
     def get_activities_export_job_file(self, *args, **kargs):
         return self._export_job_state_machine('activities', 'file', *args, **kargs)
 
+    def get_custom_objects_export_job_file(self, *args, **kargs):
+        return self._export_job_state_machine('customobjects', 'file', *args, **kargs)
+
+    def get_program_members_export_job_file(self, *args, **kargs):
+        return self._export_job_state_machine('program/members', 'file', *args, **kargs)
+
     def get_leads_export_job_status(self, *args, **kargs):
         return self._export_job_state_machine('leads', 'status', *args, **kargs)
 
     def get_activities_export_job_status(self, *args, **kargs):
         return self._export_job_state_machine('activities', 'status', *args, **kargs)
+
+    def get_custom_objects_export_job_status(self, *args, **kargs):
+        return self._export_job_state_machine('customobjects', 'status', *args, **kargs)
+
+    def get_program_members_export_job_status(self, *args, **kargs):
+        return self._export_job_state_machine('program/members', 'status', *args, **kargs)
 
     def cancel_leads_export_job(self, *args, **kargs):
         return self._export_job_state_machine('leads', 'cancel', *args, **kargs)
@@ -5313,11 +5346,23 @@ class MarketoClient:
     def cancel_activities_export_job(self, *args, **kargs):
         return self._export_job_state_machine('activities', 'cancel', *args, **kargs)
 
+    def cancel_custom_objects_export_job(self, *args, **kargs):
+        return self._export_job_state_machine('customobjects', 'cancel', *args, **kargs)
+
+    def cancel_program_members_export_job(self, *args, **kargs):
+        return self._export_job_state_machine('program/members', 'cancel', *args, **kargs)
+
     def enqueue_leads_export_job(self, *args, **kargs):
         return self._export_job_state_machine('leads', 'enqueue', *args, **kargs)
 
     def enqueue_activities_export_job(self, *args, **kargs):
         return self._export_job_state_machine('activities', 'enqueue', *args, **kargs)
+
+    def enqueue_custom_objects_export_job(self, *args, **kargs):
+        return self._export_job_state_machine('customobjects', 'enqueue', *args, **kargs)
+
+    def enqueue_program_members_export_job(self, *args, **kargs):
+        return self._export_job_state_machine('program/members', 'enqueue', *args, **kargs)
 
     def create_leads_export_job(self, *args, **kargs):
         return self._create_bulk_export_job('leads', *args, **kargs)
@@ -5325,11 +5370,23 @@ class MarketoClient:
     def create_activities_export_job(self, *args, **kargs):
         return self._create_bulk_export_job('activities', *args, **kargs)
 
+    def create_custom_objects_export_job(self, *args, **kargs):
+        return self._create_bulk_export_job('customobjects', *args, **kargs)
+
+    def create_program_members_export_job(self, *args, **kargs):
+        return self._create_bulk_export_job('program/members', *args, **kargs)
+
     def get_leads_export_jobs_list(self):
         return self._get_export_jobs_list('leads')
 
     def get_activities_export_jobs_list(self):
         return self._get_export_jobs_list('activities')
+
+    def get_custom_objects_export_jobs_list(self, object_name):
+        return self._get_export_jobs_list('customobjects', object_name)
+
+    def get_program_members_export_jobs_list(self):
+        return self._get_export_jobs_list('program/members')
 
     # --- NAMED ACCOUNTS ---
 

@@ -2211,10 +2211,11 @@ result = mc.execute(method='get_sales_persons', filterType='externalSalesPersonI
 # filterType can be: externalSalesPersonId, id, email
 ```
 
-Bulk Export Leads/Activities
+Bulk Export Leads/Activities/Custom Objects/Program Members
 ==============
 
-> Replace 'activities' with 'leads' in below to get the equivalent for leads
+> Replace 'activities' with 'leads', 'custom_objects' or 'program_members' in below to get the equivalent for leads,
+> custom objects and program members export. For Custom Objects, the `object_name` attribute is always required.  
 
 List Bulk Export Activities Jobs
 ----------------
@@ -2223,11 +2224,27 @@ API Ref: http://developers.marketo.com/rest-api/endpoint-reference/lead-database
 export_jobs = mc.execute(method='get_activities_export_jobs_list')
 ```
 
+List Bulk Export Custom Objects Jobs
+----------------
+```python
+export_jobs = mc.execute(method='get_activities_export_jobs_list', object_name='pet_c')
+
+# `object_name` is required; this is the same for all Custom Object bulk export calls
+```
+
 Create Bulk Export Activities Job
 ----------------
 API Ref: http://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Bulk_Export_Activities/createExportActivitiesUsingPOST
 ```python
 new_export_job_details = mc.execute(method='create_activities_export_job', fields=['string', 'string'], filters={'createdAt': {'endAt': '2017-11-02', 'startAt': '2017-11-01'}})
+```
+
+Create Bulk Export Custom Object Job
+----------------
+```python
+new_export_job_details = mc.execute(method='create_custom_objects_export_job', object_name='pet_c', fields=['string', 'string'], filters={'staticListId': 1025})
+
+# `object_name`, `fields` and `filters` are all required
 ```
 
 Cancel Bulk Export Activities Job
