@@ -73,6 +73,7 @@ class MarketoClient:
                     'get_list_by_name': self.get_list_by_name,
                     'get_multiple_lists': self.get_multiple_lists,
                     'browse_lists': self.browse_lists,
+                    'browse_lists_yield': self.browse_lists_yield,
                     'add_leads_to_list': self.add_leads_to_list,
                     'remove_leads_from_list': self.remove_leads_from_list,
                     'member_of_list': self.member_of_list,
@@ -118,6 +119,7 @@ class MarketoClient:
                     'update_folder': self.update_folder,
                     'delete_folder': self.delete_folder,
                     'browse_folders': self.browse_folders,
+                    'browse_folders_yield': self.browse_folders_yield,
                     'create_token': self.create_token,
                     'get_tokens': self.get_tokens,
                     'delete_tokens': self.delete_tokens,
@@ -787,6 +789,38 @@ class MarketoClient:
             offset += maxReturn
             args['offset'] = offset
         return result_list
+
+    def browse_lists_yield(self, folderId=None, folderType=None, offset=0, maxReturn=20, earliestUpdatedAt =None,
+                           latestUpdatedAt=None, return_full_result=False):
+        self.authenticate()
+        args = {
+            'access_token': self.token,
+            'maxReturn': maxReturn,
+            'offset': offset
+        }
+        if folderId and folderType:
+            args['folder'] = json.dumps({'id': folderId, 'type': folderType})
+        if earliestUpdatedAt:
+            args['earliestUpdatedAt'] = earliestUpdatedAt
+        if latestUpdatedAt:
+            args['latestUpdatedAt'] = latestUpdatedAt
+        while True:
+            self.authenticate()
+            args['access_token'] = self.token
+            result = self._api_call('get', self.host + "/rest/asset/v1/staticLists.json", args)
+            if result is None:
+                raise Exception("Empty Response")
+            if 'result' in result:
+                if return_full_result:
+                    yield result
+                else:
+                    yield result['result']
+                if len(result['result']) < maxReturn:
+                    break
+            else:
+                break
+            offset += maxReturn
+            args['offset'] = offset
 
     def add_leads_to_list(self, listId, id):
         self.authenticate()
@@ -1819,6 +1853,40 @@ class MarketoClient:
             offset += maxReturn
             args['offset'] = offset
         return result_list
+
+    def browse_folders_yield(self, root, maxDepth=None, maxReturn=20, workSpace=None, offset=0,
+                             return_full_result=False):
+        self.authenticate()
+        if root is None:
+            raise ValueError(
+                "Invalid argument: required argument root is none.")
+        args = {
+            'access_token': self.token,
+            'root': root,
+            'offset': offset
+        }
+        if maxDepth is not None:
+            args['maxDepth'] = maxDepth
+        if workSpace is not None:
+            args['workSpace'] = workSpace
+        while True:
+            self.authenticate()
+            args['access_token'] = self.token
+            result = self._api_call(
+                'get', self.host + "/rest/asset/v1/folders.json", args)
+            if result is None:
+                raise Exception("Empty Response")
+            if 'result' in result:
+                if return_full_result:
+                    yield result
+                else:
+                    yield result['result']
+                if len(result['result']) < maxReturn:
+                    break
+            else:
+                break
+            offset += maxReturn
+            args['offset'] = offset
 
     # --------- TOKENS ---------
 
@@ -5272,7 +5340,8 @@ class MarketoClient:
             'get', self.host + '/bulk/v1/{}/export.json'.format(entity), args)
         return result['result']
 
-    def _create_bulk_export_job(self, entity, fields=None, filters=None, format='CSV', columnHeaderNames=None, object_name=None):
+    def _create_bulk_export_job(self, entity, fields=None, filters=None, format='CSV', columnHeaderNames=None,
+                                object_name=None):
         assert entity is not None, 'Invalid argument: required field entity is none.'
         if entity in ['leads', 'program/members', 'customobjects']:
             assert fields is not None, 'Invalid argument: required field fields is none.'
@@ -5291,7 +5360,7 @@ class MarketoClient:
             'post', self.host + '/bulk/v1/{}/export/create.json'.format(entity), args, data)
         return result['result']
 
-    def _export_job_state_machine(self, entity, state, job_id, object_name=None):
+    def _export_job_state_machine(self, entity, state, job_id, object_name=None, stream=False):
         assert entity is not None, 'Invalid argument: required field "entity" is none.'
         assert state is not None, 'Invalid argument: required field "state" is none.'
         assert job_id is not None, 'Invalid argument: required field "job_id" is none.'
@@ -5305,15 +5374,15 @@ class MarketoClient:
             'file': {'suffix': '/file.json', 'method': 'get', 'mode': 'nojson'}
         }
         self.authenticate()
+        url = '{}/bulk/v1/{}/export/{}{}'.format(self.host, entity, job_id, state_info[state]['suffix'])
         args = {
             'access_token': self.token
         }
-        result = self._api_call(state_info[state]['method'],
-                                self.host + '/bulk/v1/{}/export/{}{}'.format(entity, job_id,
-                                                                             state_info[state]['suffix']),
-                                args, mode=state_info[state]['mode'])
+        result = self._api_call(state_info[state]['method'], url, args, mode=state_info[state]['mode'], stream=stream)
         if state == 'file' and result.status_code == 200:
-            return result.content
+            if not stream:
+                return result.content
+            return result
         return result['result']
 
     def get_leads_export_job_file(self, *args, **kargs):

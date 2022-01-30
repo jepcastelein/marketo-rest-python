@@ -23,7 +23,7 @@ retryable_error_codes = {
 
 def fatal_marketo_error_code(e):
     # Given a MarketoException, decide whether it is fatal or retryable.
-    return e.code not in retryable_error_codes
+    return e.code not in retryable_error_codes or 'Export daily quota' in e.message
 
 
 class HttpLib:
@@ -57,9 +57,9 @@ class HttpLib:
                           max_time=lookup_max_time,
                           giveup=fatal_marketo_error_code)
     @_rate_limited(num_calls_per_second)
-    def get(self, endpoint, args=None, mode=None):
+    def get(self, endpoint, args=None, mode=None, stream=False):
         headers = {'Accept-Encoding': 'gzip'}
-        r = requests.get(endpoint, params=args, headers=headers)
+        r = requests.get(endpoint, params=args, headers=headers, stream=stream)
         if mode == 'nojson':
             return r
         else:
@@ -74,7 +74,7 @@ class HttpLib:
                           giveup=fatal_marketo_error_code)
     @_rate_limited(num_calls_per_second)
     def post(self, endpoint, args, data=None, files=None, filename=None,
-             mode=None):
+             mode=None, stream=False):
         if mode == 'nojsondumps':
             headers = {'Content-type': 'application/x-www-form-urlencoded; charset=utf-8'}
             r = requests.post(endpoint, params=args, data=data, headers=headers)

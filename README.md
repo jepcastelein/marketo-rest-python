@@ -564,6 +564,15 @@ lead = mc.execute(method='browse_folders', root=3, maxDepth=5, maxReturn=200, wo
 # will throw KeyError when no folder found
 ```
 
+Browse Folders (Yield)
+--------------
+API Ref: http://developers.marketo.com/documentation/asset-api/browse-folders
+```python
+for folders in mc.execute(method='browse_folders_yield', root=3, maxDepth=5, maxReturn=200, workSpace='Default', 
+                          offset=0, return_full_result=False): 
+    print(folders)
+```
+
 Tokens
 =======
 
@@ -602,9 +611,9 @@ lead = mc.execute(method='get_list_by_id', id=724)
 
 Get Static List by Name
 --------------
-API Ref: http://developers.marketo.com/rest-api/assets/static-lists/#by_id
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Static_Lists/getStaticListByNameUsingGET
 ```python
-lead = mc.execute(method='get_list_by_name', id='My Test List')
+lead = mc.execute(method='get_list_by_name', name='My Test List')
 ```
 
 Get Multiple Lists (OLD)
@@ -625,6 +634,17 @@ lead = mc.execute(method='browse_lists', folderId=8, folderType='Folder', offset
                   maxReturn=None, earliestUpdatedAt=None, latestUpdatedAt=None)
 
 # NOTE: this call has different options compared to 'get_multiple_lists' above
+# all parameters are optional; no parameters returns all lists
+```
+
+Get Static Lists (Yield)
+------------------
+API Ref: http://developers.marketo.com/rest-api/assets/static-lists/#browse
+```python
+for lists in mc.execute(method='browse_lists_yield', folderId=8, folderType='Folder', offset=0, 
+               maxReturn=20, earliestUpdatedAt=None, latestUpdatedAt=None, return_full_result=False): 
+    print(lists)
+
 # all parameters are optional; no parameters returns all lists
 ```
 
@@ -1932,7 +1952,7 @@ Add Custom Object Type Fields
 API Ref: https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Custom_Objects/addCustomObjectTypeFieldsUsingPOST
 ```python
     fields = [{"displayName": "Email", "description": "Email", "name": "email", "dataType": "link", "relatedTo": {"name": "lead", "field": "email"}},
-    {"displayName": "Transaction ID", "description": "Transaction ID", "name": "txid", "dataType": "integer", "isDedupeField", True},
+    {"displayName": "Transaction ID", "description": "Transaction ID", "name": "txid", "dataType": "integer", "isDedupeField": True},
     {"displayName": "Total", "description": "Transaction total", "name": "total", "dataType": "float"}]
     result = mc.execute(method='add_field_custom_object_type', apiName='transactions',fields=fields)
 ```
@@ -2273,6 +2293,15 @@ Get Bulk Export Activities File
 API Ref: http://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Bulk_Export_Activities/getExportActivitiesFileUsingGET
 ```python
 export_file_contents = mc.execute(method='get_activities_export_job_file', job_id='284742ec-1e5a-46f2-b164-498a41fcaaf6')
+```
+Or use streaming: 
+```python
+with mc.execute(method='get_activities_export_job_file', job_id='284742ec-1e5a-46f2-b164-498a41fcaaf6', stream=True) as r:
+    with open('filename.csv', 'wb') as f:
+        for chunk in r.iter_content(chunk_size=1024):
+            if chunk:
+                f.write(chunk)
+# set your preferred chunk_size
 ```
 
 Named Account Object
