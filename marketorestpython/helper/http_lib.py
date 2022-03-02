@@ -29,9 +29,10 @@ def fatal_marketo_error_code(e):
 class HttpLib:
     num_calls_per_second = 5  # five calls per second max (at 100/20 rate limit)
 
-    def __init__(self, max_retry_time_conf):
+    def __init__(self, max_retry_time_conf, requests_timeout):
         global max_retry_time
         max_retry_time = max_retry_time_conf
+        self.requests_timeout = requests_timeout
 
     def lookup_max_time():
         # this function is needed to dynamically set the max_time for backoff; should not have 'self'
@@ -59,7 +60,7 @@ class HttpLib:
     @_rate_limited(num_calls_per_second)
     def get(self, endpoint, args=None, mode=None, stream=False):
         headers = {'Accept-Encoding': 'gzip'}
-        r = requests.get(endpoint, params=args, headers=headers, stream=stream)
+        r = requests.get(endpoint, params=args, headers=headers, stream=stream, timeout=self.requests_timeout)
         if mode == 'nojson':
             return r
         else:
@@ -77,14 +78,14 @@ class HttpLib:
              mode=None, stream=False):
         if mode == 'nojsondumps':
             headers = {'Content-type': 'application/x-www-form-urlencoded; charset=utf-8'}
-            r = requests.post(endpoint, params=args, data=data, headers=headers)
+            r = requests.post(endpoint, params=args, data=data, headers=headers, timeout=self.requests_timeout)
         elif files is None:
             headers = {'Content-type': 'application/json; charset=utf-8'}
-            r = requests.post(endpoint, params=args, json=data, headers=headers)
+            r = requests.post(endpoint, params=args, json=data, headers=headers, timeout=self.requests_timeout)
         elif files is not None:
             mimetype = mimetypes.guess_type(files)[0]
             file = {filename: (files, open(files, 'rb'), mimetype)}
-            r = requests.post(endpoint, params=args, json=data, files=file)
+            r = requests.post(endpoint, params=args, json=data, files=file, timeout=self.requests_timeout)
         r_json = r.json()
         if r_json.get('success'):
             return r_json
@@ -96,7 +97,7 @@ class HttpLib:
     @_rate_limited(num_calls_per_second)
     def delete(self, endpoint, args, data):
         headers = {'Content-type': 'application/json; charset=utf-8'}
-        r = requests.delete(endpoint, params=args, json=data, headers=headers)
+        r = requests.delete(endpoint, params=args, json=data, headers=headers, timeout=self.requests_timeout)
         r_json = r.json()
         if r_json.get('success'):
             return r.json()

@@ -23,7 +23,7 @@ class MarketoClient:
     last_request_id = None  # intended to save last request id, but not used right now
 
     def __init__(self, munchkin_id, client_id=None, client_secret=None, api_limit=None, max_retry_time=300,
-                 access_token=None):
+                 access_token=None, requests_timeout=None):
         assert(munchkin_id is not None)
         assert((client_id and client_secret) or access_token)
         self.valid_until = None
@@ -34,9 +34,23 @@ class MarketoClient:
         self.API_CALLS_MADE = 0
         self.API_LIMIT = api_limit
         self.max_retry_time = max_retry_time
+        if requests_timeout is not None:
+            error_message = "requests_timeout must be a postive float or int, or a two-element tuple of positive floats or ints"
+            if isinstance(requests_timeout, int) or isinstance(requests_timeout, float):
+                assert requests_timeout > 0, error_message
+                self.requests_timeout = requests_timeout
+            elif isinstance(requests_timeout, tuple):
+                assert (
+                        len(requests_timeout) == 2 and
+                        all(isinstance(x, int) or isinstance(x, float) for x in requests_timeout) and
+                        all(x > 0 for x in requests_timeout)
+                ), error_message
+                self.requests_timeout = requests_timeout
+            else:
+                raise AssertionError(error_message)
 
     def _api_call(self, method, endpoint, *args, **kwargs):
-        request = HttpLib(max_retry_time_conf=self.max_retry_time)
+        request = HttpLib(max_retry_time_conf=self.max_retry_time, requests_timeout=self.requests_timeout)
         result = getattr(request, method)(endpoint, *args, **kwargs)
         self.API_CALLS_MADE += 1
         if self.API_LIMIT and self.API_CALLS_MADE >= self.API_LIMIT:
