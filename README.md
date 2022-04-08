@@ -223,6 +223,13 @@ lead = mc.execute(method='merge_lead', id=3482183, leadIds=[3482182], mergeInCRM
 # returns True if successful
 ```
 
+Get Smart Campaigns by Lead ID
+------------------------------
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Leads/getSmartCampaignMembershipUsingGET
+```python
+results = mc.execute(method='get_smart_campaigns_by_lead_id', lead_id=39881)
+```
+
 Get Lead Partitions
 -------------------
 API Ref: http://developers.marketo.com/documentation/rest/get-lead-partitions/

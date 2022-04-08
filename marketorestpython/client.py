@@ -35,7 +35,8 @@ class MarketoClient:
         self.API_LIMIT = api_limit
         self.max_retry_time = max_retry_time
         if requests_timeout is not None:
-            error_message = "requests_timeout must be a postive float or int, or a two-element tuple of positive floats or ints"
+            error_message = "requests_timeout must be a positive float or int, or a two-element tuple of positive " \
+                            "floats or ints"
             if isinstance(requests_timeout, int) or isinstance(requests_timeout, float):
                 assert requests_timeout > 0, error_message
                 self.requests_timeout = requests_timeout
@@ -48,6 +49,8 @@ class MarketoClient:
                 self.requests_timeout = requests_timeout
             else:
                 raise AssertionError(error_message)
+        else:
+            self.requests_timeout = None
 
     def _api_call(self, method, endpoint, *args, **kwargs):
         request = HttpLib(max_retry_time_conf=self.max_retry_time, requests_timeout=self.requests_timeout)
@@ -79,6 +82,7 @@ class MarketoClient:
                     'associate_lead': self.associate_lead,
                     'push_lead': self.push_lead,
                     'merge_lead': self.merge_lead,
+                    'get_smart_campaigns_by_lead_id': self.get_smart_campaigns_by_lead_id,
                     'get_lead_partitions': self.get_lead_partitions,
                     'create_list': self.create_list,
                     'update_list': self.update_list,
@@ -654,6 +658,19 @@ class MarketoClient:
             raise Exception("Empty Response")
         # there is no 'result' node returned in this call
         return result['success']
+
+    def get_smart_campaigns_by_lead_id(self, lead_id):
+        self.authenticate()
+        if lead_id is None:
+            raise ValueError("Invalid argument: required argument lead_id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = self._api_call(
+            'get', '{}/rest/v1/leads/{}/smartCampaignMembership.json'.format(self.host, lead_id), args)
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
 
     # --------- LEAD PARTITIONS ---------
 
@@ -2386,8 +2403,6 @@ class MarketoClient:
                     yield result
                 else:
                     yield result['result']
-                if len(result['result']) < maxReturn:
-                    break
             else:
                 break
             offset += maxReturn
