@@ -659,18 +659,33 @@ class MarketoClient:
         # there is no 'result' node returned in this call
         return result['success']
 
-    def get_smart_campaigns_by_lead_id(self, lead_id):
+    def get_smart_campaigns_by_lead_id(self, lead_id, batchSize=None, earliestUpdatedAt=None, latestUpdatedAt=None):
         self.authenticate()
         if lead_id is None:
             raise ValueError("Invalid argument: required argument lead_id is none.")
         args = {
             'access_token': self.token
         }
-        result = self._api_call(
-            'get', '{}/rest/v1/leads/{}/smartCampaignMembership.json'.format(self.host, lead_id), args)
-        if result is None:
-            raise Exception("Empty Response")
-        return result['result']
+        if batchSize is not None:
+            args['batchSize'] = batchSize
+        if earliestUpdatedAt is not None:
+            args['earliestUpdatedAt'] = earliestUpdatedAt
+        if latestUpdatedAt is not None:
+            args['latestUpdatedAt'] = latestUpdatedAt
+        result_list = []
+        while True:
+            self.authenticate()
+            # for long-running processes, this updates the access token
+            args['access_token'] = self.token
+            result = self._api_call(
+                'get', '{}/rest/v1/leads/{}/smartCampaignMembership.json'.format(self.host, lead_id), args)
+            if result is None:
+                raise Exception("Empty Response")
+            result_list.extend(result['result'])
+            if result['moreResult'] is False:
+                break
+            args['nextPageToken'] = result['nextPageToken']
+        return result_list
 
     # --------- LEAD PARTITIONS ---------
 
