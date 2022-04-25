@@ -5380,9 +5380,20 @@ class MarketoClient:
         args = {
             'access_token': self.token
         }
-        result = self._api_call(
-            'get', self.host + '/bulk/v1/{}/export.json'.format(entity), args)
-        return result['result']
+        result_list = []
+        while True:
+            self.authenticate()
+            # for long-running processes, this updates the access token
+            args['access_token'] = self.token
+            result = self._api_call(
+                'get', self.host + '/bulk/v1/{}/export.json'.format(entity), args)
+            if result is None:
+                raise Exception("Empty Response")
+            result_list.extend(result['result'])
+            if 'nextPageToken' not in result:
+                break
+            args['nextPageToken'] = result['nextPageToken']
+        return result_list
 
     def _create_bulk_export_job(self, entity, fields=None, filters=None, format='CSV', columnHeaderNames=None,
                                 object_name=None):
