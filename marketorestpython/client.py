@@ -101,6 +101,7 @@ class MarketoClient:
                     'delete_smart_list': self.delete_smart_list,
                     'clone_smart_list': self.clone_smart_list,
                     'get_smart_campaign_by_id': self.get_smart_campaign_by_id,
+                    'get_smart_campaign_by_name': self.get_smart_campaign_by_name,
                     'get_smart_campaigns': self.get_smart_campaigns,
                     'get_campaign_by_id': self.get_campaign_by_id,
                     'get_multiple_campaigns': self.get_multiple_campaigns,
@@ -108,6 +109,10 @@ class MarketoClient:
                     'request_campaign': self.request_campaign,
                     'activate_smart_campaign': self.activate_smart_campaign,
                     'deactivate_smart_campaign': self.deactivate_smart_campaign,
+                    'create_smart_campaign': self.create_smart_campaign,
+                    'update_smart_campaign': self.update_smart_campaign,
+                    'clone_smart_campaign': self.clone_smart_campaign,
+                    'delete_smart_campaign': self.delete_smart_campaign,
                     'get_smart_list_by_smart_campaign_id': self.get_smart_list_by_smart_campaign_id,
                     'import_lead': self.import_lead,
                     'get_import_lead_status': self.get_import_lead_status,
@@ -1048,6 +1053,19 @@ class MarketoClient:
             raise Exception("Empty Response")
         return result['result']
 
+    def get_smart_campaign_by_name(self, name):
+        self.authenticate()
+        if name is None:
+            raise ValueError("Invalid argument: required argument 'name' is none.")
+        args = {
+            'access_token': self.token,
+            'name': name
+        }
+        result = self._api_call('get', self.host + "/rest/asset/v1/smartCampaign/byName.json".format(id), args)
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
+
     def get_smart_campaigns(self, earliestUpdatedAt=None, latestUpdatedAt=None, folderId=None, folderType=None,
                             maxReturn=200, offset=0, return_full_result=False):
         self.authenticate()
@@ -1200,6 +1218,95 @@ class MarketoClient:
             'access_token': self.token
         }
         result = self._api_call('post', self.host + "/rest/asset/v1/smartCampaign/{}/deactivate.json".format(id), args)
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
+
+    def create_smart_campaign(self, name, folderId, folderType, description=None):
+        self.authenticate()
+        if name is None:
+            raise ValueError("Invalid argument: required argument name is none.")
+        if folderId is None:
+            raise ValueError("Invalid argument: required argument folderId is none.")
+        if folderType not in ['Folder', 'Program']:
+            raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'")
+        args = {
+            'access_token': self.token
+        }
+        data = {
+            'name': name,
+            'folder': json.dumps({
+                'id': folderId,
+                'type': folderType
+            })
+        }
+        if description is not None:
+            data['description'] = description
+        result = self._api_call('post', self.host + "/rest/asset/v1/smartCampaigns.json", args, data,
+                                mode='nojsondumps')
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
+
+    def update_smart_campaign(self, id, name, description=None):
+        self.authenticate()
+        if id is None:
+            raise ValueError("Invalid argument: required argument 'id' is none.")
+        if name is None:
+            raise ValueError("Invalid argument: required argument 'name' is none.")
+        args = {
+            'access_token': self.token,
+        }
+        data = {
+            'name': name
+        }
+        if description is not None:
+            data['description'] = description
+        result = self._api_call('post', self.host + "/rest/asset/v1/smartCampaign/{}.json".format(id), args, data,
+                                mode='nojsondumps')
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
+
+    def clone_smart_campaign(self, id, folderId, folderType, name, isExecutable=False, description=None):
+        self.authenticate()
+        if id is None:
+            raise ValueError("Invalid argument: required argument 'id' is none.")
+        if name is None:
+            raise ValueError("Invalid argument: required argument name is none.")
+        if folderId is None:
+            raise ValueError("Invalid argument: required argument folderId is none.")
+        if folderType not in ['Folder', 'Program']:
+            raise ValueError("Invalid argument: folderType should be 'Folder' or 'Program'")
+        args = {
+            'access_token': self.token,
+        }
+        data = {
+            'name': name,
+            'folder': json.dumps({
+                'id': folderId,
+                'type': folderType
+            })
+        }
+        if description is not None:
+            data['description'] = description
+        if isExecutable:
+            data['isExecutable'] = isExecutable
+        result = self._api_call('post', self.host + "/rest/asset/v1/smartCampaign/{}/clone.json".format(id), args, data,
+                                mode='nojsondumps')
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
+
+    def delete_smart_campaign(self, id):
+        self.authenticate()
+        if id is None:
+            raise ValueError("Invalid argument: required argument 'id' is none.")
+        args = {
+            'access_token': self.token,
+        }
+        result = self._api_call('post', self.host + "/rest/asset/v1/smartCampaign/{}/delete.json".format(id), args,
+                                mode='nojsondumps')
         if result is None:
             raise Exception("Empty Response")
         return result['result']

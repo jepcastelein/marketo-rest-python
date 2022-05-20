@@ -751,6 +751,13 @@ API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoi
 campaign = mc.execute(method='get_smart_campaign_by_id', id=1170)
 ```
 
+Get Smart Campaign by Name
+-----------------------
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Smart_Campaigns/getSmartCampaignByNameUsingGET
+```python
+campaign = mc.execute(method='get_smart_campaign_by_name', name='my smart campaign name')
+```
+
 Get Campaign by Id - SUPERCEDED
 ------------------
 Use "Get Smart Campaign by Id" instead. 
@@ -826,6 +833,37 @@ Deactivate Smart Campaign
 API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Smart_Campaigns/deactivateSmartCampaignUsingPOST
 ```python
 campaign = mc.execute(method='deactivate_smart_campaign', id=1880)
+```
+
+Create Smart Campaign
+---------------------
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Smart_Campaigns/createSmartCampaignUsingPOST
+```python
+campaign = mc.execute(method='create_smart_campaign', name='New Smart Campaign', folderId=898, folderType='Folder', 
+                      description=None)
+```
+
+Update Smart Campaign
+--------------------
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Smart_Campaigns/updateSmartCampaignUsingPOST
+```python
+campaign = mc.execute(method='update_smart_campaign', id=1880, name='New Name', description=None)
+```
+
+Clone Smart Campaign
+--------------------
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Smart_Campaigns/cloneSmartCampaignUsingPOST
+```python
+campaign = mc.execute(method='clone_smart_campaign', id=1880, name='New Name', folderId=898, folderType='Folder', 
+                      isExecutable=False, description=None)
+# isExecutable and description are optional
+```
+
+Delete Smart Campaign
+--------------------
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Smart_Campaigns/deleteSmartCampaignUsingPOST
+```python
+campaign = mc.execute(method='delete_smart_campaign', id=1880)
 ```
 
 Get Smart List by Smart Campaign Id
