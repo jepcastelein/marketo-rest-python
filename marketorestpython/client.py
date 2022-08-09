@@ -610,15 +610,12 @@ class MarketoClient:
         # there is no 'result' node returned in this call
         return result['success']
 
-    def push_lead(self, leads, lookupField, programName, programStatus=None, partitionName=None, source=None,
+    def push_lead(self, leads, programName, lookupField=None, programStatus=None, partitionName=None, source=None,
                   reason=None):
         self.authenticate()
         if leads is None:
             raise ValueError(
                 "Invalid argument: required argument 'leads' is None.")
-        if lookupField is None:
-            raise ValueError(
-                "Invalid argument: required argument 'lookupField' is None.")
         if programName is None:
             raise ValueError(
                 "Invalid argument: required argument 'programName' is None.")
@@ -627,9 +624,10 @@ class MarketoClient:
         }
         data = {
             'input': leads,
-            'lookupField': lookupField,
             'programName': programName
         }
+        if lookupField is not None:
+            data['lookupField'] = lookupField
         if programStatus is not None:
             data['programStatus'] = programStatus
         if partitionName is not None:
