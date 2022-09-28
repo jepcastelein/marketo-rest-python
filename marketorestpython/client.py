@@ -153,6 +153,7 @@ class MarketoClient:
                     'delete_email_template': self.delete_email_template,
                     'get_email_templates': self.get_email_templates,
                     'get_email_templates_yield': self.get_email_templates_yield,
+                    'get_email_template_used_by': self.get_email_template_used_by,
                     'get_email_template_content': self.get_email_template_content,
                     'update_email_template_content': self.update_email_template_content,
                     'approve_email_template': self.approve_email_template,
@@ -2255,6 +2256,39 @@ class MarketoClient:
                 break
             offset += maxReturn
             args['offset'] = offset
+
+
+    def get_email_template_used_by(self, id, maxReturn=None):
+        self.authenticate()
+        args = {
+            'access_token': self.token
+        }
+        if maxReturn is not None:
+            args['maxReturn'] = maxReturn
+        else:
+            maxReturn = 20
+        result_list = []
+        offset = 0
+        while True:
+            self.authenticate()
+            # for long-running processes, this updates the access token
+            args['access_token'] = self.token
+            result = self._api_call(
+                'get', self.host + "/rest/asset/v1/emailTemplates/" + str(id) + "/usedBy.json", args)
+            if result is None:
+                raise Exception("Empty Response")
+            if 'result' in result:
+                if len(result['result']) < maxReturn:
+                    result_list.extend(result['result'])
+                    break
+            else:
+                break
+            result_list.extend(result['result'])
+            offset += maxReturn
+            args['offset'] = offset
+        return result_list
+
+
 
     def get_email_template_content(self, id, status=None):
         self.authenticate()
