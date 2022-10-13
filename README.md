@@ -935,6 +935,17 @@ template = mc.execute(method='get_email_templates', status='draft', maxReturn=No
 # if you specify status, it will return an approved email with a draft for both status='draft' AND status='approved'
 ```
 
+Get Email Template Used By
+-------------------
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Email_Templates/getEmailTemplateUsedByUsingGET
+
+```python
+template = mc.execute(method='get_email_template_used_by', id=41, maxReturn=None)
+
+# maxReturn is optional; default for maxReturn is 20 and max is 200
+```
+
+
 Get Email Template Content
 --------------------------
 API Ref: http://developers.marketo.com/documentation/asset-api/get-email-template-content-by-id/
