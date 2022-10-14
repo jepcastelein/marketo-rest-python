@@ -2255,7 +2255,6 @@ class MarketoClient:
             offset += maxReturn
             args['offset'] = offset
 
-
     def get_email_template_used_by(self, id, maxReturn=None):
         self.authenticate()
         args = {
@@ -2285,8 +2284,6 @@ class MarketoClient:
             offset += maxReturn
             args['offset'] = offset
         return result_list
-
-
 
     def get_email_template_content(self, id, status=None):
         self.authenticate()
