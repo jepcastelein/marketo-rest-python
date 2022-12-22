@@ -1169,6 +1169,23 @@ email = mc.execute(method='update_email_full_content', id=117, content='email_co
 # content should be an HTML document to update with (cannot include JavaScript or script tags)
 ```
 
+Get Email Variables
+-------------------
+
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Emails/getEmailVariablesUsingGET
+```python
+variables = mc.execute(method='get_email_variables', id=1124)
+```
+
+Update Email Variable
+-------------------
+
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/asset-endpoint-reference/#!/Emails/updateVariableUsingPOST
+```python
+variable = mc.execute(method='update_email_variable', id=1124, name='preheaderBackgroundColor', value='#81898c',
+           moduleId='preheader')
+```
+
 Landing pages
 =============
 

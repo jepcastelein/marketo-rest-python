@@ -179,6 +179,8 @@ class MarketoClient:
                     'send_sample_email': self.send_sample_email,
                     'get_email_full_content': self.get_email_full_content,
                     'update_email_full_content': self.update_email_full_content,
+                    'get_email_variables': self.get_email_variables,
+                    'update_email_variable': self.update_email_variable,
                     'create_landing_page': self.create_landing_page,
                     'get_landing_page_by_id': self.get_landing_page_by_id,
                     'get_landing_page_by_name': self.get_landing_page_by_name,
@@ -2811,6 +2813,43 @@ class MarketoClient:
         if result is None:
             raise Exception("Empty Response")
         return result['result']
+
+    def get_email_variables(self, id):
+        self.authenticate()
+        if id is None:
+            raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        result = self._api_call(
+            'get', self.host + "/rest/asset/v1/email/" + str(id) + "/variables.json", args)
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
+
+    def update_email_variable(self, id, name, value, moduleId):
+        self.authenticate()
+        if id is None:
+            raise ValueError("Invalid argument: required argument id is none.")
+        if name is None:
+            raise ValueError("Invalid argument: required argument name is none.")
+        if value is None:
+            raise ValueError("Invalid argument: required argument 'value' is none.")
+        if moduleId is None:
+            raise ValueError("Invalid argument: required argument moduleId is none.")
+        args = {
+            'access_token': self.token,
+        }
+        data = {
+            'value': value,
+            'moduleId': moduleId
+        }
+        result = self._api_call('post', self.host + "/rest/asset/v1/email/" + str(id) + "/variable/" + name + ".json",
+                                args, data, mode='nojsondumps')
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
+
 
     # -------LANDING PAGES ---------#
 
