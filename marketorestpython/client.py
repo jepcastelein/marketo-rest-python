@@ -198,6 +198,10 @@ class MarketoClient:
                     'unapprove_landing_page': self.unapprove_landing_page,
                     'discard_landing_page_draft': self.discard_landing_page_draft,
                     'clone_landing_page': self.clone_landing_page,
+                    'get_landing_page_variables': self.get_landing_page_variables,
+                    'get_landing_page_full_content': self.get_landing_page_full_content,
+                    'get_landing_page_redirect_rules': self.get_landing_page_redirect_rules,
+                    'get_landing_page_domains': self.get_landing_page_domains,
                     'create_form': self.create_form,
                     'get_form_by_id': self.get_form_by_id,
                     'get_form_by_name': self.get_form_by_name,
@@ -213,6 +217,7 @@ class MarketoClient:
                     'unapprove_form': self.unapprove_form,
                     'discard_form_draft': self.discard_form_draft,
                     'clone_form': self.clone_form,
+                    'get_thank_you_page_by_form_id': self.get_thank_you_page_by_form_id,
                     'create_file': self.create_file,
                     'get_file_by_id': self.get_file_by_id,
                     'get_file_by_name': self.get_file_by_name,
@@ -937,11 +942,13 @@ class MarketoClient:
 
     # --------- SMART LISTS ---------
 
-    def get_smart_list_by_id(self, id, return_full_result=False):
+    def get_smart_list_by_id(self, id, includeRules=False, return_full_result=False):
         self.authenticate()
         args = {
             'access_token': self.token
         }
+        if includeRules:
+            args['includeRules'] = includeRules
         result = self._api_call('get', self.host + "/rest/asset/v1/smartList/{}.json".format(id), args)
         if result is None:
             raise Exception("Empty Response")
@@ -1970,11 +1977,8 @@ class MarketoClient:
             raise Exception("Empty Response")
         return result['result']
 
-    def browse_folders(self, root, maxDepth=None, maxReturn=None, workSpace=None):
+    def browse_folders(self, root=None, maxDepth=None, maxReturn=None, workSpace=None):
         self.authenticate()
-        if root is None:
-            raise ValueError(
-                "Invalid argument: required argument root is none.")
         args = {
             'access_token': self.token,
             'root': root
@@ -2008,16 +2012,14 @@ class MarketoClient:
             args['offset'] = offset
         return result_list
 
-    def browse_folders_yield(self, root, maxDepth=None, maxReturn=20, workSpace=None, offset=0,
+    def browse_folders_yield(self, root=None, maxDepth=None, maxReturn=20, workSpace=None, offset=0,
                              return_full_result=False):
         self.authenticate()
-        if root is None:
-            raise ValueError(
-                "Invalid argument: required argument root is none.")
         args = {
             'access_token': self.token,
             'root': root,
-            'offset': offset
+            'offset': offset,
+            'maxReturn': maxReturn
         }
         if maxDepth is not None:
             args['maxDepth'] = maxDepth
@@ -2825,7 +2827,7 @@ class MarketoClient:
             'get', self.host + "/rest/asset/v1/email/" + str(id) + "/variables.json", args)
         if result is None:
             raise Exception("Empty Response")
-        return result['result']
+        return result.get('result')
 
     def update_email_variable(self, id, name, value, moduleId):
         self.authenticate()
@@ -3346,6 +3348,100 @@ class MarketoClient:
             raise Exception("Empty Response")
         return result['result']
 
+    def get_landing_page_variables(self, id, status=None):
+        self.authenticate()
+        if id is None:
+            raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        if status is not None:
+            args['status'] = status
+        result = self._api_call(
+            'get', self.host + "/rest/asset/v1/landingPage/" + str(id) + "/variables.json", args)
+        if result is None:
+            raise Exception("Empty Response")
+        return result.get('result')
+
+    def get_landing_page_full_content(self, id, leadId=None, segmentation=None):
+        self.authenticate()
+        if id is None:
+            raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        if leadId is not None:
+            args['leadId'] = leadId
+        if segmentation is not None:
+            args['segmentation'] = segmentation
+        result = self._api_call(
+            'get', self.host + "/rest/asset/v1/landingPage/" + str(id) + "/fullContent.json", args)
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
+
+    def get_landing_page_redirect_rules(self, maxReturn=20, offset=0, redirectTolandingPageId=None,
+                                        redirectToPath=None, earliestUpdatedAt=None, latestUpdatedAt=None,
+                                        return_full_result=False):
+        self.authenticate()
+        args = {
+            'access_token': self.token,
+            'maxReturn': maxReturn,
+            'offset': offset
+        }
+        if redirectTolandingPageId is not None:
+            args['redirectTolandingPageId'] = redirectTolandingPageId
+        if redirectToPath is not None:
+            args['redirectToPath'] = redirectToPath
+        if earliestUpdatedAt is not None:
+            args['earliestUpdatedAt'] = earliestUpdatedAt
+        if latestUpdatedAt is not None:
+            args['latestUpdatedAt'] = latestUpdatedAt
+        while True:
+            self.authenticate()
+            # for long-running processes, this updates the access token
+            args['access_token'] = self.token
+            result = self._api_call('get', self.host + "/rest/asset/v1/redirectRules.json", args)
+            if result is None:
+                raise Exception("Empty Response")
+            if 'result' in result:
+                if return_full_result:
+                    yield result
+                else:
+                    yield result['result']
+                if len(result['result']) < maxReturn:
+                    break
+            else:
+                break
+            offset += maxReturn
+            args['offset'] = offset
+
+    def get_landing_page_domains(self, maxReturn=20, offset=0, return_full_result=False):
+        self.authenticate()
+        args = {
+            'access_token': self.token,
+            'maxReturn': maxReturn,
+            'offset': offset
+        }
+        while True:
+            self.authenticate()
+            # for long-running processes, this updates the access token
+            args['access_token'] = self.token
+            result = self._api_call('get', self.host + "/rest/asset/v1/landingPageDomains.json", args)
+            if result is None:
+                raise Exception("Empty Response")
+            if 'result' in result:
+                if return_full_result:
+                    yield result
+                else:
+                    yield result['result']
+                if len(result['result']) < maxReturn:
+                    break
+            else:
+                break
+            offset += maxReturn
+            args['offset'] = offset
+
     # --------- FORMS ---------
 
     def create_form(self, name, folderId, folderType, description=None, language=None, locale=None,
@@ -3743,6 +3839,22 @@ class MarketoClient:
         if result is None:
             raise Exception("Empty Response")
         return result['result']
+
+    def get_thank_you_page_by_form_id(self, id, status=None):
+        self.authenticate()
+        if id is None:
+            raise ValueError("Invalid argument: required argument id is none.")
+        args = {
+            'access_token': self.token
+        }
+        if status is not None:
+            args['status'] = status
+        result = self._api_call(
+            'get', self.host + "/rest/asset/v1/form/" + str(id) + "/thankYouPage.json", args)
+        if result is None:
+            raise Exception("Empty Response")
+        return result['result']
+
 
     # --------- FILES ---------
 
