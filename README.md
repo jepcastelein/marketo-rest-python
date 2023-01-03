@@ -315,21 +315,28 @@ Describe
 --------
 API Ref: http://developers.marketo.com/documentation/rest/describe/
 ```python
-lead = mc.execute(method='describe')
+lead_fields = mc.execute(method='describe')
 ```
 
 Describe2
 --------
 API Ref: https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Leads/describeUsingGET_6
 ```python
-lead = mc.execute(method='describe2')
+lead_fields = mc.execute(method='describe2')
+```
+
+Describe Program Member
+-----------------------
+API Ref: https://developers.marketo.com/rest-api/endpoint-reference/lead-database-endpoint-reference/#!/Program_Members/describeProgramMemberUsingGET2
+```python
+program_member_fields = mc.execute(method='describe_program_member')
 ```
 
 Get Activity Types
 ------------------
 API Ref: http://developers.marketo.com/documentation/rest/get-activity-types/
 ```python
-mc.execute(method = 'get_activity_types')
+activity_types = mc.execute(method = 'get_activity_types')
 ```
 
 Get Paging Token
