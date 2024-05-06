@@ -78,6 +78,7 @@ class MarketoClient:
                     'get_multiple_leads_by_program_id': self.get_multiple_leads_by_program_id,
                     'get_multiple_leads_by_program_id_yield': self.get_multiple_leads_by_program_id_yield,
                     'change_lead_program_status': self.change_lead_program_status,
+                    'sync_program_member_data': self.sync_program_member_data,
                     'create_update_leads': self.create_update_leads,
                     'associate_lead': self.associate_lead,
                     'push_lead': self.push_lead,
@@ -571,11 +572,39 @@ class MarketoClient:
         }
         for leadId in leadIds:
             data['input'].append({'id': leadId})
-        # result={}
-        #result['success'] = True
-        #result['result'] = data
         result = self._api_call(
             'post', self.host + "/rest/v1/leads/programs/" + str(id) + "/status.json", args, data)
+        return result['result']
+
+    def sync_program_member_data(self, id, input):
+        """
+        :param id: program ID
+        :param input: example payload
+        [
+            {
+                "leadId": 1789,
+                "registrationCode": "dcff5f12-a7c7-11eb-bcbc-0242ac130002"
+            },
+            {
+                "leadId": 1790,
+                "registrationCode": "c0404b78-d3fd-47bf-82c4-d16f3852ab3a"
+            }
+        ]
+        """
+        self.authenticate()
+        if id is None:
+            raise ValueError("Invalid argument: required argument id is none.")
+        if input is None:
+            raise ValueError(
+                "Invalid argument: required argument input is none.")
+        args = {
+            'access_token': self.token
+        }
+        data = {
+            'input': input
+        }
+        result = self._api_call(
+            'post', self.host + "/rest/v1/programs/{}/members.json".format(id), args, data)
         return result['result']
 
     def create_update_leads(self, leads, action=None, lookupField=None, asyncProcessing=None, partitionName=None):
