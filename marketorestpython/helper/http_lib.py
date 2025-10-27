@@ -60,6 +60,13 @@ class HttpLib:
     @_rate_limited(num_calls_per_second)
     def get(self, endpoint, args=None, mode=None, stream=False):
         headers = {'Accept-Encoding': 'gzip'}
+        access_token = None
+        if args and 'access_token' in args:
+            access_token = args.pop('access_token')
+
+        if access_token:
+            headers['Authorization'] = 'Bearer ' + access_token
+
         r = requests.get(endpoint, params=args, headers=headers, stream=stream, timeout=self.requests_timeout)
         if mode == 'nojson':
             return r
@@ -76,16 +83,27 @@ class HttpLib:
     @_rate_limited(num_calls_per_second)
     def post(self, endpoint, args, data=None, files=None, filename=None,
              mode=None, stream=False):
+        headers = {}
+        access_token = None
+        if args and 'access_token' in args:
+            access_token = args.pop('access_token')
+        elif data and isinstance(data, dict) and 'access_token' in data:
+            access_token = data.pop('access_token')
+
+        if access_token:
+            headers['Authorization'] = 'Bearer ' + access_token
+
         if mode == 'nojsondumps':
-            headers = {'Content-type': 'application/x-www-form-urlencoded; charset=utf-8'}
+            headers['Content-type'] = 'application/x-www-form-urlencoded; charset=utf-8'
             r = requests.post(endpoint, params=args, data=data, headers=headers, timeout=self.requests_timeout)
         elif files is None:
-            headers = {'Content-type': 'application/json; charset=utf-8'}
+            headers['Content-type'] = 'application/json; charset=utf-8'
             r = requests.post(endpoint, params=args, json=data, headers=headers, timeout=self.requests_timeout)
         elif files is not None:
             mimetype = mimetypes.guess_type(files)[0]
             file = {filename: (files, open(files, 'rb'), mimetype)}
-            r = requests.post(endpoint, params=args, json=data, files=file, timeout=self.requests_timeout)
+            r = requests.post(endpoint, params=args, json=data, files=file, headers=headers,
+                              timeout=self.requests_timeout)
         r_json = r.json()
         if r_json.get('success'):
             return r_json
@@ -93,10 +111,19 @@ class HttpLib:
             raise MarketoException(r_json['errors'][0])
 
     @backoff.on_exception(backoff.expo, MarketoException,
-        max_time=lookup_max_time, giveup=fatal_marketo_error_code)
+                          max_time=lookup_max_time, giveup=fatal_marketo_error_code)
     @_rate_limited(num_calls_per_second)
     def delete(self, endpoint, args, data):
         headers = {'Content-type': 'application/json; charset=utf-8'}
+        access_token = None
+        if args and 'access_token' in args:
+            access_token = args.pop('access_token')
+        elif data and isinstance(data, dict) and 'access_token' in data:
+            access_token = data.pop('access_token')
+
+        if access_token:
+            headers['Authorization'] = 'Bearer ' + access_token
+
         r = requests.delete(endpoint, params=args, json=data, headers=headers, timeout=self.requests_timeout)
         r_json = r.json()
         if r_json.get('success'):
